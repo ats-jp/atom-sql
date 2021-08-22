@@ -4,13 +4,25 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>jp.ats</groupId>
 	<artifactId>furlong</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>Furlong</name>
 	<description>Spring JdbcTemplate Wrapper</description>
+
+	<url>https://github.com/ats-jp/furlong</url>
+
+	<distributionManagement>
+		<repository>
+			<id>internal.repos</id>
+			<name>Temporary Staging Repository</name>
+			<url>file://${staging.repository.directory}</url>
+		</repository>
+	</distributionManagement>
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.release>11</maven.compiler.release>
+		<github.global.server>github-ats-jp</github.global.server>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -33,6 +45,19 @@
 		</resources>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
@@ -41,6 +66,28 @@
 					<debug>true</debug>
 					<debuglevel>lines,vars,source</debuglevel>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.github.github</groupId>
+				<artifactId>site-maven-plugin</artifactId>
+				<version>0.12</version>
+				<configuration>
+					<message>Maven artifacts for ${project.version}</message>
+					<noJekyll>true</noJekyll>
+					<outputDirectory>${staging.repository.directory}</outputDirectory>
+					<includes>
+						<include>**/*</include>
+					</includes>
+					<merge>true</merge>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>site</goal>
+						</goals>
+						<phase>deploy</phase>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
