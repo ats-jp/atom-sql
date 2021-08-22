@@ -16,7 +16,7 @@ public class Configure {
 		var config = new Properties();
 
 		try {
-			var input = Configure.class.getResourceAsStream(configFileName);
+			var input = Configure.class.getClassLoader().getResourceAsStream(configFileName);
 
 			if (input != null)
 				config.load(input);
