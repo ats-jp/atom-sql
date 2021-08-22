@@ -95,7 +95,8 @@ public class FurlongAnnotationProcessor extends AbstractProcessor {
 
 					String fileName = packageName.isEmpty() ? className : packageName + "." + className;
 					try {
-						try (Writer writer = super.processingEnv.getFiler().createSourceFile(fileName).openWriter()) {
+						try (Writer writer = super.processingEnv.getFiler().createSourceFile(fileName, e)
+								.openWriter()) {
 							writer.write(template);
 						}
 					} catch (IOException ioe) {
