@@ -266,6 +266,11 @@ public enum Binder {
 	}
 
 	public static Binder select(Object o) {
+		//nullの場合はsetObject(i, null)
+		//DBによってはエラーとなる可能性があるため、setNull(int, int)の使用を検討する
+		if (o == null)
+			return OBJECT;
+
 		var binder = binders.get(o.getClass());
 		return binder == null ? OBJECT : binder;
 	}

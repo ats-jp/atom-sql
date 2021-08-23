@@ -234,10 +234,11 @@ public class Furlong {
 				sql = sql.substring(position);
 
 				var placeholder = matcher.group(1);
-				var value = argMap.get(placeholder);
 
-				if (value == null)
+				if (argMap.containsKey(placeholder))
 					throw new IllegalStateException("place holder [" + placeholder + "] was not found");
+
+				var value = argMap.get(placeholder);
 
 				binders.add(Binder.select(value));
 				values.add(value);
