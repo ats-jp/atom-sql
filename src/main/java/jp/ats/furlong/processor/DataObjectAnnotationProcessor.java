@@ -25,7 +25,7 @@ import jp.ats.furlong.DataObject;
  */
 @SupportedAnnotationTypes("jp.ats.furlong.DataObject")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
-public class DataObjectCheckAnnotationProcessor extends AbstractProcessor {
+public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
 	private static final TypeConverter typeVisitor = new TypeConverter();
 

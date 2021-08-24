@@ -1,2 +1,3 @@
-jp.ats.furlong.processor.FurlongAnnotationProcessor
-jp.ats.furlong.processor.DataObjectCheckAnnotationProcessor
+jp.ats.furlong.processor.SQLProxyAnnotationProcessor
+jp.ats.furlong.processor.DataObjectAnnotationProcessor
+jp.ats.furlong.processor.SQLParameterAnnotationProcessor

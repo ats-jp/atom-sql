@@ -29,9 +29,9 @@ import javax.lang.model.util.SimpleElementVisitor8;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic.Kind;
 
-import jp.ats.furlong.Binder;
+import jp.ats.furlong.Type;
+import jp.ats.furlong.Constants;
 import jp.ats.furlong.DataObject;
-import jp.ats.furlong.Furlong;
 import jp.ats.furlong.SQLProxy;
 
 /**
@@ -39,7 +39,7 @@ import jp.ats.furlong.SQLProxy;
  */
 @SupportedAnnotationTypes("jp.ats.furlong.SQLProxy")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
-public class FurlongAnnotationProcessor extends AbstractProcessor {
+public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 	private static final TypeConverter typeConverter = new TypeConverter();
 
@@ -80,7 +80,7 @@ public class FurlongAnnotationProcessor extends AbstractProcessor {
 
 					String packageName = packageName(e);
 
-					String className = className(packageName, e) + Furlong.METADATA_CLASS_SUFFIX;
+					String className = className(packageName, e) + Constants.METADATA_CLASS_SUFFIX;
 
 					param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 					param.put("INTERFACE", className);
@@ -130,7 +130,7 @@ public class FurlongAnnotationProcessor extends AbstractProcessor {
 
 	private static String buildMetodsPart(List<MethodInfo> infos) {
 		return String.join(", ",
-				infos.stream().map(FurlongAnnotationProcessor::methodPart).collect(Collectors.toList()));
+				infos.stream().map(SQLProxyAnnotationProcessor::methodPart).collect(Collectors.toList()));
 	}
 
 	private static String methodPart(MethodInfo info) {
@@ -223,21 +223,21 @@ public class FurlongAnnotationProcessor extends AbstractProcessor {
 		public Void visitDeclared(DeclaredType t, VariableElement p) {
 			TypeElement type = t.asElement().accept(typeConverter, null);
 
-			if (ProcessorUtils.sameClass(type, Binder.BIG_DECIMAL.type()))
+			if (ProcessorUtils.sameClass(type, Type.BIG_DECIMAL.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Binder.BINARY_STREAM.type()))
+			if (ProcessorUtils.sameClass(type, Type.BINARY_STREAM.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Binder.BLOB.type()))
+			if (ProcessorUtils.sameClass(type, Type.BLOB.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Binder.BYTE_ARRAY.type()))
+			if (ProcessorUtils.sameClass(type, Type.BYTE_ARRAY.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Binder.CHARACTER_STREAM.type()))
+			if (ProcessorUtils.sameClass(type, Type.CHARACTER_STREAM.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Binder.CLOB.type()))
+			if (ProcessorUtils.sameClass(type, Type.CLOB.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Binder.STRING.type()))
+			if (ProcessorUtils.sameClass(type, Type.STRING.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Binder.TIMESTAMP.type()))
+			if (ProcessorUtils.sameClass(type, Type.TIMESTAMP.type()))
 				return DEFAULT_VALUE;
 
 			return defaultAction(t, p);

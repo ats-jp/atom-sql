@@ -7,8 +7,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,15 +37,11 @@ import jp.ats.furlong.processor.annotation.Methods;
 @Component
 public class Furlong {
 
-	public static final String METADATA_CLASS_SUFFIX = "$FurlongMetadata";
-
 	static final Logger logger = LoggerFactory.getLogger(Furlong.class);
 
 	private Configure config = new Configure();
 
 	private final SQLLogger sqlLogger = SQLLogger.of(config);
-
-	private static final Charset sqlCharset = StandardCharsets.UTF_8;
 
 	private static final String packageName = Furlong.class.getPackageName();
 
@@ -144,10 +138,10 @@ public class Furlong {
 				if (url == null)
 					throw new IllegalStateException(sqlFileName + " not found");
 
-				sql = new String(Utils.readBytes(url.openStream()), sqlCharset);
+				sql = new String(Utils.readBytes(url.openStream()), Constants.SQL_CHARSET);
 			}
 
-			var methods = Class.forName(proxyClassName + METADATA_CLASS_SUFFIX).getAnnotation(Methods.class);
+			var methods = Class.forName(proxyClassName + Constants.METADATA_CLASS_SUFFIX).getAnnotation(Methods.class);
 
 			var find = Arrays.asList(methods.value()).stream().filter(
 					m -> m.name().equals(method.getName()) && Arrays.equals(method.getParameterTypes(), m.argTypes()))
@@ -204,7 +198,7 @@ public class Furlong {
 
 		private final Class<?> dataObjectClass;
 
-		private final List<Binder> binders = new ArrayList<>();
+		private final List<Type> binders = new ArrayList<>();
 
 		private final List<Object> values = new ArrayList<>();
 
@@ -240,7 +234,7 @@ public class Furlong {
 
 				var value = argMap.get(placeholder);
 
-				binders.add(Binder.select(value));
+				binders.add(Type.select(value));
 				values.add(value);
 			}
 
