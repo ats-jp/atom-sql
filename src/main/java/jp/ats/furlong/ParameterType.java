@@ -208,7 +208,7 @@ public enum ParameterType {
 
 		@Override
 		public Class<?> type() {
-			throw new UnsupportedOperationException();
+			return Object.class;
 		}
 
 		@Override
@@ -259,10 +259,10 @@ public enum ParameterType {
 
 	abstract void bind(int index, PreparedStatement statement, Object value);
 
-	private static final Map<Class<?>, ParameterType> binders = new HashMap<>();
+	private static final Map<Class<?>, ParameterType> types = new HashMap<>();
 
 	static {
-		Arrays.stream(ParameterType.values()).filter(b -> !b.equals(OBJECT)).forEach(b -> binders.put(b.type(), b));
+		Arrays.stream(ParameterType.values()).filter(b -> !b.equals(OBJECT)).forEach(b -> types.put(b.type(), b));
 	}
 
 	public static ParameterType select(Object o) {
@@ -271,7 +271,7 @@ public enum ParameterType {
 		if (o == null)
 			return OBJECT;
 
-		var binder = binders.get(o.getClass());
-		return binder == null ? OBJECT : binder;
+		var type = types.get(o.getClass());
+		return type == null ? OBJECT : type;
 	}
 }

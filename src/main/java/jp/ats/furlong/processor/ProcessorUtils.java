@@ -27,11 +27,6 @@ class ProcessorUtils {
 		return packageElement;
 	}
 
-	static String extractSimpleClassName(String className, String packageName) {
-		var packageNameLength = packageName.length();
-		return className.substring(packageNameLength == 0 ? 0 : packageNameLength + 1);
-	}
-
 	private static class PackageExtractor extends SimpleElementVisitor8<PackageElement, Void> {
 
 		@Override

@@ -1,5 +1,7 @@
 package jp.ats.furlong.processor.annotation;
 
+import jp.ats.furlong.DataObject;
+
 /**
  * @author 千葉 哲嗣
  */
@@ -25,6 +27,13 @@ public @interface Method {
 	 * @return メソッドの引数の型
 	 */
 	Class<?>[] argTypes();
+
+	/**
+	 * {@link SQLPrameter} に指定されたクラス
+	 * 
+	 * @return {@link SQLPrameter} に指定されたクラス
+	 */
+	Class<?> sqlParameterClass() default Object.class;
 
 	/**
 	 * 戻り値の型パラメータで示される {@link DataObject} クラス

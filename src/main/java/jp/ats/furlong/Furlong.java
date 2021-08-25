@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -128,9 +129,7 @@ public class Furlong {
 			if (sqlContainer != null) {
 				sql = sqlContainer.value();
 			} else {
-				int packageNameLength = proxyClass.getPackage().getName().length();
-
-				var sqlFileName = proxyClassName.substring(packageNameLength == 0 ? 0 : packageNameLength + 1) + "."
+				var sqlFileName = Utils.extractSimpleClassName(proxyClassName, proxyClass.getPackage().getName()) + "."
 						+ method.getName() + ".sql";
 
 				var url = proxyClass.getResource(sqlFileName);
@@ -146,7 +145,31 @@ public class Furlong {
 					m -> m.name().equals(method.getName()) && Arrays.equals(method.getParameterTypes(), m.argTypes()))
 					.findFirst().get();
 
-			var helper = new SQLProxyHelper(method, sql, find.args(), find.dataObjectClass(), args);
+			var argTypes = find.argTypes();
+
+			SQLProxyHelper helper;
+			if (argTypes.length == 1 && argTypes[0].equals(Consumer.class)) {
+				var sqlParameterClass = find.sqlParameterClass();
+				var sqlParameter = sqlParameterClass.getConstructor().newInstance();
+
+				Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameter });
+
+				var names = new LinkedList<String>();
+				var values = new LinkedList<Object>();
+				Arrays.stream(sqlParameterClass.getFields()).forEach(f -> {
+					names.add(f.getName());
+					try {
+						values.add(f.get(sqlParameter));
+					} catch (IllegalAccessException e) {
+						throw new IllegalStateException(e);
+					}
+				});
+
+				helper = new SQLProxyHelper(method, sql, names.toArray(String[]::new), find.dataObjectClass(),
+						values.toArray(Object[]::new));
+			} else {
+				helper = new SQLProxyHelper(method, sql, find.args(), find.dataObjectClass(), args);
+			}
 
 			var returnType = method.getReturnType();
 

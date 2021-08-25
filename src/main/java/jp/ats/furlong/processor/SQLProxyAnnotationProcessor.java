@@ -37,6 +37,7 @@ import jp.ats.furlong.DataObject;
 import jp.ats.furlong.ParameterType;
 import jp.ats.furlong.SQLParameter;
 import jp.ats.furlong.SQLProxy;
+import jp.ats.furlong.Utils;
 
 /**
  * @author 千葉 哲嗣
@@ -64,72 +65,73 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 		try {
 			annotations.forEach(a -> {
-				roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
-					ElementKind kind = e.getKind();
-					if (kind != ElementKind.INTERFACE) {
-						error("cannot annotate" + kind.name() + " with " + SQLProxy.class.getSimpleName(), e);
-
-						throw new ProcessException();
-					}
-
-					List<MethodInfo> infos = new LinkedList<>();
-
-					hasError.set(false);
-
-					e.getEnclosedElements().forEach(enc -> {
-						enc.accept(methodVisitor, infos);
-					});
-
-					if (hasError.get()) {
-						return;
-					}
-
-					String template = Formatter.readTemplate(FurlongMetadataTemplate.class, "UTF-8");
-					template = Formatter.convertToTemplate(template);
-
-					Map<String, String> param = new HashMap<>();
-
-					String packageName = packageName(e);
-
-					String className = className(packageName, e) + Constants.METADATA_CLASS_SUFFIX;
-
-					String fileName = packageName.isEmpty() ? className : packageName + "." + className;
-
-					if (alreadyCreatedFiles.contains(fileName))
-						return;
-
-					param.put("PROCESSOR", SQLProxyAnnotationProcessor.class.getName());
-
-					param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
-					param.put("INTERFACE", className);
-
-					String methodPart = buildMetodsPart(infos);
-
-					template = Formatter.erase(template, methodPart.isEmpty());
-
-					param.put("METHODS", methodPart);
-
-					template = Formatter.format(template, param);
-
-					try {
-						try (Writer writer = super.processingEnv.getFiler().createSourceFile(fileName, e)
-								.openWriter()) {
-							writer.write(template);
-						}
-					} catch (IOException ioe) {
-						error(ioe.getMessage(), e);
-					}
-
-					alreadyCreatedFiles.add(fileName);
-
-					info(fileName + " generated");
-				});
+				roundEnv.getElementsAnnotatedWith(a).forEach(this::execute);
 			});
 		} catch (ProcessException e) {
 			return false;
 		}
 
 		return true;
+	}
+
+	private void execute(Element e) {
+		ElementKind kind = e.getKind();
+		if (kind != ElementKind.INTERFACE) {
+			error("cannot annotate" + kind.name() + " with " + SQLProxy.class.getSimpleName(), e);
+
+			throw new ProcessException();
+		}
+
+		List<MethodInfo> infos = new LinkedList<>();
+
+		hasError.set(false);
+
+		e.getEnclosedElements().forEach(enc -> {
+			enc.accept(methodVisitor, infos);
+		});
+
+		if (hasError.get()) {
+			return;
+		}
+
+		String template = Formatter.readTemplate(FurlongMetadataTemplate.class, "UTF-8");
+		template = Formatter.convertToTemplate(template);
+
+		Map<String, String> param = new HashMap<>();
+
+		String packageName = packageName(e);
+
+		String className = className(packageName, e) + Constants.METADATA_CLASS_SUFFIX;
+
+		String fileName = packageName.isEmpty() ? className : packageName + "." + className;
+
+		if (alreadyCreatedFiles.contains(fileName))
+			return;
+
+		param.put("PROCESSOR", SQLProxyAnnotationProcessor.class.getName());
+
+		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
+		param.put("INTERFACE", className);
+
+		String methodPart = buildMetodsPart(infos);
+
+		template = Formatter.erase(template, methodPart.isEmpty());
+
+		param.put("METHODS", methodPart);
+
+		template = Formatter.format(template, param);
+
+		try {
+			try (Writer writer = super.processingEnv.getFiler().createSourceFile(fileName, e).openWriter()) {
+				writer.write(template);
+			}
+		} catch (IOException ioe) {
+			error(ioe.getMessage(), e);
+		}
+
+		alreadyCreatedFiles.add(fileName);
+
+		info(fileName + " generated");
 	}
 
 	private String packageName(Element e) {
@@ -159,11 +161,18 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		String types = String.join(", ",
 				info.parameterTypes.stream().map(t -> t + ".class").collect(Collectors.toList()));
 
-		if (info.returnTypeArgumantClassName != null)
-			return "@Method(name = \"" + info.name + "\", args = {" + args + "}, argTypes = {" + types
-					+ "}, dataObjectClass = " + info.returnTypeArgumantClassName + ".class)";
+		var methodContents = new LinkedList<String>();
+		methodContents.add("name = \"" + info.name + "\"");
+		methodContents.add("args = {" + args + "}");
+		methodContents.add("argTypes = {" + types + "}");
 
-		return "@Method(name = \"" + info.name + "\", args = {" + args + "}, argTypes = {" + types + "})";
+		if (info.sqlParameterClassName != null)
+			methodContents.add("sqlParameterClass = " + info.sqlParameterClassName + ".class");
+
+		if (info.returnTypeArgumantClassName != null)
+			methodContents.add("dataObjectClass = " + info.returnTypeArgumantClassName + ".class");
+
+		return "@Method(" + String.join(", ", methodContents) + ")";
 	}
 
 	private void info(String message) {
@@ -214,7 +223,7 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private class ParameterTypeChecker extends SimpleTypeVisitor8<Void, VariableElement> {
+	private class ParameterTypeChecker extends SimpleTypeVisitor8<TypeMirror, VariableElement> {
 
 		private final ExecutableElement method;
 
@@ -223,14 +232,14 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		}
 
 		@Override
-		protected Void defaultAction(TypeMirror e, VariableElement p) {
+		protected TypeMirror defaultAction(TypeMirror e, VariableElement p) {
 			error("cannot use parameter type [" + e + "]", p);
 			hasError.set(true);
 			return DEFAULT_VALUE;
 		}
 
 		@Override
-		public Void visitPrimitive(PrimitiveType t, VariableElement p) {
+		public TypeMirror visitPrimitive(PrimitiveType t, VariableElement p) {
 			switch (t.getKind()) {
 			case BOOLEAN:
 			case BYTE:
@@ -245,43 +254,11 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		}
 
 		@Override
-		public Void visitDeclared(DeclaredType t, VariableElement p) {
+		public TypeMirror visitDeclared(DeclaredType t, VariableElement p) {
 			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
 
-			// Consumer<SQLParameter>のチェック
 			if (ProcessorUtils.sameClass(type, Consumer.class)) {
-				var typeArg = p.asType().accept(TypeArgumentsExtractor.instance, null).get(0);
-
-				var element = typeArg.accept(ElementConverter.instance, p);
-				if (element == null) {
-					error("unknown error occurred", p);
-					hasError.set(true);
-					return DEFAULT_VALUE;
-				}
-
-				var clazz = element.accept(TypeConverter.instance, null);
-				var className = clazz.getQualifiedName().toString();
-
-				var packageName = ProcessorUtils.getPackageElement(clazz).getQualifiedName().toString();
-
-				var typeName = ProcessorUtils.extractSimpleClassName(className, packageName);
-
-				var annotation = method.getAnnotation(SQLParameter.class);
-				if (annotation == null) {
-					error("Consumer needs " + SQLParameter.class.getSimpleName() + " annotation", p);
-					hasError.set(true);
-					return DEFAULT_VALUE;
-				}
-
-				var annotationValue = annotation.value();
-
-				if (!typeName.equals(annotationValue)) {
-					error("[" + annotationValue + "] and [" + typeName + "] do not match", p);
-					hasError.set(true);
-					return DEFAULT_VALUE;
-				}
-
-				return DEFAULT_VALUE;
+				return processConsumerType(p);
 			}
 
 			if (ProcessorUtils.sameClass(type, ParameterType.BIG_DECIMAL.type()))
@@ -304,8 +281,49 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 			return defaultAction(t, p);
 		}
 
-		public Void visitError(ErrorType t, VariableElement p) {
-			return DEFAULT_VALUE;
+		public TypeMirror visitError(ErrorType t, VariableElement p) {
+			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
+
+			if (ProcessorUtils.sameClass(type, Consumer.class)) {
+				return processConsumerType(p);
+			}
+
+			return defaultAction(t, p);
+		}
+
+		private TypeMirror processConsumerType(VariableElement p) {
+			var typeArg = p.asType().accept(TypeArgumentsExtractor.instance, null).get(0);
+
+			var element = typeArg.accept(ElementConverter.instance, p);
+			if (element == null) {
+				error("unknown error occurred", p);
+				hasError.set(true);
+				return DEFAULT_VALUE;
+			}
+
+			var clazz = element.accept(TypeConverter.instance, null);
+			var className = clazz.getQualifiedName().toString();
+
+			var packageName = ProcessorUtils.getPackageElement(clazz).getQualifiedName().toString();
+
+			var typeName = Utils.extractSimpleClassName(className, packageName);
+
+			var annotation = method.getAnnotation(SQLParameter.class);
+			if (annotation == null) {
+				error("Consumer needs " + SQLParameter.class.getSimpleName() + " annotation", p);
+				hasError.set(true);
+				return DEFAULT_VALUE;
+			}
+
+			var annotationValue = annotation.value();
+
+			if (!typeName.equals(annotationValue)) {
+				error("[" + annotationValue + "] and [" + typeName + "] do not match", p);
+				hasError.set(true);
+				return DEFAULT_VALUE;
+			}
+
+			return typeArg;
 		}
 	}
 
@@ -318,24 +336,26 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 				throw new ProcessException();
 			}
 
-			var returnTypeArg = e.getReturnType().accept(returnTypeChecker, e);
-
 			MethodInfo info = new MethodInfo();
 
 			ParameterTypeChecker checker = new ParameterTypeChecker(e);
 
 			info.name = e.getSimpleName().toString();
 			e.getParameters().forEach(parameter -> {
-				parameter.asType().accept(checker, parameter);
+				var typeArg = parameter.asType().accept(checker, parameter);
 
 				info.parameterNames.add(parameter.getSimpleName().toString());
 
 				info.parameterTypes.add(parameter.asType().accept(typeNameExtractor, e));
+
+				if (typeArg != null)
+					info.sqlParameterClassName = typeArg.accept(typeNameExtractor, e);
 			});
 
-			if (returnTypeArg != null) {
+			var returnTypeArg = e.getReturnType().accept(returnTypeChecker, e);
+
+			if (returnTypeArg != null)
 				info.returnTypeArgumantClassName = returnTypeArg.accept(typeNameExtractor, e);
-			}
 
 			p.add(info);
 
@@ -380,7 +400,7 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 			return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();
 		}
 
-		//Consumer<SQLParameter>等型パラメータのあるものがここに来る
+		// Consumer<SQLParameter>等型パラメータのあるものがここに来る
 		@Override
 		public String visitError(ErrorType t, Element p) {
 			return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();
@@ -398,6 +418,11 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public Element visitDeclared(DeclaredType t, Element p) {
+			return t.asElement();
+		}
+
+		@Override
+		public Element visitError(ErrorType t, Element p) {
 			return t.asElement();
 		}
 	}
@@ -430,6 +455,11 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		public List<? extends TypeMirror> visitDeclared(DeclaredType t, Void p) {
 			return t.getTypeArguments();
 		}
+
+		@Override
+		public List<? extends TypeMirror> visitError(ErrorType t, Void p) {
+			return t.getTypeArguments();
+		}
 	}
 
 	private static class MethodInfo {
@@ -439,6 +469,8 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		private final List<String> parameterNames = new LinkedList<>();
 
 		private final List<String> parameterTypes = new LinkedList<>();
+
+		private String sqlParameterClassName;
 
 		private String returnTypeArgumantClassName;
 	}

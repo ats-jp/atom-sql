@@ -12,6 +12,11 @@ public class Utils {
 
 	private static final int BUFFER_SIZE = 8192;
 
+	public static String extractSimpleClassName(String className, String packageName) {
+		var packageNameLength = packageName.length();
+		return className.substring(packageNameLength == 0 ? 0 : packageNameLength + 1);
+	}
+
 	public static byte[] readBytes(InputStream in) throws IOException {
 		byte[] concat = BYTE_EMPTY_ARRAY;
 		byte[] b = new byte[BUFFER_SIZE];

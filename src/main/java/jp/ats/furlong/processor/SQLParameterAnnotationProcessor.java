@@ -27,6 +27,7 @@ import jp.ats.furlong.ParameterType;
 import jp.ats.furlong.PlaceholderFinder;
 import jp.ats.furlong.SQL;
 import jp.ats.furlong.SQLParameter;
+import jp.ats.furlong.Utils;
 
 @SupportedAnnotationTypes("jp.ats.furlong.SQLParameter")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
@@ -47,57 +48,7 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 
 		try {
 			annotations.forEach(a -> {
-				roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
-					var generateClassName = e.getAnnotation(SQLParameter.class).value();
-
-					var clazz = e.getEnclosingElement().accept(TypeConverter.instance, null);
-
-					PackageElement packageElement = ProcessorUtils.getPackageElement(clazz);
-
-					var className = clazz.getQualifiedName().toString();
-					var packageName = packageElement.getQualifiedName().toString();
-
-					var fileName = packageName.isEmpty() ? generateClassName : packageName + "." + generateClassName;
-
-					if (alreadyCreatedFiles.contains(fileName))
-						return;
-
-					var sql = extractSQL(packageName, className, e);
-
-					String template = Formatter.readTemplate(SQLParameterTemplate.class, "UTF-8");
-					template = Formatter.convertToTemplate(template);
-
-					Map<String, String> param = new HashMap<>();
-
-					param.put("PROCESSOR", SQLParameterAnnotationProcessor.class.getName());
-
-					param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
-					param.put("CLASS", generateClassName);
-
-					var fields = new LinkedList<String>();
-					PlaceholderFinder.execute(sql, f -> {
-						var method = f.type.map(t -> ParameterType.valueOf(t)).orElse(ParameterType.OBJECT).type()
-								.getName() + " " + f.placeholder + ";";
-						fields.add(method);
-					});
-
-					param.put("FIELDS", String.join(newLine, fields));
-
-					template = Formatter.format(template, param);
-
-					try {
-						try (Writer writer = super.processingEnv.getFiler().createSourceFile(fileName, e)
-								.openWriter()) {
-							writer.write(template);
-						}
-					} catch (IOException ioe) {
-						error(ioe.getMessage(), e);
-					}
-
-					alreadyCreatedFiles.add(fileName);
-
-					info(fileName + " generated");
-				});
+				roundEnv.getElementsAnnotatedWith(a).forEach(this::execute);
 			});
 		} catch (ProcessException e) {
 			return false;
@@ -106,13 +57,64 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 		return true;
 	}
 
+	private void execute(Element e) {
+		var generateClassName = e.getAnnotation(SQLParameter.class).value();
+
+		var clazz = e.getEnclosingElement().accept(TypeConverter.instance, null);
+
+		PackageElement packageElement = ProcessorUtils.getPackageElement(clazz);
+
+		var className = clazz.getQualifiedName().toString();
+		var packageName = packageElement.getQualifiedName().toString();
+
+		var fileName = packageName.isEmpty() ? generateClassName : packageName + "." + generateClassName;
+
+		if (alreadyCreatedFiles.contains(fileName))
+			return;
+
+		var sql = extractSQL(packageName, className, e);
+
+		String template = Formatter.readTemplate(SQLParameterTemplate.class, "UTF-8");
+		template = Formatter.convertToTemplate(template);
+
+		Map<String, String> param = new HashMap<>();
+
+		param.put("PROCESSOR", SQLParameterAnnotationProcessor.class.getName());
+
+		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
+		param.put("CLASS", generateClassName);
+
+		var fields = new LinkedList<String>();
+		PlaceholderFinder.execute(sql, f -> {
+			var method = "public "
+					+ f.type.map(t -> ParameterType.valueOf(t)).orElse(ParameterType.OBJECT).type().getName() + " "
+					+ f.placeholder + ";";
+			fields.add(method);
+		});
+
+		param.put("FIELDS", String.join(newLine, fields));
+
+		template = Formatter.format(template, param);
+
+		try {
+			try (Writer writer = super.processingEnv.getFiler().createSourceFile(fileName, e).openWriter()) {
+				writer.write(template);
+			}
+		} catch (IOException ioe) {
+			error(ioe.getMessage(), e);
+		}
+
+		alreadyCreatedFiles.add(fileName);
+
+		info(fileName + " generated");
+	}
+
 	private String extractSQL(String packageName, String className, Element method) {
 		var sql = method.getAnnotation(SQL.class);
 		if (sql != null)
 			return sql.value();
 
-		var sqlFileName = ProcessorUtils.extractSimpleClassName(className, packageName) + "." + method.getSimpleName()
-				+ ".sql";
+		var sqlFileName = Utils.extractSimpleClassName(className, packageName) + "." + method.getSimpleName() + ".sql";
 
 		try {
 			var classOutput = super.processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", "");
