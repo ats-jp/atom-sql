@@ -2,8 +2,13 @@ package jp.ats.furlong.processor;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -14,11 +19,12 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.SimpleElementVisitor8;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
 import jp.ats.furlong.Constants;
+import jp.ats.furlong.ParameterType;
+import jp.ats.furlong.PlaceholderFinder;
 import jp.ats.furlong.SQL;
 import jp.ats.furlong.SQLParameter;
 
@@ -26,9 +32,13 @@ import jp.ats.furlong.SQLParameter;
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 
-	private static final TypeConverter typeVisitor = new TypeConverter();
-
 	private static final Class<?> DEFAULT_SQL_FILE_RESOLVER_CLASS = SimpleMavenSQLFileResolver.class;
+
+	private static final String newLine = System.getProperty("line.separator");
+
+	// 二重作成防止チェッカー
+	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
+	private final Set<String> alreadyCreatedFiles = new HashSet<>();
 
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -38,9 +48,55 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 		try {
 			annotations.forEach(a -> {
 				roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
-					var value = e.getAnnotation(SQLParameter.class).value();
-					info(">>>>>>>>>>" + value);
-					info("%%%%%%%%%%" + extractSQL(e));
+					var generateClassName = e.getAnnotation(SQLParameter.class).value();
+
+					var clazz = e.getEnclosingElement().accept(TypeConverter.instance, null);
+
+					PackageElement packageElement = ProcessorUtils.getPackageElement(clazz);
+
+					var className = clazz.getQualifiedName().toString();
+					var packageName = packageElement.getQualifiedName().toString();
+
+					var fileName = packageName.isEmpty() ? generateClassName : packageName + "." + generateClassName;
+
+					if (alreadyCreatedFiles.contains(fileName))
+						return;
+
+					var sql = extractSQL(packageName, className, e);
+
+					String template = Formatter.readTemplate(SQLParameterTemplate.class, "UTF-8");
+					template = Formatter.convertToTemplate(template);
+
+					Map<String, String> param = new HashMap<>();
+
+					param.put("PROCESSOR", SQLParameterAnnotationProcessor.class.getName());
+
+					param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
+					param.put("CLASS", generateClassName);
+
+					var fields = new LinkedList<String>();
+					PlaceholderFinder.execute(sql, f -> {
+						var method = f.type.map(t -> ParameterType.valueOf(t)).orElse(ParameterType.OBJECT).type()
+								.getName() + " " + f.placeholder + ";";
+						fields.add(method);
+					});
+
+					param.put("FIELDS", String.join(newLine, fields));
+
+					template = Formatter.format(template, param);
+
+					try {
+						try (Writer writer = super.processingEnv.getFiler().createSourceFile(fileName, e)
+								.openWriter()) {
+							writer.write(template);
+						}
+					} catch (IOException ioe) {
+						error(ioe.getMessage(), e);
+					}
+
+					alreadyCreatedFiles.add(fileName);
+
+					info(fileName + " generated");
 				});
 			});
 		} catch (ProcessException e) {
@@ -50,37 +106,20 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 		return true;
 	}
 
-	private static final PackageExtractor packageExtractor = new PackageExtractor();
-
-	private String extractSQL(Element method) {
+	private String extractSQL(String packageName, String className, Element method) {
 		var sql = method.getAnnotation(SQL.class);
 		if (sql != null)
 			return sql.value();
 
-		var clazz = method.getEnclosingElement().accept(typeVisitor, null);
-
-		Element enclosing = clazz;
-		PackageElement packageElement = null;
-		do {
-			enclosing = enclosing.getEnclosingElement();
-			packageElement = enclosing.accept(packageExtractor, null);
-		} while (packageElement == null);
-
-		var className = clazz.getQualifiedName().toString();
-
-		var packageName = packageElement.getQualifiedName();
-
-		int packageNameLength = packageName.length();
-
-		var sqlFileName = className.substring(packageNameLength == 0 ? 0 : packageNameLength + 1) + "."
-				+ method.getSimpleName() + ".sql";
+		var sqlFileName = ProcessorUtils.extractSimpleClassName(className, packageName) + "." + method.getSimpleName()
+				+ ".sql";
 
 		try {
 			var classOutput = super.processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", "");
 			var pathString = classOutput.toUri().toURL().toString();
 
 			return new String(resolver(method).resolve(Paths.get(pathString.substring("file:/".length())),
-					packageName.toString(), sqlFileName), Constants.SQL_CHARSET);
+					packageName.toString(), sqlFileName, super.processingEnv.getOptions()), Constants.SQL_CHARSET);
 		} catch (IOException ioe) {
 			throw new UncheckedIOException(ioe);
 		}
@@ -105,19 +144,6 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 				| InstantiationException e) {
 			error("error occurs while instantiation class [" + className + "]", method);
 			throw new ProcessException();
-		}
-	}
-
-	private static class PackageExtractor extends SimpleElementVisitor8<PackageElement, Void> {
-
-		@Override
-		protected PackageElement defaultAction(Element e, Void p) {
-			return null;
-		}
-
-		@Override
-		public PackageElement visitPackage(PackageElement e, Void p) {
-			return e;
 		}
 	}
 

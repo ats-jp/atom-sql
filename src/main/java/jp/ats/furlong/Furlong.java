@@ -18,7 +18,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -186,8 +185,6 @@ public class Furlong {
 		});
 	}
 
-	private static final Pattern placeholder = Pattern.compile(":([a-zA-Z_$][a-zA-Z\\d_$]*)");
-
 	private class SQLProxyHelper implements PreparedStatementSetter {
 
 		private final Method method;
@@ -198,7 +195,7 @@ public class Furlong {
 
 		private final Class<?> dataObjectClass;
 
-		private final List<Type> binders = new ArrayList<>();
+		private final List<ParameterType> binders = new ArrayList<>();
 
 		private final List<Object> values = new ArrayList<>();
 
@@ -212,33 +209,22 @@ public class Furlong {
 				argMap.put(argNames[i], args[i]);
 			}
 
-			int position = 0;
 			var converted = new StringBuilder();
-			while (true) {
-				var matcher = placeholder.matcher(sql);
 
-				if (!matcher.find())
-					break;
-
-				converted.append(sql.substring(0, matcher.start()));
+			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
+				converted.append(f.gap);
 				converted.append("?");
 
-				position = matcher.end();
+				if (!argMap.containsKey(f.placeholder))
+					throw new IllegalStateException("place holder [" + f.placeholder + "] was not found");
 
-				sql = sql.substring(position);
+				var value = argMap.get(f.placeholder);
 
-				var placeholder = matcher.group(1);
-
-				if (argMap.containsKey(placeholder))
-					throw new IllegalStateException("place holder [" + placeholder + "] was not found");
-
-				var value = argMap.get(placeholder);
-
-				binders.add(Type.select(value));
+				binders.add(ParameterType.select(value));
 				values.add(value);
-			}
+			});
 
-			converted.append(sql);
+			converted.append(sqlRemain);
 
 			this.sql = converted.toString();
 		}

@@ -27,8 +27,6 @@ import jp.ats.furlong.DataObject;
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
-	private static final TypeConverter typeVisitor = new TypeConverter();
-
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 		if (annotations.size() == 0)
@@ -66,15 +64,13 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 			if (!"<init>".equals(e.getSimpleName().toString()))
 				return DEFAULT_VALUE;
 
-			ParameterTypeChecker checker = new ParameterTypeChecker();
-
 			var params = e.getParameters();
 
 			if (params.size() != 1)
 				return DEFAULT_VALUE;
 
 			boolean[] ok = { false };
-			params.get(0).asType().accept(checker, ok);
+			params.get(0).asType().accept(ParameterTypeChecker.instance, ok);
 			if (ok[0])
 				p[0] = e;
 
@@ -82,7 +78,9 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private class ParameterTypeChecker extends SimpleTypeVisitor8<Void, boolean[]> {
+	private static class ParameterTypeChecker extends SimpleTypeVisitor8<Void, boolean[]> {
+
+		private static final ParameterTypeChecker instance = new ParameterTypeChecker();
 
 		@Override
 		protected Void defaultAction(TypeMirror e, boolean[] p) {
@@ -91,7 +89,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public Void visitDeclared(DeclaredType t, boolean[] p) {
-			TypeElement type = t.asElement().accept(typeVisitor, null);
+			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
 
 			if (ProcessorUtils.sameClass(type, ResultSet.class)) {
 				p[0] = true;

@@ -9,6 +9,11 @@ import javax.lang.model.util.SimpleElementVisitor8;
  */
 class TypeConverter extends SimpleElementVisitor8<TypeElement, Void> {
 
+	static final TypeConverter instance = new TypeConverter();
+
+	private TypeConverter() {
+	}
+
 	@Override
 	protected TypeElement defaultAction(Element e, Void p) {
 		throw new ProcessException();

@@ -3,10 +3,12 @@ package jp.ats.furlong.processor;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,6 +24,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.NoType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
@@ -29,9 +32,10 @@ import javax.lang.model.util.SimpleElementVisitor8;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic.Kind;
 
-import jp.ats.furlong.Type;
 import jp.ats.furlong.Constants;
 import jp.ats.furlong.DataObject;
+import jp.ats.furlong.ParameterType;
+import jp.ats.furlong.SQLParameter;
 import jp.ats.furlong.SQLProxy;
 
 /**
@@ -41,9 +45,17 @@ import jp.ats.furlong.SQLProxy;
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
-	private static final TypeConverter typeConverter = new TypeConverter();
-
 	private static final ThreadLocal<Boolean> hasError = ThreadLocal.withInitial(() -> false);
+
+	// 二重作成防止チェッカー
+	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
+	private final Set<String> alreadyCreatedFiles = new HashSet<>();
+
+	private final TypeNameExtractor typeNameExtractor = new TypeNameExtractor();
+
+	private final MethodVisitor methodVisitor = new MethodVisitor();
+
+	private final ReturnTypeChecker returnTypeChecker = new ReturnTypeChecker();
 
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -64,9 +76,8 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 					hasError.set(false);
 
-					MethodVisitor visitor = new MethodVisitor();
 					e.getEnclosedElements().forEach(enc -> {
-						enc.accept(visitor, infos);
+						enc.accept(methodVisitor, infos);
 					});
 
 					if (hasError.get()) {
@@ -82,6 +93,13 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 					String className = className(packageName, e) + Constants.METADATA_CLASS_SUFFIX;
 
+					String fileName = packageName.isEmpty() ? className : packageName + "." + className;
+
+					if (alreadyCreatedFiles.contains(fileName))
+						return;
+
+					param.put("PROCESSOR", SQLProxyAnnotationProcessor.class.getName());
+
 					param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 					param.put("INTERFACE", className);
 
@@ -93,7 +111,6 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 					template = Formatter.format(template, param);
 
-					String fileName = packageName.isEmpty() ? className : packageName + "." + className;
 					try {
 						try (Writer writer = super.processingEnv.getFiler().createSourceFile(fileName, e)
 								.openWriter()) {
@@ -102,6 +119,8 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 					} catch (IOException ioe) {
 						error(ioe.getMessage(), e);
 					}
+
+					alreadyCreatedFiles.add(fileName);
 
 					info(fileName + " generated");
 				});
@@ -118,7 +137,7 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private String className(String packageName, Element element) {
-		TypeElement type = element.accept(typeConverter, null);
+		TypeElement type = element.accept(TypeConverter.instance, null);
 		String name = type.getQualifiedName().toString();
 
 		name = name.substring(packageName.length());
@@ -176,13 +195,13 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public TypeMirror visitDeclared(DeclaredType t, ExecutableElement p) {
-			TypeElement type = t.asElement().accept(typeConverter, null);
+			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
 
 			if (!ProcessorUtils.sameClass(type, Stream.class))
 				return defaultAction(t, p);
 
 			var typeArg = t.getTypeArguments().get(0);
-			if (typeArg.accept(new AnnotationExtractor(), null))
+			if (typeArg.accept(AnnotationExtractor.instance, null))
 				return typeArg;
 
 			return defaultAction(t, p);
@@ -196,6 +215,12 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private class ParameterTypeChecker extends SimpleTypeVisitor8<Void, VariableElement> {
+
+		private final ExecutableElement method;
+
+		private ParameterTypeChecker(ExecutableElement method) {
+			this.method = method;
+		}
 
 		@Override
 		protected Void defaultAction(TypeMirror e, VariableElement p) {
@@ -221,26 +246,66 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public Void visitDeclared(DeclaredType t, VariableElement p) {
-			TypeElement type = t.asElement().accept(typeConverter, null);
+			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
 
-			if (ProcessorUtils.sameClass(type, Type.BIG_DECIMAL.type()))
+			// Consumer<SQLParameter>のチェック
+			if (ProcessorUtils.sameClass(type, Consumer.class)) {
+				var typeArg = p.asType().accept(TypeArgumentsExtractor.instance, null).get(0);
+
+				var element = typeArg.accept(ElementConverter.instance, p);
+				if (element == null) {
+					error("unknown error occurred", p);
+					hasError.set(true);
+					return DEFAULT_VALUE;
+				}
+
+				var clazz = element.accept(TypeConverter.instance, null);
+				var className = clazz.getQualifiedName().toString();
+
+				var packageName = ProcessorUtils.getPackageElement(clazz).getQualifiedName().toString();
+
+				var typeName = ProcessorUtils.extractSimpleClassName(className, packageName);
+
+				var annotation = method.getAnnotation(SQLParameter.class);
+				if (annotation == null) {
+					error("Consumer needs " + SQLParameter.class.getSimpleName() + " annotation", p);
+					hasError.set(true);
+					return DEFAULT_VALUE;
+				}
+
+				var annotationValue = annotation.value();
+
+				if (!typeName.equals(annotationValue)) {
+					error("[" + annotationValue + "] and [" + typeName + "] do not match", p);
+					hasError.set(true);
+					return DEFAULT_VALUE;
+				}
+
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Type.BINARY_STREAM.type()))
+			}
+
+			if (ProcessorUtils.sameClass(type, ParameterType.BIG_DECIMAL.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Type.BLOB.type()))
+			if (ProcessorUtils.sameClass(type, ParameterType.BINARY_STREAM.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Type.BYTE_ARRAY.type()))
+			if (ProcessorUtils.sameClass(type, ParameterType.BLOB.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Type.CHARACTER_STREAM.type()))
+			if (ProcessorUtils.sameClass(type, ParameterType.BYTE_ARRAY.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Type.CLOB.type()))
+			if (ProcessorUtils.sameClass(type, ParameterType.CHARACTER_STREAM.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Type.STRING.type()))
+			if (ProcessorUtils.sameClass(type, ParameterType.CLOB.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, Type.TIMESTAMP.type()))
+			if (ProcessorUtils.sameClass(type, ParameterType.STRING.type()))
+				return DEFAULT_VALUE;
+			if (ProcessorUtils.sameClass(type, ParameterType.TIMESTAMP.type()))
 				return DEFAULT_VALUE;
 
 			return defaultAction(t, p);
+		}
+
+		public Void visitError(ErrorType t, VariableElement p) {
+			return DEFAULT_VALUE;
 		}
 	}
 
@@ -253,11 +318,11 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 				throw new ProcessException();
 			}
 
-			var returnTypeArg = e.getReturnType().accept(new ReturnTypeChecker(), e);
+			var returnTypeArg = e.getReturnType().accept(returnTypeChecker, e);
 
 			MethodInfo info = new MethodInfo();
 
-			ParameterTypeChecker checker = new ParameterTypeChecker();
+			ParameterTypeChecker checker = new ParameterTypeChecker(e);
 
 			info.name = e.getSimpleName().toString();
 			e.getParameters().forEach(parameter -> {
@@ -265,11 +330,11 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 				info.parameterNames.add(parameter.getSimpleName().toString());
 
-				info.parameterTypes.add(parameter.asType().accept(new TypeNameExtractor(), null));
+				info.parameterTypes.add(parameter.asType().accept(typeNameExtractor, e));
 			});
 
 			if (returnTypeArg != null) {
-				info.returnTypeArgumantClassName = returnTypeArg.accept(new TypeNameExtractor(), e);
+				info.returnTypeArgumantClassName = returnTypeArg.accept(typeNameExtractor, e);
 			}
 
 			p.add(info);
@@ -278,16 +343,16 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private class TypeNameExtractor extends SimpleTypeVisitor8<String, ExecutableElement> {
+	private class TypeNameExtractor extends SimpleTypeVisitor8<String, Element> {
 
 		@Override
-		protected String defaultAction(TypeMirror e, ExecutableElement p) {
+		protected String defaultAction(TypeMirror e, Element p) {
 			error("unknown error occurred", p);
 			return DEFAULT_VALUE;
 		}
 
 		@Override
-		public String visitPrimitive(PrimitiveType t, ExecutableElement p) {
+		public String visitPrimitive(PrimitiveType t, Element p) {
 			switch (t.getKind()) {
 			case BOOLEAN:
 				return boolean.class.getName();
@@ -311,12 +376,35 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		}
 
 		@Override
-		public String visitDeclared(DeclaredType t, ExecutableElement p) {
-			return t.asElement().accept(typeConverter, null).getQualifiedName().toString();
+		public String visitDeclared(DeclaredType t, Element p) {
+			return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();
+		}
+
+		//Consumer<SQLParameter>等型パラメータのあるものがここに来る
+		@Override
+		public String visitError(ErrorType t, Element p) {
+			return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();
 		}
 	}
 
-	private class AnnotationExtractor extends SimpleTypeVisitor8<Boolean, ExecutableElement> {
+	private static class ElementConverter extends SimpleTypeVisitor8<Element, Element> {
+
+		private static ElementConverter instance = new ElementConverter();
+
+		@Override
+		protected Element defaultAction(TypeMirror e, Element p) {
+			return DEFAULT_VALUE;
+		}
+
+		@Override
+		public Element visitDeclared(DeclaredType t, Element p) {
+			return t.asElement();
+		}
+	}
+
+	private static class AnnotationExtractor extends SimpleTypeVisitor8<Boolean, ExecutableElement> {
+
+		private static final AnnotationExtractor instance = new AnnotationExtractor();
 
 		@Override
 		protected Boolean defaultAction(TypeMirror e, ExecutableElement p) {
@@ -326,6 +414,21 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		@Override
 		public Boolean visitDeclared(DeclaredType t, ExecutableElement p) {
 			return t.asElement().getAnnotation(DataObject.class) != null;
+		}
+	}
+
+	private static class TypeArgumentsExtractor extends SimpleTypeVisitor8<List<? extends TypeMirror>, Void> {
+
+		private static final TypeArgumentsExtractor instance = new TypeArgumentsExtractor();
+
+		@Override
+		protected List<? extends TypeMirror> defaultAction(TypeMirror e, Void p) {
+			return null;
+		}
+
+		@Override
+		public List<? extends TypeMirror> visitDeclared(DeclaredType t, Void p) {
+			return t.getTypeArguments();
 		}
 	}
 

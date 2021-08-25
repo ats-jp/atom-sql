@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * @author 千葉 哲嗣
  */
-public enum Type {
+public enum ParameterType {
 
 	BIG_DECIMAL {
 
@@ -259,13 +259,13 @@ public enum Type {
 
 	abstract void bind(int index, PreparedStatement statement, Object value);
 
-	private static final Map<Class<?>, Type> binders = new HashMap<>();
+	private static final Map<Class<?>, ParameterType> binders = new HashMap<>();
 
 	static {
-		Arrays.stream(Type.values()).filter(b -> !b.equals(OBJECT)).forEach(b -> binders.put(b.type(), b));
+		Arrays.stream(ParameterType.values()).filter(b -> !b.equals(OBJECT)).forEach(b -> binders.put(b.type(), b));
 	}
 
-	public static Type select(Object o) {
+	public static ParameterType select(Object o) {
 		// nullの場合はsetObject(i, null)
 		// DBによってはエラーとなる可能性があるため、setNull(int, int)の使用を検討する
 		if (o == null)
