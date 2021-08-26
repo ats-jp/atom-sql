@@ -42,7 +42,7 @@ import jp.ats.furlong.annotation.SQLProxy;
 /**
  * @author 千葉 哲嗣
  */
-@SupportedAnnotationTypes("jp.ats.furlong.SQLProxy")
+@SupportedAnnotationTypes("jp.ats.furlong.annotation.SQLProxy")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 

@@ -29,7 +29,7 @@ import jp.ats.furlong.Utils;
 import jp.ats.furlong.annotation.SQL;
 import jp.ats.furlong.annotation.SQLParameter;
 
-@SupportedAnnotationTypes("jp.ats.furlong.SQLParameter")
+@SupportedAnnotationTypes("jp.ats.furlong.annotation.SQLParameter")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 

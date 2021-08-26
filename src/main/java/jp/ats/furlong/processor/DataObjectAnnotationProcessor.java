@@ -23,7 +23,7 @@ import jp.ats.furlong.annotation.DataObject;
 /**
  * @author 千葉 哲嗣
  */
-@SupportedAnnotationTypes("jp.ats.furlong.DataObject")
+@SupportedAnnotationTypes("jp.ats.furlong.annotation.DataObject")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
