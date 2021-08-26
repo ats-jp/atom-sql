@@ -18,7 +18,7 @@ import javax.lang.model.util.SimpleElementVisitor8;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic.Kind;
 
-import jp.ats.furlong.DataObject;
+import jp.ats.furlong.annotation.DataObject;
 
 /**
  * @author 千葉 哲嗣

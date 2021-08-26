@@ -1,6 +1,6 @@
 package jp.ats.furlong.processor.annotation;
 
-import jp.ats.furlong.DataObject;
+import jp.ats.furlong.annotation.DataObject;
 
 /**
  * @author 千葉 哲嗣

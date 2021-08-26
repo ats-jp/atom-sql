@@ -9,6 +9,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
+import jp.ats.furlong.annotation.DataObject;
+
 /**
  * @author 千葉 哲嗣
  */

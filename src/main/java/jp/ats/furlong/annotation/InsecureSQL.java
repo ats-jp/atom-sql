@@ -1,4 +1,4 @@
-package jp.ats.furlong;
+package jp.ats.furlong.annotation;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -11,12 +11,5 @@ import java.lang.annotation.Target;
  */
 @Target({ METHOD })
 @Retention(RUNTIME)
-public @interface SQL {
-
-	/**
-	 * SQL
-	 * 
-	 * @return SQL
-	 */
-	String value();
+public @interface InsecureSQL {
 }

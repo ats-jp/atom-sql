@@ -25,9 +25,9 @@ import javax.tools.StandardLocation;
 import jp.ats.furlong.Constants;
 import jp.ats.furlong.ParameterType;
 import jp.ats.furlong.PlaceholderFinder;
-import jp.ats.furlong.SQL;
-import jp.ats.furlong.SQLParameter;
 import jp.ats.furlong.Utils;
+import jp.ats.furlong.annotation.SQL;
+import jp.ats.furlong.annotation.SQLParameter;
 
 @SupportedAnnotationTypes("jp.ats.furlong.SQLParameter")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)

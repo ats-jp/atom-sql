@@ -30,6 +30,9 @@ import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
+import jp.ats.furlong.annotation.InsecureSQL;
+import jp.ats.furlong.annotation.SQL;
+import jp.ats.furlong.annotation.SQLProxy;
 import jp.ats.furlong.processor.annotation.Methods;
 
 /**

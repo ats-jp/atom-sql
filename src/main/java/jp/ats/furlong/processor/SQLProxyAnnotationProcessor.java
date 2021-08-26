@@ -33,11 +33,11 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic.Kind;
 
 import jp.ats.furlong.Constants;
-import jp.ats.furlong.DataObject;
 import jp.ats.furlong.ParameterType;
-import jp.ats.furlong.SQLParameter;
-import jp.ats.furlong.SQLProxy;
 import jp.ats.furlong.Utils;
+import jp.ats.furlong.annotation.DataObject;
+import jp.ats.furlong.annotation.SQLParameter;
+import jp.ats.furlong.annotation.SQLProxy;
 
 /**
  * @author 千葉 哲嗣
