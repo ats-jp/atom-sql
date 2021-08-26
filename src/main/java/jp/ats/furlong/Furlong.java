@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import jp.ats.furlong.processor.annotation.Methods;
@@ -49,8 +50,18 @@ public class Furlong {
 
 	private final Map<Class<?>, Object> cache = new HashMap<>();
 
+	private final Executor executor = new FurlongExecutor();
+
+	private final JdbcTemplate jdbcTemplate;
+
 	@Autowired
-	private JdbcTemplate jdbcTemplate;
+	public Furlong(JdbcTemplate jdbcTemplate) {
+		this.jdbcTemplate = jdbcTemplate;
+	}
+
+	Furlong() {
+		this.jdbcTemplate = null;
+	}
 
 	public <T> T of(Class<T> proxyInterface) {
 		if (!proxyInterface.isInterface())
@@ -90,7 +101,7 @@ public class Furlong {
 		batchResources.get().forEach((sql, helpers) -> {
 			var startNanos = System.nanoTime();
 			try {
-				jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+				executor().batchUpdate(sql, new BatchPreparedStatementSetter() {
 
 					@Override
 					public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -110,6 +121,39 @@ public class Furlong {
 				logElapsed(startNanos);
 			}
 		});
+	}
+
+	private class FurlongExecutor implements Executor {
+
+		@Override
+		public void batchUpdate(String sql, BatchPreparedStatementSetter pss) {
+			jdbcTemplate.batchUpdate(sql, pss);
+
+		}
+
+		@Override
+		public Object queryForStream(String sql, PreparedStatementSetter pss, RowMapper<Object> rowMapper) {
+			return jdbcTemplate.queryForStream(sql, pss, rowMapper);
+		}
+
+		@Override
+		public int update(String sql, PreparedStatementSetter pss) {
+			return jdbcTemplate.update(sql, pss);
+		}
+
+		@Override
+		public void logSQL(Logger log, String originalSQL, Method method, PreparedStatement ps) {
+			if (method.getAnnotation(InsecureSQL.class) != null) {
+				log.info(originalSQL);
+			} else {
+				log.info(ps.toString());
+			}
+		}
+	}
+
+	private Executor executor() {
+		var executor = Sandbox.executor.get();
+		return executor == null ? this.executor : executor;
 	}
 
 	private class SQLProxyInvocationHandler implements InvocationHandler {
@@ -176,8 +220,7 @@ public class Furlong {
 			if (returnType.equals(Stream.class)) {
 				var startNanos = System.nanoTime();
 				try {
-					return jdbcTemplate.<Object>queryForStream(helper.sql, helper,
-							(r, n) -> helper.createDataObject(r));
+					return executor().queryForStream(helper.sql, helper, (r, n) -> helper.createDataObject(r));
 				} finally {
 					logElapsed(startNanos);
 				}
@@ -186,7 +229,7 @@ public class Furlong {
 				if (resources == null) {
 					var startNanos = System.nanoTime();
 					try {
-						return jdbcTemplate.update(helper.sql, helper);
+						return executor().update(helper.sql, helper);
 					} finally {
 						logElapsed(startNanos);
 					}
@@ -286,7 +329,7 @@ public class Furlong {
 				for (var element : elements) {
 					var elementString = element.toString();
 
-					if (elementString.contains(packageName))
+					if (elementString.contains(packageName) || elementString.contains("(Unknown Source)"))
 						continue;
 
 					if (config.logStackTracePattern.matcher(elementString).find())
@@ -295,11 +338,7 @@ public class Furlong {
 
 				log.info("sql:");
 
-				if (method.getAnnotation(InsecureSQL.class) != null) {
-					log.info(originalSQL);
-				} else {
-					log.info(ps.toString());
-				}
+				executor().logSQL(log, originalSQL, method, ps);
 
 				log.info("------  SQL END  ------");
 			});
