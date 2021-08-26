@@ -142,7 +142,7 @@ public class Furlong {
 		}
 
 		@Override
-		public void logSQL(Logger log, String originalSQL, Method method, PreparedStatement ps) {
+		public void logSQL(Logger log, String originalSQL, String sql, Method method, PreparedStatement ps) {
 			if (method.getAnnotation(InsecureSQL.class) != null) {
 				log.info(originalSQL);
 			} else {
@@ -338,7 +338,7 @@ public class Furlong {
 
 				log.info("sql:");
 
-				executor().logSQL(log, originalSQL, method, ps);
+				executor().logSQL(log, originalSQL, sql, method, ps);
 
 				log.info("------  SQL END  ------");
 			});

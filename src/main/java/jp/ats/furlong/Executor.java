@@ -19,5 +19,5 @@ public interface Executor {
 
 	int update(String sql, PreparedStatementSetter pss);
 
-	void logSQL(Logger log, String originalSQL, Method method, PreparedStatement ps);
+	void logSQL(Logger log, String originalSQL, String sql, Method method, PreparedStatement ps);
 }

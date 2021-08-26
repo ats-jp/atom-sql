@@ -78,10 +78,13 @@ public class Sandbox {
 		}
 
 		@Override
-		public void logSQL(Logger log, String originalSQL, Method method, PreparedStatement ps) {
+		public void logSQL(Logger log, String originalSQL, String sql, Method method, PreparedStatement ps) {
 			var handler = pairs.get().stream().filter(p -> p.statement == ps).findFirst().get().handler;
 
 			log.info(originalSQL);
+
+			log.info("processed to:");
+			log.info(sql);
 
 			log.info("binding values:");
 
