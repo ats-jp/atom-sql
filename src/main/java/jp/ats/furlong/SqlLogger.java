@@ -4,6 +4,9 @@ import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 
+/**
+ * @author 千葉 哲嗣
+ */
 abstract class SqlLogger {
 
 	private static final SqlLogger logger = new SqlLoggerImpl();

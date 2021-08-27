@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+/**
+ * @author 千葉 哲嗣
+ */
 public class Configure {
 
 	private final String configFileName = "furlong.properties";

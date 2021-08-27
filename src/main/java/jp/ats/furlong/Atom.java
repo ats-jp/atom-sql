@@ -10,6 +10,9 @@ import org.springframework.jdbc.core.RowMapper;
 
 import jp.ats.furlong.Furlong.SqlProxyHelper;
 
+/**
+ * @author 千葉 哲嗣
+ */
 public class Atom<T> {
 
 	private final Furlong furlong;

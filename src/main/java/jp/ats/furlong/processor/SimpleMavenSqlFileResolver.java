@@ -6,6 +6,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+/**
+ * @author 千葉 哲嗣
+ */
 public class SimpleMavenSqlFileResolver implements SqlFileResolver {
 
 	@Override

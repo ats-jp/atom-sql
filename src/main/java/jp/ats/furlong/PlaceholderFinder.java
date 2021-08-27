@@ -4,6 +4,9 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+/**
+ * @author 千葉 哲嗣
+ */
 public class PlaceholderFinder {
 
 	private static final Pattern pattern = Pattern.compile(":([a-zA-Z_$][a-zA-Z\\d_$]*)(?:/\\*([A-Z_]+)\\*/|)");

@@ -17,6 +17,9 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 
+/**
+ * @author 千葉 哲嗣
+ */
 public class Sandbox {
 
 	static final ThreadLocal<Executor> executor = new ThreadLocal<>();

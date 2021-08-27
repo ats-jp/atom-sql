@@ -3,6 +3,9 @@ package jp.ats.furlong;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * @author 千葉 哲嗣
+ */
 @FunctionalInterface
 public interface SimpleRowMapper<T> {
 
