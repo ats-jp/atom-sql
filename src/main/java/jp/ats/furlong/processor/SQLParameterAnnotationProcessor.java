@@ -87,7 +87,7 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 		var fields = new LinkedList<String>();
 		PlaceholderFinder.execute(sql, f -> {
 			var method = "public "
-					+ f.type.map(t -> ParameterType.valueOf(t)).orElse(ParameterType.OBJECT).type().getName() + " "
+					+ f.typeHint.map(t -> ParameterType.valueOf(t)).orElse(ParameterType.OBJECT).type().getName() + " "
 					+ f.placeholder + ";";
 			fields.add(method);
 		});

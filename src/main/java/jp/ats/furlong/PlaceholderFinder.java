@@ -25,7 +25,7 @@ public class PlaceholderFinder {
 			sql = sql.substring(position);
 
 			found.placeholder = matcher.group(1);
-			found.type = Optional.ofNullable(matcher.group(2));
+			found.typeHint = Optional.ofNullable(matcher.group(2));
 
 			placeholderConsumer.accept(found);
 		}
@@ -39,6 +39,6 @@ public class PlaceholderFinder {
 
 		public String placeholder;
 
-		public Optional<String> type;
+		public Optional<String> typeHint;
 	}
 }

@@ -1,5 +1,6 @@
 package jp.ats.furlong;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -135,7 +136,7 @@ public class Furlong {
 		}
 
 		@Override
-		public Object queryForStream(String sql, PreparedStatementSetter pss, RowMapper<Object> rowMapper) {
+		public <T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
 			return jdbcTemplate.queryForStream(sql, pss, rowMapper);
 		}
 
@@ -145,8 +146,8 @@ public class Furlong {
 		}
 
 		@Override
-		public void logSQL(Logger log, String originalSQL, String sql, Method method, PreparedStatement ps) {
-			if (method.getAnnotation(InsecureSQL.class) != null) {
+		public void logSQL(Logger log, String originalSQL, String sql, boolean insecure, PreparedStatement ps) {
+			if (insecure) {
 				log.info(originalSQL);
 			} else {
 				log.info(ps.toString());
@@ -170,21 +171,7 @@ public class Furlong {
 
 			var proxyClassName = proxyClass.getName();
 
-			String sql;
-
-			var sqlContainer = method.getAnnotation(SQL.class);
-			if (sqlContainer != null) {
-				sql = sqlContainer.value();
-			} else {
-				var sqlFileName = Utils.extractSimpleClassName(proxyClassName, proxyClass.getPackage().getName()) + "."
-						+ method.getName() + ".sql";
-
-				var url = proxyClass.getResource(sqlFileName);
-				if (url == null)
-					throw new IllegalStateException(sqlFileName + " not found");
-
-				sql = new String(Utils.readBytes(url.openStream()), Constants.SQL_CHARSET);
-			}
+			var sql = loadSQL(proxyClass, method);
 
 			var methods = Class.forName(proxyClassName + Constants.METADATA_CLASS_SUFFIX).getAnnotation(Methods.class);
 
@@ -193,6 +180,8 @@ public class Furlong {
 					.findFirst().get();
 
 			var argTypes = find.argTypes();
+
+			var insecure = method.getAnnotation(InsecureSQL.class) != null;
 
 			SQLProxyHelper helper;
 			if (argTypes.length == 1 && argTypes[0].equals(Consumer.class)) {
@@ -212,38 +201,13 @@ public class Furlong {
 					}
 				});
 
-				helper = new SQLProxyHelper(method, sql, names.toArray(String[]::new), find.dataObjectClass(),
+				helper = new SQLProxyHelper(sql, insecure, names.toArray(String[]::new), find.sqlParameterClass(),
 						values.toArray(Object[]::new));
 			} else {
-				helper = new SQLProxyHelper(method, sql, find.args(), find.dataObjectClass(), args);
+				helper = new SQLProxyHelper(sql, insecure, find.args(), find.sqlParameterClass(), args);
 			}
 
-			var returnType = method.getReturnType();
-
-			if (returnType.equals(Stream.class)) {
-				var startNanos = System.nanoTime();
-				try {
-					return executor().queryForStream(helper.sql, helper, (r, n) -> helper.createDataObject(r));
-				} finally {
-					logElapsed(startNanos);
-				}
-			} else if (returnType.equals(int.class)) {
-				var resources = batchResources.get();
-				if (resources == null) {
-					var startNanos = System.nanoTime();
-					try {
-						return executor().update(helper.sql, helper);
-					} finally {
-						logElapsed(startNanos);
-					}
-				}
-
-				resources.computeIfAbsent(helper.sql, s -> new LinkedList<>()).add(helper);
-
-				return 0;
-			} else {
-				throw new IllegalStateException("Return type is incorrect: " + returnType);
-			}
+			return new Atom<Object>(Furlong.this, executor(), helper);
 		}
 	}
 
@@ -254,23 +218,42 @@ public class Furlong {
 		});
 	}
 
-	private class SQLProxyHelper implements PreparedStatementSetter {
+	private static String loadSQL(Class<?> decreredClass, Method method) throws IOException {
+		var proxyClassName = decreredClass.getName();
 
-		private final Method method;
+		var sqlContainer = method.getAnnotation(SQL.class);
+		if (sqlContainer != null) {
+			return sqlContainer.value();
+		} else {
+			var sqlFileName = Utils.extractSimpleClassName(proxyClassName, decreredClass.getPackage().getName()) + "."
+					+ method.getName() + ".sql";
 
-		private final String originalSQL;
+			var url = decreredClass.getResource(sqlFileName);
+			if (url == null)
+				throw new IllegalStateException(sqlFileName + " not found");
 
-		private final String sql;
+			return new String(Utils.readBytes(url.openStream()), Constants.SQL_CHARSET);
+		}
+	}
 
-		private final Class<?> dataObjectClass;
+	class SQLProxyHelper implements PreparedStatementSetter {
 
-		private final List<ParameterType> binders = new ArrayList<>();
+		final String sql;
+
+		final String originalSql;
+
+		private final boolean insecure;
+
+		private final List<ParameterType> parameterTypes = new ArrayList<>();
 
 		private final List<Object> values = new ArrayList<>();
 
-		private SQLProxyHelper(Method method, String sql, String[] argNames, Class<?> dataObjectClass, Object[] args) {
-			this.method = method;
-			originalSQL = sql;
+		private final Class<?> dataObjectClass;
+
+		private SQLProxyHelper(String sql, boolean insecure, String[] argNames, Class<?> dataObjectClass,
+				Object[] args) {
+			originalSql = sql;
+			this.insecure = insecure;
 			this.dataObjectClass = dataObjectClass;
 
 			var argMap = new HashMap<String, Object>();
@@ -289,7 +272,7 @@ public class Furlong {
 
 				var value = argMap.get(f.placeholder);
 
-				binders.add(ParameterType.select(value));
+				parameterTypes.add(ParameterType.select(value));
 				values.add(value);
 			});
 
@@ -298,7 +281,22 @@ public class Furlong {
 			this.sql = converted.toString();
 		}
 
-		private Object createDataObject(ResultSet rs) {
+		SQLProxyHelper(String sql, String originalSql, SQLProxyHelper main, SQLProxyHelper sub) {
+			this.sql = sql;
+			this.originalSql = originalSql;
+			this.dataObjectClass = main.dataObjectClass;
+
+			// セキュアではない場合すべて汚染される
+			this.insecure = main.insecure || sub.insecure;
+
+			parameterTypes.addAll(main.parameterTypes);
+			parameterTypes.addAll(sub.parameterTypes);
+
+			values.addAll(main.values);
+			values.addAll(sub.values);
+		}
+
+		Object createDataObject(ResultSet rs) {
 			if (dataObjectClass == Object.class)
 				throw new IllegalStateException();
 
@@ -306,7 +304,7 @@ public class Furlong {
 			try {
 				constructor = dataObjectClass.getConstructor(ResultSet.class);
 			} catch (NoSuchMethodException e) {
-				throw new IllegalStateException(e);
+				return createNoParametersConstructorDataObject(rs);
 			}
 
 			try {
@@ -316,12 +314,48 @@ public class Furlong {
 			}
 		}
 
+		private Object createNoParametersConstructorDataObject(ResultSet rs) {
+			Constructor<?> constructor;
+			try {
+				constructor = dataObjectClass.getConstructor();
+			} catch (NoSuchMethodException e) {
+				throw new IllegalStateException(e);
+			}
+
+			Object object;
+			try {
+				object = constructor.newInstance();
+			} catch (InvocationTargetException | IllegalAccessException | InstantiationException e) {
+				throw new IllegalStateException(e);
+			}
+
+			Arrays.stream(dataObjectClass.getFields()).forEach(f -> {
+				try {
+					f.set(object, rs.getObject(f.getName()));
+				} catch (SQLException e) {
+					throw new FurlongSQLException(e);
+				} catch (IllegalAccessException e) {
+					throw new IllegalStateException(e);
+				}
+			});
+
+			return object;
+		}
+
+		void logElapsed(long startNanos) {
+			Furlong.this.logElapsed(startNanos);
+		}
+
+		ThreadLocal<Map<String, List<SQLProxyHelper>>> batchResources() {
+			return batchResources;
+		}
+
 		@Override
 		public void setValues(PreparedStatement ps) throws SQLException {
 			var i = 0;
-			var size = binders.size();
+			var size = parameterTypes.size();
 			for (; i < size; i++) {
-				binders.get(i).bind(i + 1, ps, values.get(i));
+				parameterTypes.get(i).bind(i + 1, ps, values.get(i));
 			}
 
 			sqlLogger.perform(log -> {
@@ -341,7 +375,7 @@ public class Furlong {
 
 				log.info("sql:");
 
-				executor().logSQL(log, originalSQL, sql, method, ps);
+				executor().logSQL(log, originalSql, sql, insecure, ps);
 
 				log.info("------  SQL END  ------");
 			});

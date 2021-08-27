@@ -41,38 +41,45 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 					return;
 				}
 
-				ExecutableElement[] result = { null };
+				boolean[] result = { false };
 				ConstructorVisitor visitor = new ConstructorVisitor();
 				e.getEnclosedElements().forEach(enc -> {
 					enc.accept(visitor, result);
 				});
 
-				if (result[0] == null)
+				if (!result[0])
 					error(DataObject.class.getSimpleName()
-							+ " requires a constructor whose only parameter is ResultSet", e);
+							+ " requires a constructor whose only parameter is ResultSet or no parameters", e);
 			});
 		});
 
 		return false;
 	}
 
-	private class ConstructorVisitor extends SimpleElementVisitor8<Void, ExecutableElement[]> {
+	private class ConstructorVisitor extends SimpleElementVisitor8<Void, boolean[]> {
 
 		@Override
-		public Void visitExecutable(ExecutableElement e, ExecutableElement[] p) {
+		public Void visitExecutable(ExecutableElement e, boolean[] p) {
 			// コンストラクタ以外はスキップ
 			if (!"<init>".equals(e.getSimpleName().toString()))
 				return DEFAULT_VALUE;
 
 			var params = e.getParameters();
 
+			// パラメータなしコンストラクタはOK
+			if (params.size() != 1) {
+				p[0] = true;
+				return DEFAULT_VALUE;
+			}
+
 			if (params.size() != 1)
 				return DEFAULT_VALUE;
 
+			//パラメータがResultSetのみのコンストラクタはOK
 			boolean[] ok = { false };
 			params.get(0).asType().accept(ParameterTypeChecker.instance, ok);
 			if (ok[0])
-				p[0] = e;
+				p[0] = true;
 
 			return DEFAULT_VALUE;
 		}

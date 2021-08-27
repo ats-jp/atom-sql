@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -52,7 +53,7 @@ public class Sandbox {
 		}
 
 		@Override
-		public Object queryForStream(String sql, PreparedStatementSetter pss, RowMapper<Object> rowMapper) {
+		public <T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
 			var statement = preparedStatement();
 
 			try {
@@ -78,13 +79,16 @@ public class Sandbox {
 		}
 
 		@Override
-		public void logSQL(Logger log, String originalSQL, String sql, Method method, PreparedStatement ps) {
+		public void logSQL(Logger log, String originalSQL, String sql, boolean insecure, PreparedStatement ps) {
 			var handler = pairs.get().stream().filter(p -> p.statement == ps).findFirst().get().handler;
 
 			log.info(originalSQL);
 
 			log.info("processed to:");
 			log.info(sql);
+
+			if (insecure)
+				return;
 
 			log.info("binding values:");
 

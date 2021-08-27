@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -32,6 +31,7 @@ import javax.lang.model.util.SimpleElementVisitor8;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic.Kind;
 
+import jp.ats.furlong.Atom;
 import jp.ats.furlong.Constants;
 import jp.ats.furlong.ParameterType;
 import jp.ats.furlong.Utils;
@@ -169,8 +169,8 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		if (info.sqlParameterClassName != null)
 			methodContents.add("sqlParameterClass = " + info.sqlParameterClassName + ".class");
 
-		if (info.returnTypeArgumantClassName != null)
-			methodContents.add("dataObjectClass = " + info.returnTypeArgumantClassName + ".class");
+		if (info.returnTypeParameterClassName != null)
+			methodContents.add("dataObjectClass = " + info.returnTypeParameterClassName + ".class");
 
 		return "@Method(" + String.join(", ", methodContents) + ")";
 	}
@@ -206,7 +206,7 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		public TypeMirror visitDeclared(DeclaredType t, ExecutableElement p) {
 			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
 
-			if (!ProcessorUtils.sameClass(type, Stream.class))
+			if (!ProcessorUtils.sameClass(type, Atom.class))
 				return defaultAction(t, p);
 
 			var typeArg = t.getTypeArguments().get(0);
@@ -352,10 +352,16 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 					info.sqlParameterClassName = typeArg.accept(typeNameExtractor, e);
 			});
 
-			var returnTypeArg = e.getReturnType().accept(returnTypeChecker, e);
+			var returnTypeParameter = e.getReturnType().accept(returnTypeChecker, e);
 
-			if (returnTypeArg != null)
-				info.returnTypeArgumantClassName = returnTypeArg.accept(typeNameExtractor, e);
+			if (returnTypeParameter != null) {
+				if (returnTypeParameter.getAnnotation(DataObject.class) == null) {
+					error(Atom.class.getSimpleName() + "'s type parameter must be annotated with "
+							+ DataObject.class.getSimpleName(), e);
+				} else {
+					info.returnTypeParameterClassName = returnTypeParameter.accept(typeNameExtractor, e);
+				}
+			}
 
 			p.add(info);
 
@@ -472,6 +478,6 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 		private String sqlParameterClassName;
 
-		private String returnTypeArgumantClassName;
+		private String returnTypeParameterClassName;
 	}
 }
