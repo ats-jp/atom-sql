@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 
 import org.springframework.jdbc.core.RowMapper;
 
-import jp.ats.furlong.Furlong.SQLProxyHelper;
+import jp.ats.furlong.Furlong.SqlProxyHelper;
 
 public class Atom<T> {
 
@@ -16,11 +16,11 @@ public class Atom<T> {
 
 	private final Executor executor;
 
-	private final SQLProxyHelper helper;
+	private final SqlProxyHelper helper;
 
 	private final boolean andType;
 
-	Atom(Furlong furlong, Executor executor, SQLProxyHelper helper) {
+	Atom(Furlong furlong, Executor executor, SqlProxyHelper helper) {
 		this.furlong = furlong;
 		this.executor = executor;
 		this.helper = helper;
@@ -108,7 +108,7 @@ public class Atom<T> {
 	public Atom<T> concat(Atom<T> another) {
 		var sql = helper.sql + " " + another.helper.sql;
 		var originalSql = helper.originalSql + " " + another.helper.originalSql;
-		return new Atom<T>(furlong, executor, furlong.new SQLProxyHelper(sql, originalSql, helper, another.helper));
+		return new Atom<T>(furlong, executor, furlong.new SqlProxyHelper(sql, originalSql, helper, another.helper));
 	}
 
 	public Atom<T> and(Atom<T> another) {
@@ -126,10 +126,10 @@ public class Atom<T> {
 		var sql = sqls.sql + delimiter + anotherSqls.sql;
 		var originalSql = sqls.originalSql + delimiter + anotherSqls.originalSql;
 
-		return new Atom<T>(furlong, executor, furlong.new SQLProxyHelper(sql, originalSql, helper, another.helper));
+		return new Atom<T>(furlong, executor, furlong.new SqlProxyHelper(sql, originalSql, helper, another.helper));
 	}
 
-	private static Sqls guardSql(boolean andType, SQLProxyHelper helper) {
+	private static Sqls guardSql(boolean andType, SqlProxyHelper helper) {
 		var sqls = new Sqls();
 		if (andType) {
 			sqls.sql = helper.sql;

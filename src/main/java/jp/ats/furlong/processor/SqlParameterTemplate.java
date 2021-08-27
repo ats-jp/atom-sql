@@ -4,7 +4,7 @@ import javax.annotation.processing.Generated;
 
 @Generated("[[PROCESSOR]]")
 @SuppressWarnings("javadoc")
-public class /*--*/SQLParameterTemplate/*--*//*++[[CLASS]]++*/ {
+public class SqlParameterTemplate {
 
 /*++[[FIELDS]]++*/
 }

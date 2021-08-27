@@ -27,7 +27,7 @@ public class TransientDataObject {
 		try {
 			return base.getBoolean(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -35,7 +35,7 @@ public class TransientDataObject {
 		try {
 			return base.getDouble(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -43,7 +43,7 @@ public class TransientDataObject {
 		try {
 			return base.getFloat(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -51,7 +51,7 @@ public class TransientDataObject {
 		try {
 			return base.getInt(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -59,7 +59,7 @@ public class TransientDataObject {
 		try {
 			return base.getLong(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -67,7 +67,7 @@ public class TransientDataObject {
 		try {
 			return base.getString(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -75,7 +75,7 @@ public class TransientDataObject {
 		try {
 			return base.getTimestamp(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -83,7 +83,7 @@ public class TransientDataObject {
 		try {
 			return base.getBigDecimal(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -91,7 +91,7 @@ public class TransientDataObject {
 		try {
 			return base.getBinaryStream(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -99,7 +99,7 @@ public class TransientDataObject {
 		try {
 			return base.getCharacterStream(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -107,7 +107,7 @@ public class TransientDataObject {
 		try {
 			return base.getObject(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -115,7 +115,7 @@ public class TransientDataObject {
 		try {
 			return base.getBytes(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -123,7 +123,7 @@ public class TransientDataObject {
 		try {
 			return base.getBlob(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -131,7 +131,7 @@ public class TransientDataObject {
 		try {
 			return base.getClob(columnName);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -139,7 +139,7 @@ public class TransientDataObject {
 		try {
 			return base.getBoolean(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -147,7 +147,7 @@ public class TransientDataObject {
 		try {
 			return base.getDouble(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -155,7 +155,7 @@ public class TransientDataObject {
 		try {
 			return base.getFloat(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -163,7 +163,7 @@ public class TransientDataObject {
 		try {
 			return base.getInt(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -171,7 +171,7 @@ public class TransientDataObject {
 		try {
 			return base.getLong(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -179,7 +179,7 @@ public class TransientDataObject {
 		try {
 			return base.getString(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -187,7 +187,7 @@ public class TransientDataObject {
 		try {
 			return base.getTimestamp(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -195,7 +195,7 @@ public class TransientDataObject {
 		try {
 			return base.getBigDecimal(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -203,7 +203,7 @@ public class TransientDataObject {
 		try {
 			return base.getObject(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -211,7 +211,7 @@ public class TransientDataObject {
 		try {
 			return base.getBinaryStream(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -219,7 +219,7 @@ public class TransientDataObject {
 		try {
 			return base.getCharacterStream(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -227,7 +227,7 @@ public class TransientDataObject {
 		try {
 			return base.getBytes(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -235,7 +235,7 @@ public class TransientDataObject {
 		try {
 			return base.getBlob(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -243,7 +243,7 @@ public class TransientDataObject {
 		try {
 			return base.getClob(columnIndex);
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 
@@ -251,7 +251,7 @@ public class TransientDataObject {
 		try {
 			return base.wasNull();
 		} catch (SQLException e) {
-			throw new FurlongSQLException(e);
+			throw new FurlongSqlException(e);
 		}
 	}
 }

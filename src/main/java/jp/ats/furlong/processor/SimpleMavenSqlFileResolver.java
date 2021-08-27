@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
-public class SimpleMavenSQLFileResolver implements SQLFileResolver {
+public class SimpleMavenSqlFileResolver implements SqlFileResolver {
 
 	@Override
 	public byte[] resolve(Path classOutput, String packageName, String sqlFileName, Map<String, String> options)

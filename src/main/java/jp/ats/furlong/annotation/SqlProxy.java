@@ -15,5 +15,5 @@ import jp.ats.furlong.Furlong;
  */
 @Target({ TYPE })
 @Retention(RUNTIME)
-public @interface SQLProxy {
+public @interface SqlProxy {
 }

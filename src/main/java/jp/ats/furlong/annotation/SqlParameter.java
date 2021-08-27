@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 @Target({ METHOD })
 @Retention(RUNTIME)
-public @interface SQLParameter {
+public @interface SqlParameter {
 
 	/**
 	 * 自動生成されるクラス名

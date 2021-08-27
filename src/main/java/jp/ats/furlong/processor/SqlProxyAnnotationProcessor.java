@@ -36,15 +36,15 @@ import jp.ats.furlong.Constants;
 import jp.ats.furlong.ParameterType;
 import jp.ats.furlong.Utils;
 import jp.ats.furlong.annotation.DataObject;
-import jp.ats.furlong.annotation.SQLParameter;
-import jp.ats.furlong.annotation.SQLProxy;
+import jp.ats.furlong.annotation.SqlParameter;
+import jp.ats.furlong.annotation.SqlProxy;
 
 /**
  * @author 千葉 哲嗣
  */
-@SupportedAnnotationTypes("jp.ats.furlong.annotation.SQLProxy")
+@SupportedAnnotationTypes("jp.ats.furlong.annotation.SqlProxy")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
-public class SQLProxyAnnotationProcessor extends AbstractProcessor {
+public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 	private static final ThreadLocal<Boolean> hasError = ThreadLocal.withInitial(() -> false);
 
@@ -77,7 +77,7 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 	private void execute(Element e) {
 		ElementKind kind = e.getKind();
 		if (kind != ElementKind.INTERFACE) {
-			error("cannot annotate" + kind.name() + " with " + SQLProxy.class.getSimpleName(), e);
+			error("cannot annotate" + kind.name() + " with " + SqlProxy.class.getSimpleName(), e);
 
 			throw new ProcessException();
 		}
@@ -108,7 +108,7 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 		if (alreadyCreatedFiles.contains(fileName))
 			return;
 
-		param.put("PROCESSOR", SQLProxyAnnotationProcessor.class.getName());
+		param.put("PROCESSOR", SqlProxyAnnotationProcessor.class.getName());
 
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("INTERFACE", className);
@@ -151,7 +151,7 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 	private static String buildMetodsPart(List<MethodInfo> infos) {
 		return String.join(", ",
-				infos.stream().map(SQLProxyAnnotationProcessor::methodPart).collect(Collectors.toList()));
+				infos.stream().map(SqlProxyAnnotationProcessor::methodPart).collect(Collectors.toList()));
 	}
 
 	private static String methodPart(MethodInfo info) {
@@ -308,9 +308,9 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 
 			var typeName = Utils.extractSimpleClassName(className, packageName);
 
-			var annotation = method.getAnnotation(SQLParameter.class);
+			var annotation = method.getAnnotation(SqlParameter.class);
 			if (annotation == null) {
-				error("Consumer needs " + SQLParameter.class.getSimpleName() + " annotation", p);
+				error("Consumer needs " + SqlParameter.class.getSimpleName() + " annotation", p);
 				hasError.set(true);
 				return DEFAULT_VALUE;
 			}
@@ -406,7 +406,7 @@ public class SQLProxyAnnotationProcessor extends AbstractProcessor {
 			return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();
 		}
 
-		// Consumer<SQLParameter>等型パラメータのあるものがここに来る
+		// Consumer<SqlParameter>等型パラメータのあるものがここに来る
 		@Override
 		public String visitError(ErrorType t, Element p) {
 			return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();

@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  */
 @Target({ METHOD })
 @Retention(RUNTIME)
-public @interface SQL {
+public @interface Sql {
 
 	/**
 	 * SQL

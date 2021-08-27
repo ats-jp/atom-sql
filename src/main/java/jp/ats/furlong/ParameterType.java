@@ -27,7 +27,7 @@ public enum ParameterType {
 			try {
 				statement.setBigDecimal(index, (BigDecimal) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -45,7 +45,7 @@ public enum ParameterType {
 			try {
 				statement.setBinaryStream(index, stream.input, stream.length);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -62,7 +62,7 @@ public enum ParameterType {
 			try {
 				statement.setBlob(index, (Blob) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -79,7 +79,7 @@ public enum ParameterType {
 			try {
 				statement.setBoolean(index, (boolean) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -96,7 +96,7 @@ public enum ParameterType {
 			try {
 				statement.setBytes(index, (byte[]) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -114,7 +114,7 @@ public enum ParameterType {
 			try {
 				statement.setCharacterStream(index, stream.input, stream.length);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -131,7 +131,7 @@ public enum ParameterType {
 			try {
 				statement.setClob(index, (Clob) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -148,7 +148,7 @@ public enum ParameterType {
 			try {
 				statement.setDouble(index, (double) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -165,7 +165,7 @@ public enum ParameterType {
 			try {
 				statement.setFloat(index, (float) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -182,7 +182,7 @@ public enum ParameterType {
 			try {
 				statement.setInt(index, (int) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -199,7 +199,7 @@ public enum ParameterType {
 			try {
 				statement.setLong(index, (long) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -216,7 +216,7 @@ public enum ParameterType {
 			try {
 				statement.setObject(index, value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -233,7 +233,7 @@ public enum ParameterType {
 			try {
 				statement.setString(index, (String) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	},
@@ -250,7 +250,7 @@ public enum ParameterType {
 			try {
 				statement.setTimestamp(index, (Timestamp) value);
 			} catch (SQLException e) {
-				throw new FurlongSQLException(e);
+				throw new FurlongSqlException(e);
 			}
 		}
 	};

@@ -26,14 +26,14 @@ import jp.ats.furlong.Constants;
 import jp.ats.furlong.ParameterType;
 import jp.ats.furlong.PlaceholderFinder;
 import jp.ats.furlong.Utils;
-import jp.ats.furlong.annotation.SQL;
-import jp.ats.furlong.annotation.SQLParameter;
+import jp.ats.furlong.annotation.Sql;
+import jp.ats.furlong.annotation.SqlParameter;
 
-@SupportedAnnotationTypes("jp.ats.furlong.annotation.SQLParameter")
+@SupportedAnnotationTypes("jp.ats.furlong.annotation.SqlParameter")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
-public class SQLParameterAnnotationProcessor extends AbstractProcessor {
+public class SqlParameterAnnotationProcessor extends AbstractProcessor {
 
-	private static final Class<?> DEFAULT_SQL_FILE_RESOLVER_CLASS = SimpleMavenSQLFileResolver.class;
+	private static final Class<?> DEFAULT_SQL_FILE_RESOLVER_CLASS = SimpleMavenSqlFileResolver.class;
 
 	private static final String newLine = System.getProperty("line.separator");
 
@@ -58,7 +58,7 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private void execute(Element e) {
-		var generateClassName = e.getAnnotation(SQLParameter.class).value();
+		var generateClassName = e.getAnnotation(SqlParameter.class).value();
 
 		var clazz = e.getEnclosingElement().accept(TypeConverter.instance, null);
 
@@ -72,14 +72,14 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 		if (alreadyCreatedFiles.contains(fileName))
 			return;
 
-		var sql = extractSQL(packageName, className, e);
+		var sql = extractSql(packageName, className, e);
 
-		String template = Formatter.readTemplate(SQLParameterTemplate.class, "UTF-8");
+		String template = Formatter.readTemplate(SqlParameterTemplate.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);
 
 		Map<String, String> param = new HashMap<>();
 
-		param.put("PROCESSOR", SQLParameterAnnotationProcessor.class.getName());
+		param.put("PROCESSOR", SqlParameterAnnotationProcessor.class.getName());
 
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("CLASS", generateClassName);
@@ -109,8 +109,8 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 		info(fileName + " generated");
 	}
 
-	private String extractSQL(String packageName, String className, Element method) {
-		var sql = method.getAnnotation(SQL.class);
+	private String extractSql(String packageName, String className, Element method) {
+		var sql = method.getAnnotation(Sql.class);
 		if (sql != null)
 			return sql.value();
 
@@ -127,7 +127,7 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private final SQLFileResolver resolver(Element method) {
+	private final SqlFileResolver resolver(Element method) {
 		var className = super.processingEnv.getOptions().get("sql-file-resolver");
 
 		var clazz = DEFAULT_SQL_FILE_RESOLVER_CLASS;
@@ -141,7 +141,7 @@ public class SQLParameterAnnotationProcessor extends AbstractProcessor {
 		}
 
 		try {
-			return (SQLFileResolver) clazz.getConstructor().newInstance();
+			return (SqlFileResolver) clazz.getConstructor().newInstance();
 		} catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException
 				| InstantiationException e) {
 			error("error occurs while instantiation class [" + className + "]", method);

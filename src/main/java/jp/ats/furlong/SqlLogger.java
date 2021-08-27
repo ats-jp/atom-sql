@@ -4,13 +4,13 @@ import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 
-abstract class SQLLogger {
+abstract class SqlLogger {
 
-	private static final SQLLogger logger = new SQLLoggerImpl();
+	private static final SqlLogger logger = new SqlLoggerImpl();
 
-	private static final SQLLogger disabledLogger = new DisabledSQLLogger();
+	private static final SqlLogger disabledLogger = new DisabledSqlLogger();
 
-	static SQLLogger of(Configure config) {
+	static SqlLogger of(Configure config) {
 		if (config.enableLog)
 			return logger;
 
@@ -20,7 +20,7 @@ abstract class SQLLogger {
 
 	abstract void perform(Consumer<Logger> consumer);
 
-	private static class SQLLoggerImpl extends SQLLogger {
+	private static class SqlLoggerImpl extends SqlLogger {
 
 		@Override
 		void perform(Consumer<Logger> consumer) {
@@ -28,7 +28,7 @@ abstract class SQLLogger {
 		}
 	}
 
-	private static class DisabledSQLLogger extends SQLLogger {
+	private static class DisabledSqlLogger extends SqlLogger {
 
 		@Override
 		void perform(Consumer<Logger> consumer) {

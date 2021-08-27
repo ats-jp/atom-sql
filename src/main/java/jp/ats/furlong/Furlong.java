@@ -31,9 +31,9 @@ import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
-import jp.ats.furlong.annotation.InsecureSQL;
-import jp.ats.furlong.annotation.SQL;
-import jp.ats.furlong.annotation.SQLProxy;
+import jp.ats.furlong.annotation.InsecureSql;
+import jp.ats.furlong.annotation.Sql;
+import jp.ats.furlong.annotation.SqlProxy;
 import jp.ats.furlong.processor.annotation.Methods;
 
 /**
@@ -46,11 +46,11 @@ public class Furlong {
 
 	private Configure config = new Configure();
 
-	private final SQLLogger sqlLogger = SQLLogger.of(config);
+	private final SqlLogger sqlLogger = SqlLogger.of(config);
 
 	private static final String packageName = Furlong.class.getPackageName();
 
-	private final ThreadLocal<Map<String, List<SQLProxyHelper>>> batchResources = new ThreadLocal<>();
+	private final ThreadLocal<Map<String, List<SqlProxyHelper>>> batchResources = new ThreadLocal<>();
 
 	private final Map<Class<?>, Object> cache = new HashMap<>();
 
@@ -75,7 +75,7 @@ public class Furlong {
 			@SuppressWarnings("unchecked")
 			T instance = (T) cache.computeIfAbsent(proxyInterface,
 					k -> Proxy.newProxyInstance(Furlong.class.getClassLoader(), new Class<?>[] { proxyInterface },
-							new SQLProxyInvocationHandler()));
+							new SqlProxyInvocationHandler()));
 
 			return instance;
 		}
@@ -146,9 +146,9 @@ public class Furlong {
 		}
 
 		@Override
-		public void logSQL(Logger log, String originalSQL, String sql, boolean insecure, PreparedStatement ps) {
+		public void logSql(Logger log, String originalSql, String sql, boolean insecure, PreparedStatement ps) {
 			if (insecure) {
-				log.info(originalSQL);
+				log.info(originalSql);
 			} else {
 				log.info(ps.toString());
 			}
@@ -160,18 +160,18 @@ public class Furlong {
 		return executor == null ? this.executor : executor;
 	}
 
-	private class SQLProxyInvocationHandler implements InvocationHandler {
+	private class SqlProxyInvocationHandler implements InvocationHandler {
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			var proxyClass = proxy.getClass().getInterfaces()[0];
 
-			if (!proxyClass.isAnnotationPresent(SQLProxy.class))
-				throw new IllegalStateException("annotation SQLProxy not found");
+			if (!proxyClass.isAnnotationPresent(SqlProxy.class))
+				throw new IllegalStateException("annotation " + SqlProxy.class.getSimpleName() + " not found");
 
 			var proxyClassName = proxyClass.getName();
 
-			var sql = loadSQL(proxyClass, method);
+			var sql = loadSql(proxyClass, method);
 
 			var methods = Class.forName(proxyClassName + Constants.METADATA_CLASS_SUFFIX).getAnnotation(Methods.class);
 
@@ -181,9 +181,9 @@ public class Furlong {
 
 			var argTypes = find.argTypes();
 
-			var insecure = method.getAnnotation(InsecureSQL.class) != null;
+			var insecure = method.getAnnotation(InsecureSql.class) != null;
 
-			SQLProxyHelper helper;
+			SqlProxyHelper helper;
 			if (argTypes.length == 1 && argTypes[0].equals(Consumer.class)) {
 				var sqlParameterClass = find.sqlParameterClass();
 				var sqlParameter = sqlParameterClass.getConstructor().newInstance();
@@ -201,10 +201,10 @@ public class Furlong {
 					}
 				});
 
-				helper = new SQLProxyHelper(sql, insecure, names.toArray(String[]::new), find.sqlParameterClass(),
+				helper = new SqlProxyHelper(sql, insecure, names.toArray(String[]::new), find.sqlParameterClass(),
 						values.toArray(Object[]::new));
 			} else {
-				helper = new SQLProxyHelper(sql, insecure, find.args(), find.sqlParameterClass(), args);
+				helper = new SqlProxyHelper(sql, insecure, find.args(), find.sqlParameterClass(), args);
 			}
 
 			return new Atom<Object>(Furlong.this, executor(), helper);
@@ -218,10 +218,10 @@ public class Furlong {
 		});
 	}
 
-	private static String loadSQL(Class<?> decreredClass, Method method) throws IOException {
+	private static String loadSql(Class<?> decreredClass, Method method) throws IOException {
 		var proxyClassName = decreredClass.getName();
 
-		var sqlContainer = method.getAnnotation(SQL.class);
+		var sqlContainer = method.getAnnotation(Sql.class);
 		if (sqlContainer != null) {
 			return sqlContainer.value();
 		} else {
@@ -236,7 +236,7 @@ public class Furlong {
 		}
 	}
 
-	class SQLProxyHelper implements PreparedStatementSetter {
+	class SqlProxyHelper implements PreparedStatementSetter {
 
 		final String sql;
 
@@ -250,7 +250,7 @@ public class Furlong {
 
 		private final Class<?> dataObjectClass;
 
-		private SQLProxyHelper(String sql, boolean insecure, String[] argNames, Class<?> dataObjectClass,
+		private SqlProxyHelper(String sql, boolean insecure, String[] argNames, Class<?> dataObjectClass,
 				Object[] args) {
 			originalSql = sql;
 			this.insecure = insecure;
@@ -281,7 +281,7 @@ public class Furlong {
 			this.sql = converted.toString();
 		}
 
-		SQLProxyHelper(String sql, String originalSql, SQLProxyHelper main, SQLProxyHelper sub) {
+		SqlProxyHelper(String sql, String originalSql, SqlProxyHelper main, SqlProxyHelper sub) {
 			this.sql = sql;
 			this.originalSql = originalSql;
 			this.dataObjectClass = main.dataObjectClass;
@@ -333,7 +333,7 @@ public class Furlong {
 				try {
 					f.set(object, rs.getObject(f.getName()));
 				} catch (SQLException e) {
-					throw new FurlongSQLException(e);
+					throw new FurlongSqlException(e);
 				} catch (IllegalAccessException e) {
 					throw new IllegalStateException(e);
 				}
@@ -346,7 +346,7 @@ public class Furlong {
 			Furlong.this.logElapsed(startNanos);
 		}
 
-		ThreadLocal<Map<String, List<SQLProxyHelper>>> batchResources() {
+		ThreadLocal<Map<String, List<SqlProxyHelper>>> batchResources() {
 			return batchResources;
 		}
 
@@ -375,7 +375,7 @@ public class Furlong {
 
 				log.info("sql:");
 
-				executor().logSQL(log, originalSql, sql, insecure, ps);
+				executor().logSql(log, originalSql, sql, insecure, ps);
 
 				log.info("------  SQL END  ------");
 			});

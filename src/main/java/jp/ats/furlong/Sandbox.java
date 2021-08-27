@@ -79,10 +79,10 @@ public class Sandbox {
 		}
 
 		@Override
-		public void logSQL(Logger log, String originalSQL, String sql, boolean insecure, PreparedStatement ps) {
+		public void logSql(Logger log, String originalSql, String sql, boolean insecure, PreparedStatement ps) {
 			var handler = pairs.get().stream().filter(p -> p.statement == ps).findFirst().get().handler;
 
-			log.info(originalSQL);
+			log.info(originalSql);
 
 			log.info("processed to:");
 			log.info(sql);
