@@ -50,6 +50,8 @@ public class Furlong {
 
 	private static final String packageName = Furlong.class.getPackageName();
 
+	private static final String newLine = System.getProperty("line.separator");
+
 	private final ThreadLocal<Map<String, List<SqlProxyHelper>>> batchResources = new ThreadLocal<>();
 
 	private final Map<Class<?>, Object> cache = new HashMap<>();
@@ -127,22 +129,23 @@ public class Furlong {
 		});
 	}
 
+	//MySQLのPareparedStatement#toString()対策でSQLの先頭に改行を付与
 	private class FurlongExecutor implements Executor {
 
 		@Override
 		public void batchUpdate(String sql, BatchPreparedStatementSetter pss) {
-			jdbcTemplate.batchUpdate(sql, pss);
+			jdbcTemplate.batchUpdate(newLine + sql, pss);
 
 		}
 
 		@Override
 		public <T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-			return jdbcTemplate.queryForStream(sql, pss, rowMapper);
+			return jdbcTemplate.queryForStream(newLine + sql, pss, rowMapper);
 		}
 
 		@Override
 		public int update(String sql, PreparedStatementSetter pss) {
-			return jdbcTemplate.update(sql, pss);
+			return jdbcTemplate.update(newLine + sql, pss);
 		}
 
 		@Override
