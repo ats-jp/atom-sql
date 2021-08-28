@@ -37,9 +37,6 @@ import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.processor.annotation.Methods;
 
-//TODO ParameterとArgumentを正確にする
-//TODO プリミティブ型とラッパー型を区別できるように
-
 /**
  * @author 千葉 哲嗣
  */
