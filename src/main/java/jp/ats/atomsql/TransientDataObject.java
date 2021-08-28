@@ -19,10 +19,17 @@ public class TransientDataObject {
 
 	private final ResultSet base;
 
+	/**
+	 * @param base
+	 */
 	public TransientDataObject(ResultSet base) {
 		this.base = base;
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public boolean getBoolean(String columnName) {
 		try {
 			return base.getBoolean(columnName);
@@ -31,6 +38,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public double getDouble(String columnName) {
 		try {
 			return base.getDouble(columnName);
@@ -39,6 +50,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public float getFloat(String columnName) {
 		try {
 			return base.getFloat(columnName);
@@ -47,6 +62,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public int getInt(String columnName) {
 		try {
 			return base.getInt(columnName);
@@ -55,6 +74,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public long getLong(String columnName) {
 		try {
 			return base.getLong(columnName);
@@ -63,6 +86,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public String getString(String columnName) {
 		try {
 			return base.getString(columnName);
@@ -71,6 +98,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public Timestamp getTimestamp(String columnName) {
 		try {
 			return base.getTimestamp(columnName);
@@ -79,6 +110,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public BigDecimal getBigDecimal(String columnName) {
 		try {
 			return base.getBigDecimal(columnName);
@@ -87,6 +122,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public InputStream getBinaryStream(String columnName) {
 		try {
 			return base.getBinaryStream(columnName);
@@ -95,6 +134,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public Reader getCharacterStream(String columnName) {
 		try {
 			return base.getCharacterStream(columnName);
@@ -103,6 +146,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public Object getObject(String columnName) {
 		try {
 			return base.getObject(columnName);
@@ -111,6 +158,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public byte[] getBytes(String columnName) {
 		try {
 			return base.getBytes(columnName);
@@ -119,6 +170,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public Blob getBlob(String columnName) {
 		try {
 			return base.getBlob(columnName);
@@ -127,6 +182,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnName
+	 * @return result
+	 */
 	public Clob getClob(String columnName) {
 		try {
 			return base.getClob(columnName);
@@ -135,6 +194,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public boolean getBoolean(int columnIndex) {
 		try {
 			return base.getBoolean(columnIndex);
@@ -143,6 +206,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public double getDouble(int columnIndex) {
 		try {
 			return base.getDouble(columnIndex);
@@ -151,6 +218,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public float getFloat(int columnIndex) {
 		try {
 			return base.getFloat(columnIndex);
@@ -159,6 +230,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public int getInt(int columnIndex) {
 		try {
 			return base.getInt(columnIndex);
@@ -167,6 +242,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public long getLong(int columnIndex) {
 		try {
 			return base.getLong(columnIndex);
@@ -175,6 +254,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public String getString(int columnIndex) {
 		try {
 			return base.getString(columnIndex);
@@ -183,6 +266,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public Timestamp getTimestamp(int columnIndex) {
 		try {
 			return base.getTimestamp(columnIndex);
@@ -191,6 +278,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public BigDecimal getBigDecimal(int columnIndex) {
 		try {
 			return base.getBigDecimal(columnIndex);
@@ -199,6 +290,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public Object getObject(int columnIndex) {
 		try {
 			return base.getObject(columnIndex);
@@ -207,6 +302,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public InputStream getBinaryStream(int columnIndex) {
 		try {
 			return base.getBinaryStream(columnIndex);
@@ -215,6 +314,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public Reader getCharacterStream(int columnIndex) {
 		try {
 			return base.getCharacterStream(columnIndex);
@@ -223,6 +326,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public byte[] getBytes(int columnIndex) {
 		try {
 			return base.getBytes(columnIndex);
@@ -231,6 +338,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public Blob getBlob(int columnIndex) {
 		try {
 			return base.getBlob(columnIndex);
@@ -239,6 +350,10 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @param columnIndex
+	 * @return result
+	 */
 	public Clob getClob(int columnIndex) {
 		try {
 			return base.getClob(columnIndex);
@@ -247,6 +362,9 @@ public class TransientDataObject {
 		}
 	}
 
+	/**
+	 * @return was null
+	 */
 	public boolean wasNull() {
 		try {
 			return base.wasNull();

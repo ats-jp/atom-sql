@@ -152,16 +152,19 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private static String buildMetodsPart(List<MethodInfo> infos) {
-		return String.join(", ",
-				infos.stream().map(SqlProxyAnnotationProcessor::methodPart).collect(Collectors.toList()));
+		return String.join(
+			", ",
+			infos.stream().map(SqlProxyAnnotationProcessor::methodPart).collect(Collectors.toList()));
 	}
 
 	private static String methodPart(MethodInfo info) {
-		String args = String.join(", ",
-				info.parameterNames.stream().map(n -> "\"" + n + "\"").collect(Collectors.toList()));
+		String args = String.join(
+			", ",
+			info.parameterNames.stream().map(n -> "\"" + n + "\"").collect(Collectors.toList()));
 
-		String types = String.join(", ",
-				info.parameterTypes.stream().map(t -> t + ".class").collect(Collectors.toList()));
+		String types = String.join(
+			", ",
+			info.parameterTypes.stream().map(t -> t + ".class").collect(Collectors.toList()));
 
 		var methodContents = new LinkedList<String>();
 		methodContents.add("name = \"" + info.name + "\"");
@@ -216,16 +219,17 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				// <?>
 				// Atomの場合は、型パラメータを指定しなくてOK
 				return null;
-			} else if (ProcessorUtils.sameClass(type, Stream.class) || ProcessorUtils.sameClass(type, List.class)
-					|| ProcessorUtils.sameClass(type, Optional.class)) {
-				var dataObjectType = t.getTypeArguments().get(0);
-				if (dataObjectType.accept(AnnotationExtractor.instance, null))
-					return dataObjectType;
+			} else if (ProcessorUtils.sameClass(type, Stream.class)
+				|| ProcessorUtils.sameClass(type, List.class)
+				|| ProcessorUtils.sameClass(type, Optional.class)) {
+					var dataObjectType = t.getTypeArguments().get(0);
+					if (dataObjectType.accept(AnnotationExtractor.instance, null))
+						return dataObjectType;
 
-				// <?>
-				// Stream, List, Optionalの場合は、型パラメータを指定しなければならない
-				return defaultAction(t, p);
-			}
+					// <?>
+					// Stream, List, Optionalの場合は、型パラメータを指定しなければならない
+					return defaultAction(t, p);
+				}
 
 			return defaultAction(t, p);
 		}
@@ -304,6 +308,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			return defaultAction(t, p);
 		}
 
+		@Override
 		public TypeMirror visitError(ErrorType t, VariableElement p) {
 			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
 
@@ -380,8 +385,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			if (dataObjectType != null) {
 				var dataObjectClassName = dataObjectType.accept(typeNameExtractor, e);
 				if (dataObjectType.getAnnotation(DataObject.class) == null) {
-					error("[" + dataObjectClassName + "] must be annotated with " + DataObject.class.getSimpleName(),
-							e);
+					error(
+						"[" + dataObjectClassName + "] must be annotated with " + DataObject.class.getSimpleName(),
+						e);
 				} else {
 					info.dataObjectClassName = dataObjectClassName;
 				}

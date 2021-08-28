@@ -17,6 +17,9 @@ import java.util.stream.IntStream;
  */
 public enum ParameterType {
 
+	/**
+	 * {@link BigDecimal}
+	 */
 	BIG_DECIMAL {
 
 		@Override
@@ -34,6 +37,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * {@link BinaryStream}
+	 */
 	BINARY_STREAM {
 
 		@Override
@@ -52,6 +58,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * {@link Blob}
+	 */
 	BLOB {
 
 		@Override
@@ -69,6 +78,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * boolean
+	 */
 	BOOLEAN {
 
 		@Override
@@ -86,6 +98,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * byte[]
+	 */
 	BYTE_ARRAY {
 
 		@Override
@@ -103,6 +118,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * {@link CharacterStream}
+	 */
 	CHARACTER_STREAM {
 
 		@Override
@@ -121,6 +139,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * {@link Clob}
+	 */
 	CLOB {
 
 		@Override
@@ -138,6 +159,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * double
+	 */
 	DOUBLE {
 
 		@Override
@@ -155,6 +179,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * float
+	 */
 	FLOAT {
 
 		@Override
@@ -172,6 +199,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * int
+	 */
 	INT {
 
 		@Override
@@ -189,6 +219,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * long
+	 */
 	LONG {
 
 		@Override
@@ -206,6 +239,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * {@link Object}
+	 */
 	OBJECT {
 
 		@Override
@@ -223,6 +259,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * {@link String}
+	 */
 	STRING {
 
 		@Override
@@ -240,6 +279,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * {@link Timestamp}
+	 */
 	TIMESTAMP {
 
 		@Override
@@ -257,6 +299,9 @@ public enum ParameterType {
 		}
 	},
 
+	/**
+	 * {@link CommaSeparatedParameters}
+	 */
 	COMMA_SEPARATED_PARAMETERS {
 
 		@Override
@@ -273,12 +318,16 @@ public enum ParameterType {
 			});
 		}
 
+		@Override
 		String placeholderExpression(Object value) {
 			var values = ((CommaSeparatedParameters<?>) value).values();
 			return String.join(", ", values.stream().map(v -> "?").collect(Collectors.toList()));
 		}
 	};
 
+	/**
+	 * @return type
+	 */
 	public abstract Class<?> type();
 
 	abstract void bind(int index, PreparedStatement statement, Object value);
@@ -293,6 +342,10 @@ public enum ParameterType {
 		Arrays.stream(ParameterType.values()).filter(b -> !b.equals(OBJECT)).forEach(b -> types.put(b.type(), b));
 	}
 
+	/**
+	 * @param o
+	 * @return {@link ParameterType}
+	 */
 	public static ParameterType select(Object o) {
 		// nullの場合はsetObject(i, null)
 		// DBによってはエラーとなる可能性があるため、その場合はsetNull(int, int)の使用を検討する

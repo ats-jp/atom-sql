@@ -31,6 +31,7 @@ import jp.ats.atomsql.annotation.SqlParameter;
 
 @SupportedAnnotationTypes("jp.ats.atomsql.annotation.SqlParameter")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SuppressWarnings("javadoc")
 public class SqlParameterAnnotationProcessor extends AbstractProcessor {
 
 	private static final Class<?> DEFAULT_SQL_FILE_RESOLVER_CLASS = SimpleMavenSqlFileResolver.class;
@@ -87,8 +88,10 @@ public class SqlParameterAnnotationProcessor extends AbstractProcessor {
 		var fields = new LinkedList<String>();
 		PlaceholderFinder.execute(sql, f -> {
 			var method = "public "
-					+ f.typeHint.map(t -> ParameterType.valueOf(t)).orElse(ParameterType.OBJECT).type().getName() + " "
-					+ f.placeholder + ";";
+				+ f.typeHint.map(t -> ParameterType.valueOf(t)).orElse(ParameterType.OBJECT).type().getName()
+				+ " "
+				+ f.placeholder
+				+ ";";
 			fields.add(method);
 		});
 
@@ -120,8 +123,13 @@ public class SqlParameterAnnotationProcessor extends AbstractProcessor {
 			var classOutput = super.processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", "");
 			var pathString = classOutput.toUri().toURL().toString();
 
-			return new String(resolver(method).resolve(Paths.get(pathString.substring("file:/".length())),
-					packageName.toString(), sqlFileName, super.processingEnv.getOptions()), Constants.SQL_CHARSET);
+			return new String(
+				resolver(method).resolve(
+					Paths.get(pathString.substring("file:/".length())),
+					packageName.toString(),
+					sqlFileName,
+					super.processingEnv.getOptions()),
+				Constants.SQL_CHARSET);
 		} catch (IOException ioe) {
 			throw new UncheckedIOException(ioe);
 		}
@@ -143,7 +151,7 @@ public class SqlParameterAnnotationProcessor extends AbstractProcessor {
 		try {
 			return (SqlFileResolver) clazz.getConstructor().newInstance();
 		} catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException
-				| InstantiationException e) {
+			| InstantiationException e) {
 			error("error occurs while instantiation class [" + className + "]", method);
 			throw new ProcessException();
 		}

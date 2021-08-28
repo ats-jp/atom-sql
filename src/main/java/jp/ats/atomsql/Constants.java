@@ -8,7 +8,13 @@ import java.nio.charset.StandardCharsets;
  */
 public interface Constants {
 
+	/**
+	 * 
+	 */
 	public static final String METADATA_CLASS_SUFFIX = "$AtomSqlMetadata";
 
+	/**
+	 * 
+	 */
 	public static final Charset SQL_CHARSET = StandardCharsets.UTF_8;
 }

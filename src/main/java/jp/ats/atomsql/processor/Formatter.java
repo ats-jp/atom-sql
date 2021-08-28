@@ -12,6 +12,7 @@ import jp.ats.atomsql.Utils;
 /**
  * @author 千葉 哲嗣
  */
+@SuppressWarnings("javadoc")
 public class Formatter {
 
 	private static final Pattern pattern = Pattern.compile("\\[\\[([^\\]]+)\\]\\]", Pattern.MULTILINE + Pattern.DOTALL);

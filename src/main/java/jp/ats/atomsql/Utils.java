@@ -6,6 +6,7 @@ import java.io.InputStream;
 /**
  * @author 千葉 哲嗣
  */
+@SuppressWarnings("javadoc")
 public class Utils {
 
 	private static final byte[] BYTE_EMPTY_ARRAY = {};

@@ -13,7 +13,7 @@ public class SimpleMavenSqlFileResolver implements SqlFileResolver {
 
 	@Override
 	public byte[] resolve(Path classOutput, String packageName, String sqlFileName, Map<String, String> options)
-			throws IOException {
+		throws IOException {
 		var projectRoot = classOutput.getParent().getParent();
 
 		var packagePath = Paths.get(packageName.replace('.', '/'));

@@ -8,10 +8,20 @@ import java.util.Objects;
  */
 public class CharacterStream {
 
+	/**
+	 * 
+	 */
 	public final Reader input;
 
+	/**
+	 * 
+	 */
 	public final int length;
 
+	/**
+	 * @param input
+	 * @param length
+	 */
 	public CharacterStream(Reader input, int length) {
 		this.input = Objects.requireNonNull(input);
 		this.length = length;

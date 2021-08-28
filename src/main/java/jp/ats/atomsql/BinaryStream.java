@@ -8,10 +8,20 @@ import java.util.Objects;
  */
 public class BinaryStream {
 
+	/**
+	 * 
+	 */
 	public final InputStream input;
 
+	/**
+	 * 
+	 */
 	public final int length;
 
+	/**
+	 * @param input
+	 * @param length
+	 */
 	public BinaryStream(InputStream input, int length) {
 		this.input = Objects.requireNonNull(input);
 		this.length = length;

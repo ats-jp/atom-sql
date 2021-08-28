@@ -48,8 +48,10 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 				});
 
 				if (!result[0])
-					error(DataObject.class.getSimpleName()
-							+ " requires a constructor whose only parameter is ResultSet or no parameters", e);
+					error(
+						DataObject.class.getSimpleName()
+							+ " requires a constructor whose only parameter is ResultSet or no parameters",
+						e);
 			});
 		});
 

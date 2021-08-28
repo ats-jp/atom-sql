@@ -12,6 +12,7 @@ import jp.ats.atomsql.AtomSql.SqlProxyHelper;
 
 /**
  * @author 千葉 哲嗣
+ * @param <T> 
  */
 public class Atom<T> {
 
@@ -30,6 +31,9 @@ public class Atom<T> {
 		this.andType = true;
 	}
 
+	/**
+	 * @return results
+	 */
 	public Stream<T> stream() {
 		var startNanos = System.nanoTime();
 		try {
@@ -43,14 +47,25 @@ public class Atom<T> {
 		}
 	}
 
+	/**
+	 * @return results
+	 */
 	public List<T> list() {
 		return stream().collect(Collectors.toList());
 	}
 
+	/**
+	 * @return result
+	 */
 	public Optional<T> get() {
 		return get(list());
 	}
 
+	/**
+	 * @param mapper 
+	 * @param <R> 
+	 * @return results
+	 */
 	public <R> Stream<R> stream(RowMapper<R> mapper) {
 		var startNanos = System.nanoTime();
 		try {
@@ -60,14 +75,29 @@ public class Atom<T> {
 		}
 	}
 
+	/**
+	 * @param mapper 
+	 * @param <R> 
+	 * @return results
+	 */
 	public <R> List<R> list(RowMapper<R> mapper) {
 		return stream(mapper).collect(Collectors.toList());
 	}
 
+	/**
+	 * @param mapper 
+	 * @param <R> 
+	 * @return result
+	 */
 	public <R> Optional<R> get(RowMapper<R> mapper) {
 		return get(list(mapper));
 	}
 
+	/**
+	 * @param mapper 
+	 * @param <R> 
+	 * @return results
+	 */
 	public <R> Stream<R> stream(SimpleRowMapper<R> mapper) {
 		var startNanos = System.nanoTime();
 		try {
@@ -77,10 +107,20 @@ public class Atom<T> {
 		}
 	}
 
+	/**
+	 * @param mapper 
+	 * @param <R> 
+	 * @return results
+	 */
 	public <R> List<R> list(SimpleRowMapper<R> mapper) {
 		return stream(mapper).collect(Collectors.toList());
 	}
 
+	/**
+	 * @param mapper 
+	 * @param <R> 
+	 * @return result
+	 */
 	public <R> Optional<R> get(SimpleRowMapper<R> mapper) {
 		return get(list(mapper));
 	}
@@ -92,6 +132,9 @@ public class Atom<T> {
 		return list.stream().findFirst();
 	}
 
+	/**
+	 * @return updated row count
+	 */
 	public int execute() {
 		var resources = helper.batchResources().get();
 		if (resources == null) {// バッチ実行中ではない
@@ -108,16 +151,28 @@ public class Atom<T> {
 		return 0;
 	}
 
+	/**
+	 * @param another
+	 * @return {@link Atom}
+	 */
 	public Atom<T> concat(Atom<T> another) {
 		var sql = helper.sql + " " + another.helper.sql;
 		var originalSql = helper.originalSql + " " + another.helper.originalSql;
 		return new Atom<T>(atomsql, executor, atomsql.new SqlProxyHelper(sql, originalSql, helper, another.helper));
 	}
 
+	/**
+	 * @param another
+	 * @return {@link Atom}
+	 */
 	public Atom<T> and(Atom<T> another) {
 		return andor(" AND ", another);
 	}
 
+	/**
+	 * @param another
+	 * @return {@link Atom}
+	 */
 	public Atom<T> or(Atom<T> another) {
 		return andor(" OR ", another);
 	}

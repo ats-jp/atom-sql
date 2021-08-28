@@ -61,6 +61,10 @@ public class AtomSql {
 
 	private final JdbcTemplate jdbcTemplate;
 
+	/**
+	 * 
+	 * @param jdbcTemplate
+	 */
 	@Autowired
 	public AtomSql(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
@@ -70,20 +74,33 @@ public class AtomSql {
 		this.jdbcTemplate = null;
 	}
 
+	/**
+	 * 
+	 * @param <T>
+	 * @param proxyInterface
+	 * @return T
+	 */
 	public <T> T of(Class<T> proxyInterface) {
 		if (!proxyInterface.isInterface())
 			throw new IllegalArgumentException(proxyInterface + " is not interface");
 
 		synchronized (cache) {
 			@SuppressWarnings("unchecked")
-			T instance = (T) cache.computeIfAbsent(proxyInterface,
-					k -> Proxy.newProxyInstance(AtomSql.class.getClassLoader(), new Class<?>[] { proxyInterface },
-							new SqlProxyInvocationHandler()));
+			T instance = (T) cache.computeIfAbsent(
+				proxyInterface,
+				k -> Proxy.newProxyInstance(
+					AtomSql.class.getClassLoader(),
+					new Class<?>[] { proxyInterface },
+					new SqlProxyInvocationHandler()));
 
 			return instance;
 		}
 	}
 
+	/**
+	 * 
+	 * @param runnable
+	 */
 	public void batch(Runnable runnable) {
 		batchResources.set(new LinkedHashMap<>());
 		try {
@@ -94,6 +111,12 @@ public class AtomSql {
 		}
 	}
 
+	/**
+	 * 
+	 * @param <T>
+	 * @param supplier
+	 * @return T
+	 */
 	public <T> T batch(Supplier<T> supplier) {
 		batchResources.set(new LinkedHashMap<>());
 		try {
@@ -179,9 +202,12 @@ public class AtomSql {
 
 			var methods = Class.forName(proxyClassName + Constants.METADATA_CLASS_SUFFIX).getAnnotation(Methods.class);
 
-			var find = Arrays.asList(methods.value()).stream().filter(
+			var find = Arrays.asList(methods.value())
+				.stream()
+				.filter(
 					m -> m.name().equals(method.getName()) && Arrays.equals(method.getParameterTypes(), m.argTypes()))
-					.findFirst().get();
+				.findFirst()
+				.get();
 
 			var argTypes = find.argTypes();
 
@@ -205,8 +231,12 @@ public class AtomSql {
 					}
 				});
 
-				helper = new SqlProxyHelper(sql, insecure, names.toArray(String[]::new), find.sqlParameterClass(),
-						values.toArray(Object[]::new));
+				helper = new SqlProxyHelper(
+					sql,
+					insecure,
+					names.toArray(String[]::new),
+					find.sqlParameterClass(),
+					values.toArray(Object[]::new));
 			} else {
 				helper = new SqlProxyHelper(sql, insecure, find.args(), find.sqlParameterClass(), args);
 			}
@@ -245,16 +275,18 @@ public class AtomSql {
 		var sqlContainer = method.getAnnotation(Sql.class);
 		if (sqlContainer != null) {
 			return sqlContainer.value();
-		} else {
-			var sqlFileName = Utils.extractSimpleClassName(proxyClassName, decreredClass.getPackage().getName()) + "."
-					+ method.getName() + ".sql";
-
-			var url = decreredClass.getResource(sqlFileName);
-			if (url == null)
-				throw new IllegalStateException(sqlFileName + " not found");
-
-			return new String(Utils.readBytes(url.openStream()), Constants.SQL_CHARSET);
 		}
+
+		var sqlFileName = Utils.extractSimpleClassName(proxyClassName, decreredClass.getPackage().getName())
+			+ "."
+			+ method.getName()
+			+ ".sql";
+
+		var url = decreredClass.getResource(sqlFileName);
+		if (url == null)
+			throw new IllegalStateException(sqlFileName + " not found");
+
+		return new String(Utils.readBytes(url.openStream()), Constants.SQL_CHARSET);
 	}
 
 	class SqlProxyHelper implements PreparedStatementSetter {
@@ -271,8 +303,12 @@ public class AtomSql {
 
 		private final Class<?> dataObjectClass;
 
-		private SqlProxyHelper(String sql, boolean insecure, String[] argNames, Class<?> dataObjectClass,
-				Object[] args) {
+		private SqlProxyHelper(
+			String sql,
+			boolean insecure,
+			String[] argNames,
+			Class<?> dataObjectClass,
+			Object[] args) {
 			originalSql = sql;
 			this.insecure = insecure;
 			this.dataObjectClass = dataObjectClass;

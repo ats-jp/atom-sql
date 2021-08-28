@@ -11,8 +11,14 @@ public class Configure {
 
 	private final String configFileName = "atom-sql.properties";
 
+	/**
+	 * 
+	 */
 	public final boolean enableLog;
 
+	/**
+	 * 
+	 */
 	public final Pattern logStackTracePattern;
 
 	Configure() {

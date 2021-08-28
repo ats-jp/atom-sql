@@ -28,6 +28,9 @@ public class Sandbox {
 
 	private static final ThreadLocal<List<Pair>> pairs = new ThreadLocal<>();
 
+	/**
+	 * @param process
+	 */
 	public static void execute(Consumer<AtomSql> process) {
 		pairs.set(new LinkedList<Pair>());
 		executor.set(myExecutor);
@@ -96,8 +99,9 @@ public class Sandbox {
 			log.info("binding values:");
 
 			handler.allArgs.forEach(a -> {
-				var args = Arrays.stream(a.args).map(v -> v == null ? "null" : v.toString())
-						.collect(Collectors.toList());
+				var args = Arrays.stream(a.args)
+					.map(v -> v == null ? "null" : v.toString())
+					.collect(Collectors.toList());
 				log.info(a.method.getName() + " [" + String.join(", ", args) + "]");
 			});
 		}
@@ -112,8 +116,10 @@ public class Sandbox {
 
 	private static PreparedStatement preparedStatement() {
 		var handler = new PreparedStatementInvocationHandler();
-		var statement = (PreparedStatement) Proxy.newProxyInstance(Sandbox.class.getClassLoader(),
-				new Class<?>[] { PreparedStatement.class }, handler);
+		var statement = (PreparedStatement) Proxy.newProxyInstance(
+			Sandbox.class.getClassLoader(),
+			new Class<?>[] { PreparedStatement.class },
+			handler);
 
 		var pair = new Pair();
 		pair.statement = statement;
