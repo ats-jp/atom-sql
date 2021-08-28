@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -220,6 +221,8 @@ public class AtomSql {
 				return atom.stream();
 			} else if (returnType.equals(List.class)) {
 				return atom.list();
+			} else if (returnType.equals(Optional.class)) {
+				return atom.get();
 			} else if (returnType.equals(int.class)) {
 				return atom.execute();
 			} else {

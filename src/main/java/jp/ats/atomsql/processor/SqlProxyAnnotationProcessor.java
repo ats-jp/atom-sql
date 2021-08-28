@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -32,6 +33,7 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic.Kind;
 
 import jp.ats.atomsql.Atom;
+import jp.ats.atomsql.CommaSeparatedParameters;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.ParameterType;
 import jp.ats.atomsql.Utils;
@@ -169,8 +171,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		if (info.sqlParameterClassName != null)
 			methodContents.add("sqlParameterClass = " + info.sqlParameterClassName + ".class");
 
-		if (info.returnTypeParameterClassName != null)
-			methodContents.add("dataObjectClass = " + info.returnTypeParameterClassName + ".class");
+		if (info.dataObjectClassName != null)
+			methodContents.add("dataObjectClass = " + info.dataObjectClassName + ".class");
 
 		return "@Method(" + String.join(", ", methodContents) + ")";
 	}
@@ -206,16 +208,26 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		public TypeMirror visitDeclared(DeclaredType t, ExecutableElement p) {
 			var type = t.asElement().accept(TypeConverter.instance, null);
 
-			if (!ProcessorUtils.sameClass(type, Atom.class) && !ProcessorUtils.sameClass(type, Stream.class)
-					&& !ProcessorUtils.sameClass(type, List.class))
+			if (ProcessorUtils.sameClass(type, Atom.class)) {
+				var dataObjectType = t.getTypeArguments().get(0);
+				if (dataObjectType.accept(AnnotationExtractor.instance, null))
+					return dataObjectType;
+
+				// <?>
+				// Atomの場合は、型パラメータを指定しなくてOK
+				return null;
+			} else if (ProcessorUtils.sameClass(type, Stream.class) || ProcessorUtils.sameClass(type, List.class)
+					|| ProcessorUtils.sameClass(type, Optional.class)) {
+				var dataObjectType = t.getTypeArguments().get(0);
+				if (dataObjectType.accept(AnnotationExtractor.instance, null))
+					return dataObjectType;
+
+				// <?>
+				// Stream, List, Optionalの場合は、型パラメータを指定しなければならない
 				return defaultAction(t, p);
+			}
 
-			var typeArg = t.getTypeArguments().get(0);
-			if (typeArg.accept(AnnotationExtractor.instance, null))
-				return typeArg;
-
-			// <?>
-			return null;
+			return defaultAction(t, p);
 		}
 	}
 
@@ -273,6 +285,21 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, ParameterType.TIMESTAMP.type()))
 				return DEFAULT_VALUE;
+			if (ProcessorUtils.sameClass(type, ParameterType.COMMA_SEPARATED_PARAMETERS.type())) {
+				var parameterType = t.getTypeArguments().get(0);
+				var element = parameterType.accept(ElementConverter.instance, null);
+				var typeElement = element.accept(TypeConverter.instance, null);
+
+				// この先再帰するので同タイプは先にはじく
+				if (ProcessorUtils.sameClass(typeElement, CommaSeparatedParameters.class)) {
+					return defaultAction(t, p);
+				}
+
+				var checker = new ParameterTypeChecker(method);
+				parameterType.accept(checker, p);
+
+				return DEFAULT_VALUE;
+			}
 
 			return defaultAction(t, p);
 		}
@@ -290,7 +317,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		private TypeMirror processConsumerType(VariableElement p) {
 			var typeArg = p.asType().accept(TypeArgumentsExtractor.instance, null).get(0);
 
-			var element = typeArg.accept(ElementConverter.instance, p);
+			var element = typeArg.accept(ElementConverter.instance, null);
 			if (element == null) {
 				error("unknown error occurred", p);
 				hasError.set(true);
@@ -332,9 +359,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				throw new ProcessException();
 			}
 
-			MethodInfo info = new MethodInfo();
+			var info = new MethodInfo();
 
-			ParameterTypeChecker checker = new ParameterTypeChecker(e);
+			var checker = new ParameterTypeChecker(e);
 
 			info.name = e.getSimpleName().toString();
 			e.getParameters().forEach(parameter -> {
@@ -348,14 +375,15 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 					info.sqlParameterClassName = typeArg.accept(typeNameExtractor, e);
 			});
 
-			var returnTypeParameter = e.getReturnType().accept(returnTypeChecker, e);
+			var dataObjectType = e.getReturnType().accept(returnTypeChecker, e);
 
-			if (returnTypeParameter != null) {
-				if (returnTypeParameter.getAnnotation(DataObject.class) == null) {
-					error(Atom.class.getSimpleName() + "'s type parameter must be annotated with "
-							+ DataObject.class.getSimpleName(), e);
+			if (dataObjectType != null) {
+				var dataObjectClassName = dataObjectType.accept(typeNameExtractor, e);
+				if (dataObjectType.getAnnotation(DataObject.class) == null) {
+					error("[" + dataObjectClassName + "] must be annotated with " + DataObject.class.getSimpleName(),
+							e);
 				} else {
-					info.returnTypeParameterClassName = returnTypeParameter.accept(typeNameExtractor, e);
+					info.dataObjectClassName = dataObjectClassName;
 				}
 			}
 
@@ -409,22 +437,22 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private static class ElementConverter extends SimpleTypeVisitor8<Element, Element> {
+	private static class ElementConverter extends SimpleTypeVisitor8<Element, Void> {
 
 		private static ElementConverter instance = new ElementConverter();
 
 		@Override
-		protected Element defaultAction(TypeMirror e, Element p) {
+		protected Element defaultAction(TypeMirror e, Void p) {
 			return DEFAULT_VALUE;
 		}
 
 		@Override
-		public Element visitDeclared(DeclaredType t, Element p) {
+		public Element visitDeclared(DeclaredType t, Void p) {
 			return t.asElement();
 		}
 
 		@Override
-		public Element visitError(ErrorType t, Element p) {
+		public Element visitError(ErrorType t, Void p) {
 			return t.asElement();
 		}
 	}
@@ -474,6 +502,6 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		private String sqlParameterClassName;
 
-		private String returnTypeParameterClassName;
+		private String dataObjectClassName;
 	}
 }

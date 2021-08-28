@@ -9,6 +9,8 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author 千葉 哲嗣
@@ -253,11 +255,37 @@ public enum ParameterType {
 				throw new AtomSqlException(e);
 			}
 		}
+	},
+
+	COMMA_SEPARATED_PARAMETERS {
+
+		@Override
+		public Class<?> type() {
+			return CommaSeparatedParameters.class;
+		}
+
+		@Override
+		void bind(int index, PreparedStatement statement, Object value) {
+			var values = ((CommaSeparatedParameters<?>) value).values();
+			IntStream.range(0, values.size()).forEach(i -> {
+				var v = values.get(i);
+				select(v).bind(index + i, statement, v);
+			});
+		}
+
+		String placeholderExpression(Object value) {
+			var values = ((CommaSeparatedParameters<?>) value).values();
+			return String.join(", ", values.stream().map(v -> "?").collect(Collectors.toList()));
+		}
 	};
 
 	public abstract Class<?> type();
 
 	abstract void bind(int index, PreparedStatement statement, Object value);
+
+	String placeholderExpression(Object value) {
+		return "?";
+	}
 
 	private static final Map<Class<?>, ParameterType> types = new HashMap<>();
 
@@ -267,7 +295,7 @@ public enum ParameterType {
 
 	public static ParameterType select(Object o) {
 		// nullの場合はsetObject(i, null)
-		// DBによってはエラーとなる可能性があるため、setNull(int, int)の使用を検討する
+		// DBによってはエラーとなる可能性があるため、その場合はsetNull(int, int)の使用を検討する
 		if (o == null)
 			return OBJECT;
 
