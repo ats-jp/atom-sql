@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 @SuppressWarnings("javadoc")
 public class PlaceholderFinder {
 
-	private static final Pattern pattern = Pattern.compile(":([a-zA-Z_$][a-zA-Z\\d_$]*)(?:/\\*([A-Z_]+)\\*/|)");
+	private static final Pattern pattern = Pattern.compile(":([a-zA-Z_$][a-zA-Z\\d_$]*)(?:/\\*([A-Z_]+)(?:<([A-Z_]+)>|)\\*/|)");
 
 	public static String execute(String sql, Consumer<Found> placeholderConsumer) {
 		int position = 0;
@@ -31,6 +31,8 @@ public class PlaceholderFinder {
 			found.placeholder = matcher.group(1);
 			found.typeHint = Optional.ofNullable(matcher.group(2));
 
+			found.typeArgumentHint = Optional.ofNullable(matcher.group(3));
+
 			placeholderConsumer.accept(found);
 		}
 
@@ -44,5 +46,7 @@ public class PlaceholderFinder {
 		public String placeholder;
 
 		public Optional<String> typeHint;
+
+		public Optional<String> typeArgumentHint;
 	}
 }

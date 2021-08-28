@@ -1,7 +1,7 @@
 package jp.ats.atomsql.processor.annotation;
 
 import jp.ats.atomsql.annotation.DataObject;
-import jp.ats.atomsql.annotation.SqlParameter;
+import jp.ats.atomsql.annotation.SqlParameters;
 
 /**
  * @author 千葉 哲嗣
@@ -30,11 +30,11 @@ public @interface Method {
 	Class<?>[] argTypes();
 
 	/**
-	 * {@link SqlParameter} に指定されたクラス
+	 * {@link SqlParameters} に指定されたクラス
 	 * 
-	 * @return {@link SqlParameter} に指定されたクラス
+	 * @return {@link SqlParameters} に指定されたクラス
 	 */
-	Class<?> sqlParameterClass() default Object.class;
+	Class<?> sqlParametersClass() default Object.class;
 
 	/**
 	 * 戻り値の型パラメータで示される {@link DataObject} クラス

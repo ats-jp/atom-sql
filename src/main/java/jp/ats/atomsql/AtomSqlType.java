@@ -15,7 +15,7 @@ import java.util.stream.IntStream;
 /**
  * @author 千葉 哲嗣
  */
-public enum ParameterType {
+public enum AtomSqlType {
 
 	/**
 	 * {@link BigDecimal}
@@ -336,17 +336,17 @@ public enum ParameterType {
 		return "?";
 	}
 
-	private static final Map<Class<?>, ParameterType> types = new HashMap<>();
+	private static final Map<Class<?>, AtomSqlType> types = new HashMap<>();
 
 	static {
-		Arrays.stream(ParameterType.values()).filter(b -> !b.equals(OBJECT)).forEach(b -> types.put(b.type(), b));
+		Arrays.stream(AtomSqlType.values()).filter(b -> !b.equals(OBJECT)).forEach(b -> types.put(b.type(), b));
 	}
 
 	/**
 	 * @param o
-	 * @return {@link ParameterType}
+	 * @return {@link AtomSqlType}
 	 */
-	public static ParameterType select(Object o) {
+	public static AtomSqlType select(Object o) {
 		// nullの場合はsetObject(i, null)
 		// DBによってはエラーとなる可能性があるため、その場合はsetNull(int, int)の使用を検討する
 		if (o == null)
@@ -354,5 +354,31 @@ public enum ParameterType {
 
 		var type = types.get(o.getClass());
 		return type == null ? OBJECT : type;
+	}
+
+	/**
+	 * @param name
+	 * @return {@link AtomSqlType}
+	 */
+	public static AtomSqlType safetyValueOf(String name) {
+		try {
+			return valueOf(name);
+		} catch (IllegalArgumentException e) {
+			return OBJECT;
+		}
+	}
+
+	/**
+	 * @param name
+	 * @return {@link AtomSqlType}
+	 */
+	public static AtomSqlType safetyTypeArgumentValueOf(String name) {
+		try {
+			var found = valueOf(name);
+
+			return found == COMMA_SEPARATED_PARAMETERS ? OBJECT : found;
+		} catch (IllegalArgumentException e) {
+			return OBJECT;
+		}
 	}
 }

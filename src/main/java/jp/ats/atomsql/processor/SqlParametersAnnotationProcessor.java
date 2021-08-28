@@ -23,16 +23,16 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
 import jp.ats.atomsql.Constants;
-import jp.ats.atomsql.ParameterType;
+import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.Sql;
-import jp.ats.atomsql.annotation.SqlParameter;
+import jp.ats.atomsql.annotation.SqlParameters;
 
-@SupportedAnnotationTypes("jp.ats.atomsql.annotation.SqlParameter")
+@SupportedAnnotationTypes("jp.ats.atomsql.annotation.SqlParameters")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SuppressWarnings("javadoc")
-public class SqlParameterAnnotationProcessor extends AbstractProcessor {
+public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 	private static final Class<?> DEFAULT_SQL_FILE_RESOLVER_CLASS = SimpleMavenSqlFileResolver.class;
 
@@ -59,7 +59,7 @@ public class SqlParameterAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private void execute(Element e) {
-		var generateClassName = e.getAnnotation(SqlParameter.class).value();
+		var generateClassName = e.getAnnotation(SqlParameters.class).value();
 
 		var clazz = e.getEnclosingElement().accept(TypeConverter.instance, null);
 
@@ -75,20 +75,23 @@ public class SqlParameterAnnotationProcessor extends AbstractProcessor {
 
 		var sql = extractSql(packageName, className, e);
 
-		String template = Formatter.readTemplate(SqlParameterTemplate.class, "UTF-8");
+		String template = Formatter.readTemplate(SqlParametersTemplate.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);
 
 		Map<String, String> param = new HashMap<>();
 
-		param.put("PROCESSOR", SqlParameterAnnotationProcessor.class.getName());
+		param.put("PROCESSOR", SqlParametersAnnotationProcessor.class.getName());
 
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("CLASS", generateClassName);
 
 		var fields = new LinkedList<String>();
 		PlaceholderFinder.execute(sql, f -> {
+			var typeArgument = f.typeArgumentHint.map(t -> "<" + AtomSqlType.safetyTypeArgumentValueOf(t).type().getName() + ">").orElse("");
+
 			var method = "public "
-				+ f.typeHint.map(t -> ParameterType.valueOf(t)).orElse(ParameterType.OBJECT).type().getName()
+				+ f.typeHint.map(t -> AtomSqlType.safetyValueOf(t)).orElse(AtomSqlType.OBJECT).type().getName()
+				+ typeArgument
 				+ " "
 				+ f.placeholder
 				+ ";";

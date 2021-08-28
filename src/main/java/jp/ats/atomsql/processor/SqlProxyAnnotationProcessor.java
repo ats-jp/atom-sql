@@ -35,10 +35,10 @@ import javax.tools.Diagnostic.Kind;
 import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.CommaSeparatedParameters;
 import jp.ats.atomsql.Constants;
-import jp.ats.atomsql.ParameterType;
+import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.DataObject;
-import jp.ats.atomsql.annotation.SqlParameter;
+import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
 
 /**
@@ -171,8 +171,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		methodContents.add("args = {" + args + "}");
 		methodContents.add("argTypes = {" + types + "}");
 
-		if (info.sqlParameterClassName != null)
-			methodContents.add("sqlParameterClass = " + info.sqlParameterClassName + ".class");
+		if (info.sqlParametersClassName != null)
+			methodContents.add("sqlParametersClass = " + info.sqlParametersClassName + ".class");
 
 		if (info.dataObjectClassName != null)
 			methodContents.add("dataObjectClass = " + info.dataObjectClassName + ".class");
@@ -273,25 +273,25 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return processConsumerType(p);
 			}
 
-			if (ProcessorUtils.sameClass(type, ParameterType.BIG_DECIMAL.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.BIG_DECIMAL.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, ParameterType.BINARY_STREAM.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.BINARY_STREAM.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, ParameterType.BLOB.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.BLOB.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, ParameterType.BYTE_ARRAY.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.BYTE_ARRAY.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, ParameterType.CHARACTER_STREAM.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.CHARACTER_STREAM.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, ParameterType.CLOB.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.CLOB.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, ParameterType.STRING.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.STRING.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, ParameterType.TIMESTAMP.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.TIMESTAMP.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, ParameterType.COMMA_SEPARATED_PARAMETERS.type())) {
-				var parameterType = t.getTypeArguments().get(0);
-				var element = parameterType.accept(ElementConverter.instance, null);
+			if (ProcessorUtils.sameClass(type, AtomSqlType.COMMA_SEPARATED_PARAMETERS.type())) {
+				var argumentType = t.getTypeArguments().get(0);
+				var element = argumentType.accept(ElementConverter.instance, null);
 				var typeElement = element.accept(TypeConverter.instance, null);
 
 				// この先再帰するので同タイプは先にはじく
@@ -300,7 +300,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				}
 
 				var checker = new ParameterTypeChecker(method);
-				parameterType.accept(checker, p);
+				argumentType.accept(checker, p);
 
 				return DEFAULT_VALUE;
 			}
@@ -324,7 +324,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			var element = typeArg.accept(ElementConverter.instance, null);
 			if (element == null) {
-				error("unknown error occurred", p);
+				error("Consumer needs type argument that is annotated " + SqlParameters.class.getSimpleName(), p);
 				hasError.set(true);
 				return DEFAULT_VALUE;
 			}
@@ -336,9 +336,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			var typeName = Utils.extractSimpleClassName(className, packageName);
 
-			var annotation = method.getAnnotation(SqlParameter.class);
+			var annotation = method.getAnnotation(SqlParameters.class);
 			if (annotation == null) {
-				error("Consumer needs " + SqlParameter.class.getSimpleName() + " annotation", p);
+				error("Consumer needs type argument that is annotated " + SqlParameters.class.getSimpleName(), p);
 				hasError.set(true);
 				return DEFAULT_VALUE;
 			}
@@ -366,19 +366,32 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			var info = new MethodInfo();
 
-			var checker = new ParameterTypeChecker(e);
-
 			info.name = e.getSimpleName().toString();
-			e.getParameters().forEach(parameter -> {
-				var typeArg = parameter.asType().accept(checker, parameter);
 
-				info.parameterNames.add(parameter.getSimpleName().toString());
+			var parameters = e.getParameters();
+			if (e.getAnnotation(SqlParameters.class) != null && parameters.size() != 1) {
+				error(
+					"method ["
+						+ e.getSimpleName()
+						+ "] needs one parameter of Consumer<annotated with "
+						+ SqlParameters.class.getSimpleName()
+						+ ">",
+					e);
+				hasError.set(false);
+			} else {
+				var checker = new ParameterTypeChecker(e);
 
-				info.parameterTypes.add(parameter.asType().accept(typeNameExtractor, e));
+				parameters.forEach(parameter -> {
+					var typeArg = parameter.asType().accept(checker, parameter);
 
-				if (typeArg != null)
-					info.sqlParameterClassName = typeArg.accept(typeNameExtractor, e);
-			});
+					info.parameterNames.add(parameter.getSimpleName().toString());
+
+					info.parameterTypes.add(parameter.asType().accept(typeNameExtractor, e));
+
+					if (typeArg != null)
+						info.sqlParametersClassName = typeArg.accept(typeNameExtractor, e);
+				});
+			}
 
 			var dataObjectType = e.getReturnType().accept(returnTypeChecker, e);
 
@@ -506,7 +519,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		private final List<String> parameterTypes = new LinkedList<>();
 
-		private String sqlParameterClassName;
+		private String sqlParametersClassName;
 
 		private String dataObjectClassName;
 	}

@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  */
 @Target({ METHOD })
 @Retention(RUNTIME)
-public @interface SqlParameter {
+public @interface SqlParameters {
 
 	/**
 	 * 自動生成されるクラス名

@@ -37,6 +37,9 @@ import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.processor.annotation.Methods;
 
+//TODO ParameterとArgumentを正確にする
+//TODO プリミティブ型とラッパー型を区別できるように
+
 /**
  * @author 千葉 哲嗣
  */
@@ -215,7 +218,7 @@ public class AtomSql {
 
 			SqlProxyHelper helper;
 			if (argTypes.length == 1 && argTypes[0].equals(Consumer.class)) {
-				var sqlParameterClass = find.sqlParameterClass();
+				var sqlParameterClass = find.sqlParametersClass();
 				var sqlParameter = sqlParameterClass.getConstructor().newInstance();
 
 				Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameter });
@@ -235,10 +238,10 @@ public class AtomSql {
 					sql,
 					insecure,
 					names.toArray(String[]::new),
-					find.sqlParameterClass(),
+					find.sqlParametersClass(),
 					values.toArray(Object[]::new));
 			} else {
-				helper = new SqlProxyHelper(sql, insecure, find.args(), find.sqlParameterClass(), args);
+				helper = new SqlProxyHelper(sql, insecure, find.args(), find.sqlParametersClass(), args);
 			}
 
 			var atom = new Atom<Object>(AtomSql.this, executor(), helper);
@@ -297,7 +300,7 @@ public class AtomSql {
 
 		private final boolean insecure;
 
-		private final List<ParameterType> parameterTypes = new ArrayList<>();
+		private final List<AtomSqlType> argumentTypes = new ArrayList<>();
 
 		private final List<Object> values = new ArrayList<>();
 
@@ -329,7 +332,7 @@ public class AtomSql {
 
 				var value = argMap.get(f.placeholder);
 
-				parameterTypes.add(ParameterType.select(value));
+				argumentTypes.add(AtomSqlType.select(value));
 				values.add(value);
 			});
 
@@ -346,8 +349,8 @@ public class AtomSql {
 			// セキュアではない場合すべて汚染される
 			this.insecure = main.insecure || sub.insecure;
 
-			parameterTypes.addAll(main.parameterTypes);
-			parameterTypes.addAll(sub.parameterTypes);
+			argumentTypes.addAll(main.argumentTypes);
+			argumentTypes.addAll(sub.argumentTypes);
 
 			values.addAll(main.values);
 			values.addAll(sub.values);
@@ -410,9 +413,9 @@ public class AtomSql {
 		@Override
 		public void setValues(PreparedStatement ps) throws SQLException {
 			var i = 0;
-			var size = parameterTypes.size();
+			var size = argumentTypes.size();
 			for (; i < size; i++) {
-				parameterTypes.get(i).bind(i + 1, ps, values.get(i));
+				argumentTypes.get(i).bind(i + 1, ps, values.get(i));
 			}
 
 			sqlLogger.perform(log -> {
