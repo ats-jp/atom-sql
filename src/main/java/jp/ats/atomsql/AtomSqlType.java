@@ -79,7 +79,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * boolean
+	 * Boolean
 	 */
 	BOOLEAN {
 
@@ -95,6 +95,23 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+	},
+
+	/**
+	 * boolean
+	 */
+	P_BOOLEAN {
+
+		@Override
+		public Class<?> type() {
+			return boolean.class;
+		}
+
+		@Override
+		void bind(int index, PreparedStatement statement, Object value) {
+			//ラッパー型が使用される
+			throw new UnsupportedOperationException();
 		}
 	},
 
@@ -160,7 +177,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * double
+	 * Double
 	 */
 	DOUBLE {
 
@@ -180,7 +197,24 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * float
+	 * double
+	 */
+	P_DOUBLE {
+
+		@Override
+		public Class<?> type() {
+			return double.class;
+		}
+
+		@Override
+		void bind(int index, PreparedStatement statement, Object value) {
+			//ラッパー型が使用される
+			throw new UnsupportedOperationException();
+		}
+	},
+
+	/**
+	 * Float
 	 */
 	FLOAT {
 
@@ -200,9 +234,26 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * int
+	 * float
 	 */
-	INT {
+	P_FLOAT {
+
+		@Override
+		public Class<?> type() {
+			return float.class;
+		}
+
+		@Override
+		void bind(int index, PreparedStatement statement, Object value) {
+			//ラッパー型が使用される
+			throw new UnsupportedOperationException();
+		}
+	},
+
+	/**
+	 * Integer
+	 */
+	INTEGER {
 
 		@Override
 		public Class<?> type() {
@@ -220,7 +271,24 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * long
+	 * int
+	 */
+	P_INT {
+
+		@Override
+		public Class<?> type() {
+			return int.class;
+		}
+
+		@Override
+		void bind(int index, PreparedStatement statement, Object value) {
+			//ラッパー型が使用される
+			throw new UnsupportedOperationException();
+		}
+	},
+
+	/**
+	 * Long
 	 */
 	LONG {
 
@@ -236,6 +304,23 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+	},
+
+	/**
+	 * long
+	 */
+	P_LONG {
+
+		@Override
+		public Class<?> type() {
+			return long.class;
+		}
+
+		@Override
+		void bind(int index, PreparedStatement statement, Object value) {
+			//ラッパー型が使用される
+			throw new UnsupportedOperationException();
 		}
 	},
 

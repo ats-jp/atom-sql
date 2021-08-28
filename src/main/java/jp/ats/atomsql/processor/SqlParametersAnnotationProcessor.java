@@ -22,8 +22,8 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
-import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.Sql;

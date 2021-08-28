@@ -33,9 +33,9 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic.Kind;
 
 import jp.ats.atomsql.Atom;
+import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.CommaSeparatedParameters;
 import jp.ats.atomsql.Constants;
-import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlParameters;
@@ -279,11 +279,21 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.BLOB.type()))
 				return DEFAULT_VALUE;
+			if (ProcessorUtils.sameClass(type, AtomSqlType.BOOLEAN.type()))
+				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.BYTE_ARRAY.type()))
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.CHARACTER_STREAM.type()))
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.CLOB.type()))
+				return DEFAULT_VALUE;
+			if (ProcessorUtils.sameClass(type, AtomSqlType.DOUBLE.type()))
+				return DEFAULT_VALUE;
+			if (ProcessorUtils.sameClass(type, AtomSqlType.FLOAT.type()))
+				return DEFAULT_VALUE;
+			if (ProcessorUtils.sameClass(type, AtomSqlType.INTEGER.type()))
+				return DEFAULT_VALUE;
+			if (ProcessorUtils.sameClass(type, AtomSqlType.LONG.type()))
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.STRING.type()))
 				return DEFAULT_VALUE;
@@ -355,6 +365,10 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
+	private static TypeElement toTypeElement(VariableElement e) {
+		return e.asType().accept(ElementConverter.instance, null).accept(TypeConverter.instance, null);
+	}
+
 	private class MethodVisitor extends SimpleElementVisitor8<Void, List<MethodInfo>> {
 
 		@Override
@@ -369,29 +383,31 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			info.name = e.getSimpleName().toString();
 
 			var parameters = e.getParameters();
-			if (e.getAnnotation(SqlParameters.class) != null && parameters.size() != 1) {
-				error(
-					"method ["
-						+ e.getSimpleName()
-						+ "] needs one parameter of Consumer<annotated with "
-						+ SqlParameters.class.getSimpleName()
-						+ ">",
-					e);
-				hasError.set(false);
-			} else {
-				var checker = new ParameterTypeChecker(e);
-
-				parameters.forEach(parameter -> {
-					var typeArg = parameter.asType().accept(checker, parameter);
-
-					info.parameterNames.add(parameter.getSimpleName().toString());
-
-					info.parameterTypes.add(parameter.asType().accept(typeNameExtractor, e));
-
-					if (typeArg != null)
-						info.sqlParametersClassName = typeArg.accept(typeNameExtractor, e);
-				});
+			if (e.getAnnotation(SqlParameters.class) != null) {
+				if (parameters.size() != 1 || !ProcessorUtils.sameClass(toTypeElement(parameters.get(0)), Consumer.class)) {
+					error(
+						"method ["
+							+ e.getSimpleName()
+							+ "] needs one parameter of Consumer<annotated with "
+							+ SqlParameters.class.getSimpleName()
+							+ ">",
+						e);
+					hasError.set(true);
+				}
 			}
+
+			var checker = new ParameterTypeChecker(e);
+
+			parameters.forEach(parameter -> {
+				var typeArg = parameter.asType().accept(checker, parameter);
+
+				info.parameterNames.add(parameter.getSimpleName().toString());
+
+				info.parameterTypes.add(parameter.asType().accept(typeNameExtractor, e));
+
+				if (typeArg != null)
+					info.sqlParametersClassName = typeArg.accept(typeNameExtractor, e);
+			});
 
 			var dataObjectType = e.getReturnType().accept(returnTypeChecker, e);
 
