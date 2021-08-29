@@ -68,7 +68,7 @@ public class Sandbox {
 				throw new IllegalStateException(e);
 			}
 
-			return null;
+			return Stream.of();
 		}
 
 		@Override
@@ -100,9 +100,9 @@ public class Sandbox {
 
 			handler.allArgs.forEach(a -> {
 				var args = Arrays.stream(a.args)
-					.map(v -> v == null ? "null" : v.toString())
+					.map(v -> v == null ? "null" : (v instanceof Number ? v.toString() : "[" + v.toString() + "]"))
 					.collect(Collectors.toList());
-				log.info(a.method.getName() + " [" + String.join(", ", args) + "]");
+				log.info(a.method.getName() + "(" + String.join(", ", args) + ")");
 			});
 		}
 	}

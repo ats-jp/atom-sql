@@ -57,7 +57,7 @@ public class AtomSql {
 
 	private final Map<Class<?>, Object> cache = new HashMap<>();
 
-	private final Executor executor = new AtomSqlExecutor();
+	private final Executor executor = new JdbcTemplateExecutor();
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -154,7 +154,7 @@ public class AtomSql {
 	}
 
 	// MySQLのPareparedStatement#toString()対策でSQLの先頭に改行を付与
-	private class AtomSqlExecutor implements Executor {
+	private class JdbcTemplateExecutor implements Executor {
 
 		@Override
 		public void batchUpdate(String sql, BatchPreparedStatementSetter pss) {
