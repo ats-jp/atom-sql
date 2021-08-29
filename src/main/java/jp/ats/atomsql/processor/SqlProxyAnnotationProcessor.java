@@ -383,13 +383,14 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			info.name = e.getSimpleName().toString();
 
 			var parameters = e.getParameters();
-			if (e.getAnnotation(SqlParameters.class) != null) {
+			var annotation = e.getAnnotation(SqlParameters.class);
+			if (annotation != null) {
 				if (parameters.size() != 1 || !ProcessorUtils.sameClass(toTypeElement(parameters.get(0)), Consumer.class)) {
 					error(
 						"method ["
 							+ e.getSimpleName()
-							+ "] needs one parameter of Consumer<annotated with "
-							+ SqlParameters.class.getSimpleName()
+							+ "] needs one parameter of Consumer<"
+							+ annotation.value()
 							+ ">",
 						e);
 					hasError.set(true);
