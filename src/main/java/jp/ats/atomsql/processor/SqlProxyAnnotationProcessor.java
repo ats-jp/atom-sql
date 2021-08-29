@@ -35,7 +35,7 @@ import javax.tools.Diagnostic.Kind;
 import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.Constants;
-import jp.ats.atomsql.MultiValues;
+import jp.ats.atomsql.Csv;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlParameters;
@@ -299,13 +299,13 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.TIMESTAMP.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.MULTI_VALUES.type())) {
+			if (ProcessorUtils.sameClass(type, AtomSqlType.CSV.type())) {
 				var argumentType = t.getTypeArguments().get(0);
 				var element = argumentType.accept(ElementConverter.instance, null);
 				var typeElement = element.accept(TypeConverter.instance, null);
 
 				// この先再帰するので同タイプは先にはじく
-				if (ProcessorUtils.sameClass(typeElement, MultiValues.class)) {
+				if (ProcessorUtils.sameClass(typeElement, Csv.class)) {
 					return defaultAction(t, p);
 				}
 

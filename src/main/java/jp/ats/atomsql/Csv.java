@@ -8,27 +8,27 @@ import java.util.stream.Stream;
  * @author 千葉 哲嗣
  * @param <T> 
  */
-public class MultiValues<T> {
+public class Csv<T> {
 
 	private final List<T> values = new LinkedList<>();
 
 	/**
 	 * 
 	 */
-	public MultiValues() {
+	public Csv() {
 	}
 
 	/**
 	 * @param list
 	 */
-	public MultiValues(List<T> list) {
+	public Csv(List<T> list) {
 		this.values.addAll(list);
 	}
 
 	/**
 	 * @param stream
 	 */
-	public MultiValues(Stream<T> stream) {
+	public Csv(Stream<T> stream) {
 		stream.forEach(values::add);
 	}
 

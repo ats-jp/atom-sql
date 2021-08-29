@@ -480,18 +480,18 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * {@link MultiValues}
+	 * Comma Separated Values
 	 */
-	MULTI_VALUES {
+	CSV {
 
 		@Override
 		public Class<?> type() {
-			return MultiValues.class;
+			return Csv.class;
 		}
 
 		@Override
 		void bind(int index, PreparedStatement statement, Object value) {
-			var values = ((MultiValues<?>) value).values();
+			var values = ((Csv<?>) value).values();
 			IntStream.range(0, values.size()).forEach(i -> {
 				var v = values.get(i);
 				select(v).bind(index + i, statement, v);
@@ -500,7 +500,7 @@ public enum AtomSqlType {
 
 		@Override
 		String placeholderExpression(Object value) {
-			var values = ((MultiValues<?>) value).values();
+			var values = ((Csv<?>) value).values();
 			return String.join(", ", values.stream().map(v -> "?").collect(Collectors.toList()));
 		}
 

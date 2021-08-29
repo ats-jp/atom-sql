@@ -138,6 +138,14 @@ public class Atom<T> {
 	}
 
 	/**
+	 * @return SQL
+	 */
+	@Override
+	public String toString() {
+		return helper.originalSql;
+	}
+
+	/**
 	 * @return isEmpty
 	 */
 	public boolean isEmpty() {
