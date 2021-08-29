@@ -20,7 +20,7 @@ public @interface Method {
 	 * 
 	 * @return メソッドの引数名
 	 */
-	String[] args();
+	String[] parameters();
 
 	/**
 	 * メソッドの引数の型

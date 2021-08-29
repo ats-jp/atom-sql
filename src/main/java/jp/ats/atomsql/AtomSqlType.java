@@ -35,6 +35,11 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
@@ -56,6 +61,11 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
@@ -75,6 +85,11 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
 		}
 	},
 
@@ -96,6 +111,11 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
@@ -112,6 +132,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return BOOLEAN;
 		}
 	},
 
@@ -132,6 +157,11 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
 		}
 	},
 
@@ -154,6 +184,11 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
@@ -173,6 +208,11 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
 		}
 	},
 
@@ -194,6 +234,11 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
@@ -210,6 +255,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return DOUBLE;
 		}
 	},
 
@@ -231,6 +281,11 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
@@ -247,6 +302,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return FLOAT;
 		}
 	},
 
@@ -268,6 +328,11 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
@@ -284,6 +349,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return INTEGER;
 		}
 	},
 
@@ -305,6 +375,11 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
@@ -321,6 +396,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return LONG;
 		}
 	},
 
@@ -342,6 +422,11 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
@@ -361,6 +446,11 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
 		}
 	},
 
@@ -382,21 +472,26 @@ public enum AtomSqlType {
 				throw new AtomSqlException(e);
 			}
 		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
 	},
 
 	/**
-	 * {@link CommaSeparatedParameters}
+	 * {@link MultiValues}
 	 */
-	COMMA_SEPARATED_PARAMETERS {
+	MULTI_VALUES {
 
 		@Override
 		public Class<?> type() {
-			return CommaSeparatedParameters.class;
+			return MultiValues.class;
 		}
 
 		@Override
 		void bind(int index, PreparedStatement statement, Object value) {
-			var values = ((CommaSeparatedParameters<?>) value).values();
+			var values = ((MultiValues<?>) value).values();
 			IntStream.range(0, values.size()).forEach(i -> {
 				var v = values.get(i);
 				select(v).bind(index + i, statement, v);
@@ -405,8 +500,13 @@ public enum AtomSqlType {
 
 		@Override
 		String placeholderExpression(Object value) {
-			var values = ((CommaSeparatedParameters<?>) value).values();
+			var values = ((MultiValues<?>) value).values();
 			return String.join(", ", values.stream().map(v -> "?").collect(Collectors.toList()));
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return OBJECT;
 		}
 	};
 
@@ -416,6 +516,8 @@ public enum AtomSqlType {
 	public abstract Class<?> type();
 
 	abstract void bind(int index, PreparedStatement statement, Object value);
+
+	abstract AtomSqlType toTypeArgument();
 
 	String placeholderExpression(Object value) {
 		return "?";
@@ -445,7 +547,7 @@ public enum AtomSqlType {
 	 * @param name
 	 * @return {@link AtomSqlType}
 	 */
-	public static AtomSqlType safetyValueOf(String name) {
+	public static AtomSqlType safeValueOf(String name) {
 		try {
 			return valueOf(name);
 		} catch (IllegalArgumentException e) {
@@ -457,11 +559,9 @@ public enum AtomSqlType {
 	 * @param name
 	 * @return {@link AtomSqlType}
 	 */
-	public static AtomSqlType safetyTypeArgumentValueOf(String name) {
+	public static AtomSqlType safeTypeArgumentValueOf(String name) {
 		try {
-			var found = valueOf(name);
-
-			return found == COMMA_SEPARATED_PARAMETERS ? OBJECT : found;
+			return valueOf(name).toTypeArgument();
 		} catch (IllegalArgumentException e) {
 			return OBJECT;
 		}

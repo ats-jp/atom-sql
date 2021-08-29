@@ -61,6 +61,11 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 	private void execute(Element e) {
 		var generateClassName = e.getAnnotation(SqlParameters.class).value();
 
+		if (generateClassName.isBlank()) {
+			error("value of " + SqlParameters.class.getSimpleName() + " is blank", e);
+			return;
+		}
+
 		var clazz = e.getEnclosingElement().accept(TypeConverter.instance, null);
 
 		PackageElement packageElement = ProcessorUtils.getPackageElement(clazz);
@@ -87,10 +92,10 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 		var fields = new LinkedList<String>();
 		PlaceholderFinder.execute(sql, f -> {
-			var typeArgument = f.typeArgumentHint.map(t -> "<" + AtomSqlType.safetyTypeArgumentValueOf(t).type().getName() + ">").orElse("");
+			var typeArgument = f.typeArgumentHint.map(t -> "<" + AtomSqlType.safeTypeArgumentValueOf(t).type().getName() + ">").orElse("");
 
 			var method = "public "
-				+ f.typeHint.map(t -> AtomSqlType.safetyValueOf(t)).orElse(AtomSqlType.OBJECT).type().getName()
+				+ f.typeHint.map(t -> AtomSqlType.safeValueOf(t)).orElse(AtomSqlType.OBJECT).type().getName()
 				+ typeArgument
 				+ " "
 				+ f.placeholder

@@ -8,27 +8,27 @@ import java.util.stream.Stream;
  * @author 千葉 哲嗣
  * @param <T> 
  */
-public class CommaSeparatedParameters<T> {
+public class MultiValues<T> {
 
 	private final List<T> values = new LinkedList<>();
 
 	/**
 	 * 
 	 */
-	public CommaSeparatedParameters() {
+	public MultiValues() {
 	}
 
 	/**
 	 * @param list
 	 */
-	public CommaSeparatedParameters(List<T> list) {
+	public MultiValues(List<T> list) {
 		this.values.addAll(list);
 	}
 
 	/**
 	 * @param stream
 	 */
-	public CommaSeparatedParameters(Stream<T> stream) {
+	public MultiValues(Stream<T> stream) {
 		stream.forEach(values::add);
 	}
 

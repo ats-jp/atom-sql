@@ -34,8 +34,8 @@ import javax.tools.Diagnostic.Kind;
 
 import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.AtomSqlType;
-import jp.ats.atomsql.CommaSeparatedParameters;
 import jp.ats.atomsql.Constants;
+import jp.ats.atomsql.MultiValues;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlParameters;
@@ -158,7 +158,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private static String methodPart(MethodInfo info) {
-		String args = String.join(
+		String parameters = String.join(
 			", ",
 			info.parameterNames.stream().map(n -> "\"" + n + "\"").collect(Collectors.toList()));
 
@@ -168,7 +168,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		var methodContents = new LinkedList<String>();
 		methodContents.add("name = \"" + info.name + "\"");
-		methodContents.add("args = {" + args + "}");
+		methodContents.add("parameters = {" + parameters + "}");
 		methodContents.add("argTypes = {" + types + "}");
 
 		if (info.sqlParametersClassName != null)
@@ -299,13 +299,13 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.TIMESTAMP.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.COMMA_SEPARATED_PARAMETERS.type())) {
+			if (ProcessorUtils.sameClass(type, AtomSqlType.MULTI_VALUES.type())) {
 				var argumentType = t.getTypeArguments().get(0);
 				var element = argumentType.accept(ElementConverter.instance, null);
 				var typeElement = element.accept(TypeConverter.instance, null);
 
 				// この先再帰するので同タイプは先にはじく
-				if (ProcessorUtils.sameClass(typeElement, CommaSeparatedParameters.class)) {
+				if (ProcessorUtils.sameClass(typeElement, MultiValues.class)) {
 					return defaultAction(t, p);
 				}
 

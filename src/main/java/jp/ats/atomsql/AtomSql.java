@@ -238,10 +238,10 @@ public class AtomSql {
 					find.sqlParametersClass(),
 					values.toArray(Object[]::new));
 			} else {
-				helper = new SqlProxyHelper(sql, insecure, find.args(), find.sqlParametersClass(), args);
+				helper = new SqlProxyHelper(sql, insecure, find.parameters(), find.sqlParametersClass(), args);
 			}
 
-			var atom = new Atom<Object>(AtomSql.this, executor(), helper);
+			var atom = new Atom<Object>(AtomSql.this, executor(), helper, true);
 
 			var returnType = method.getReturnType();
 
@@ -309,7 +309,7 @@ public class AtomSql {
 			String[] argNames,
 			Class<?> dataObjectClass,
 			Object[] args) {
-			originalSql = sql;
+			originalSql = sql.trim();
 			this.insecure = insecure;
 			this.dataObjectClass = dataObjectClass;
 
@@ -322,20 +322,23 @@ public class AtomSql {
 
 			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
 				converted.append(f.gap);
-				converted.append("?");
 
 				if (!argMap.containsKey(f.placeholder))
 					throw new IllegalStateException("place holder [" + f.placeholder + "] was not found");
 
 				var value = argMap.get(f.placeholder);
 
-				argumentTypes.add(AtomSqlType.select(value));
+				var type = AtomSqlType.select(value);
+
+				converted.append(type.placeholderExpression(value));
+
+				argumentTypes.add(type);
 				values.add(value);
 			});
 
 			converted.append(sqlRemain);
 
-			this.sql = converted.toString();
+			this.sql = converted.toString().trim();
 		}
 
 		SqlProxyHelper(String sql, String originalSql, SqlProxyHelper main, SqlProxyHelper sub) {
