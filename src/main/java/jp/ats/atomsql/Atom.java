@@ -199,7 +199,9 @@ public class Atom<T> {
 	 * @return {@link Atom}
 	 */
 	public Atom<T> or(Atom<?> another) {
-		return andOr(" OR ", another, false);
+		//どちらか一方でも空の場合OR結合が発生しないのでAND状態のままとする
+		var andType = isEmpty() || another.isEmpty();
+		return andOr(" OR ", another, andType);
 	}
 
 	private Atom<T> andOr(String delimiter, Atom<?> another, boolean andTypeCurrent) {
