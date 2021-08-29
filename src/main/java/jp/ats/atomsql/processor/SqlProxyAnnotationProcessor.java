@@ -413,7 +413,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			if (dataObjectType != null) {
 				var dataObjectClassName = dataObjectType.accept(typeNameExtractor, e);
-				if (dataObjectType.getAnnotation(DataObject.class) == null) {
+
+				var dataObjectElement = dataObjectType.accept(ElementConverter.instance, null);
+				if (dataObjectElement.getAnnotation(DataObject.class) == null) {
 					error(
 						"[" + dataObjectClassName + "] must be annotated with " + DataObject.class.getSimpleName(),
 						e);
