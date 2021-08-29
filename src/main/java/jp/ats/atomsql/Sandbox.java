@@ -35,7 +35,6 @@ public class Sandbox {
 		pairs.set(new LinkedList<Pair>());
 		executor.set(myExecutor);
 		try {
-
 			process.accept(new AtomSql());
 		} finally {
 			pairs.remove();

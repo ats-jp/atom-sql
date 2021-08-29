@@ -8,6 +8,7 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Objects;
 
 import jp.ats.atomsql.annotation.DataObject;
 
@@ -23,7 +24,7 @@ public class TransientDataObject {
 	 * @param base
 	 */
 	public TransientDataObject(ResultSet base) {
-		this.base = base;
+		this.base = Objects.requireNonNull(base);
 	}
 
 	/**
