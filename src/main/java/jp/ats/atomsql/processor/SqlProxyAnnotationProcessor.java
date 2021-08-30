@@ -65,13 +65,15 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		if (annotations.size() == 0)
 			return false;
 
-		try {
-			annotations.forEach(a -> {
-				roundEnv.getElementsAnnotatedWith(a).forEach(this::execute);
+		annotations.forEach(a -> {
+			roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
+				try {
+					execute(e);
+				} catch (ProcessException pe) {
+					//スキップして次の対象へ
+				}
 			});
-		} catch (ProcessException e) {
-			return false;
-		}
+		});
 
 		return true;
 	}
