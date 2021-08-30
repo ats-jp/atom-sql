@@ -27,7 +27,7 @@ public @interface Method {
 	 * 
 	 * @return メソッドの引数の型
 	 */
-	Class<?>[] argTypes();
+	Class<?>[] parameterTypes();
 
 	/**
 	 * {@link SqlParameters} に指定されたクラス

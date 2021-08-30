@@ -171,7 +171,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		var methodContents = new LinkedList<String>();
 		methodContents.add("name = \"" + info.name + "\"");
 		methodContents.add("parameters = {" + parameters + "}");
-		methodContents.add("argTypes = {" + types + "}");
+		methodContents.add("parameterTypes = {" + types + "}");
 
 		if (info.sqlParametersClassName != null)
 			methodContents.add("sqlParametersClass = " + info.sqlParametersClassName + ".class");

@@ -205,27 +205,27 @@ public class AtomSql {
 			var find = Arrays.asList(methods.value())
 				.stream()
 				.filter(
-					m -> m.name().equals(method.getName()) && Arrays.equals(method.getParameterTypes(), m.argTypes()))
+					m -> m.name().equals(method.getName()) && Arrays.equals(method.getParameterTypes(), m.parameterTypes()))
 				.findFirst()
 				.get();
 
-			var argTypes = find.argTypes();
+			var parameterTypes = find.parameterTypes();
 
 			var insecure = method.getAnnotation(InsecureSql.class) != null;
 
 			SqlProxyHelper helper;
-			if (argTypes.length == 1 && argTypes[0].equals(Consumer.class)) {
-				var sqlParameterClass = find.sqlParametersClass();
-				var sqlParameter = sqlParameterClass.getConstructor().newInstance();
+			if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
+				var sqlParametersClass = find.sqlParametersClass();
+				var sqlParameters = sqlParametersClass.getConstructor().newInstance();
 
-				Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameter });
+				Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameters });
 
 				var names = new LinkedList<String>();
 				var values = new LinkedList<Object>();
-				Arrays.stream(sqlParameterClass.getFields()).forEach(f -> {
+				Arrays.stream(sqlParametersClass.getFields()).forEach(f -> {
 					names.add(f.getName());
 					try {
-						values.add(f.get(sqlParameter));
+						values.add(f.get(sqlParameters));
 					} catch (IllegalAccessException e) {
 						throw new IllegalStateException(e);
 					}
@@ -235,10 +235,10 @@ public class AtomSql {
 					sql,
 					insecure,
 					names.toArray(String[]::new),
-					find.sqlParametersClass(),
+					find.dataObjectClass(),
 					values.toArray(Object[]::new));
 			} else {
-				helper = new SqlProxyHelper(sql, insecure, find.parameters(), find.sqlParametersClass(), args);
+				helper = new SqlProxyHelper(sql, insecure, find.parameters(), find.dataObjectClass(), args);
 			}
 
 			var atom = new Atom<Object>(AtomSql.this, executor(), helper, true);
