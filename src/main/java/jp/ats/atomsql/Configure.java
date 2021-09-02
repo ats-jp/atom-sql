@@ -51,6 +51,6 @@ public class Configure {
 
 		logStackTracePattern = Pattern.compile(config.getProperty("log-stacktrace-pattern", ".+"));
 
-		jdbcTemplateNames = config.getProperty("jdbc-template-names", "jdbcTemplate").split(" *, *");
+		jdbcTemplateNames = config.getProperty("jdbc-template-names", "").split(" *, *");
 	}
 }
