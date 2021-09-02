@@ -25,12 +25,10 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Component;
 
 import jp.ats.atomsql.annotation.InsecureSql;
 import jp.ats.atomsql.annotation.Sql;
@@ -40,7 +38,6 @@ import jp.ats.atomsql.processor.annotation.Methods;
 /**
  * @author 千葉 哲嗣
  */
-@Component
 public class AtomSql {
 
 	static final Logger logger = LoggerFactory.getLogger(AtomSql.class);
@@ -51,13 +48,13 @@ public class AtomSql {
 
 	private static final String packageName = AtomSql.class.getPackageName();
 
-	private static final String newLine = System.getProperty("line.separator");
-
-	private final ThreadLocal<Map<String, List<SqlProxyHelper>>> batchResources = new ThreadLocal<>();
+	private static final ThreadLocal<Map<String, List<SqlProxyHelper>>> batchResources = new ThreadLocal<>();
 
 	private final Map<Class<?>, Object> cache = new HashMap<>();
 
 	private final Executor executor = new JdbcTemplateExecutor();
+
+	private final SqlProxyInvocationHandler handler = new SqlProxyInvocationHandler();
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -65,7 +62,6 @@ public class AtomSql {
 	 * 
 	 * @param jdbcTemplate
 	 */
-	@Autowired
 	public AtomSql(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
 	}
@@ -91,7 +87,7 @@ public class AtomSql {
 				k -> Proxy.newProxyInstance(
 					AtomSql.class.getClassLoader(),
 					new Class<?>[] { proxyInterface },
-					new SqlProxyInvocationHandler()));
+					handler));
 
 			return instance;
 		}
@@ -127,7 +123,7 @@ public class AtomSql {
 		}
 	}
 
-	private final void executeBatch() {
+	private void executeBatch() {
 		batchResources.get().forEach((sql, helpers) -> {
 			var startNanos = System.nanoTime();
 			try {
@@ -158,18 +154,18 @@ public class AtomSql {
 
 		@Override
 		public void batchUpdate(String sql, BatchPreparedStatementSetter pss) {
-			jdbcTemplate.batchUpdate(newLine + sql, pss);
+			jdbcTemplate.batchUpdate(Constants.NEW_LINE + sql, pss);
 
 		}
 
 		@Override
 		public <T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-			return jdbcTemplate.queryForStream(newLine + sql, pss, rowMapper);
+			return jdbcTemplate.queryForStream(Constants.NEW_LINE + sql, pss, rowMapper);
 		}
 
 		@Override
 		public int update(String sql, PreparedStatementSetter pss) {
-			return jdbcTemplate.update(newLine + sql, pss);
+			return jdbcTemplate.update(Constants.NEW_LINE + sql, pss);
 		}
 
 		@Override

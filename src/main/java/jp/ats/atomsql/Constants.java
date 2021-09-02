@@ -17,4 +17,14 @@ public interface Constants {
 	 * 
 	 */
 	public static final Charset SQL_CHARSET = StandardCharsets.UTF_8;
+
+	/**
+	 * 
+	 */
+	public static final String NEW_LINE = System.getProperty("line.separator");
+
+	/**
+	 * 
+	 */
+	public static final String PROXY_LIST = "jp.ats.atom-sql.proxy-list";
 }

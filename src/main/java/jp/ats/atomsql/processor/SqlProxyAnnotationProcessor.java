@@ -1,7 +1,9 @@
 package jp.ats.atomsql.processor;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -31,6 +33,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.StandardLocation;
 
 import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.AtomSqlType;
@@ -60,11 +63,10 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 	private final ReturnTypeChecker returnTypeChecker = new ReturnTypeChecker();
 
+	private final Set<String> sqlProxyList = new HashSet<>();
+
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-		if (annotations.size() == 0)
-			return false;
-
 		annotations.forEach(a -> {
 			roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
 				try {
@@ -74,6 +76,22 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				}
 			});
 		});
+
+		if (!roundEnv.processingOver()) return true;
+
+		try {
+			var data = String.join(Constants.NEW_LINE, sqlProxyList).getBytes(StandardCharsets.UTF_8);
+
+			var listFile = super.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", Constants.PROXY_LIST);
+
+			try (var output = new BufferedOutputStream(listFile.openOutputStream())) {
+				output.write(data);
+			}
+		} catch (IOException ioe) {
+			super.processingEnv.getMessager().printMessage(Kind.ERROR, ioe.getMessage());
+		}
+
+		sqlProxyList.clear();
 
 		return true;
 	}
@@ -97,6 +115,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		if (hasError.get()) {
 			return;
 		}
+
+		sqlProxyList.add(e.accept(TypeConverter.instance, null).getQualifiedName().toString());
 
 		String template = Formatter.readTemplate(AtomSqlMetadataTemplate.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);

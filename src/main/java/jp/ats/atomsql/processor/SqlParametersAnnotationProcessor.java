@@ -36,8 +36,6 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 	private static final Class<?> DEFAULT_SQL_FILE_RESOLVER_CLASS = SimpleMavenSqlFileResolver.class;
 
-	private static final String newLine = System.getProperty("line.separator");
-
 	// 二重作成防止チェッカー
 	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
 	private final Set<String> alreadyCreatedFiles = new HashSet<>();
@@ -105,7 +103,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 			fields.add(method);
 		});
 
-		param.put("FIELDS", String.join(newLine, fields));
+		param.put("FIELDS", String.join(Constants.NEW_LINE, fields));
 
 		template = Formatter.format(template, param);
 
