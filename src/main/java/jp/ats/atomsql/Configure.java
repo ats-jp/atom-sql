@@ -9,6 +9,11 @@ import java.util.regex.Pattern;
  */
 public class Configure {
 
+	/**
+	 * 
+	 */
+	public static final Configure instance = new Configure();
+
 	private final String configFileName = "atom-sql.properties";
 
 	/**
@@ -21,7 +26,16 @@ public class Configure {
 	 */
 	public final Pattern logStackTracePattern;
 
-	Configure() {
+	private final String[] jdbcTemplateNames;
+
+	/**
+	 * @return jdbcTemplateNames
+	 */
+	public String[] jdbcTemplateNames() {
+		return jdbcTemplateNames.clone();
+	}
+
+	private Configure() {
 		var config = new Properties();
 
 		try {
@@ -36,5 +50,7 @@ public class Configure {
 		enableLog = Boolean.valueOf(config.getProperty("enable-log", "true"));
 
 		logStackTracePattern = Pattern.compile(config.getProperty("log-stacktrace-pattern", ".+"));
+
+		jdbcTemplateNames = config.getProperty("jdbc-template-names", "jdbcTemplate").split(" *, *");
 	}
 }

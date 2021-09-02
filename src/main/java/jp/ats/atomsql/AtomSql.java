@@ -42,9 +42,7 @@ public class AtomSql {
 
 	static final Logger logger = LoggerFactory.getLogger(AtomSql.class);
 
-	private Configure config = new Configure();
-
-	private final SqlLogger sqlLogger = SqlLogger.of(config);
+	private final SqlLogger sqlLogger = SqlLogger.of(Configure.instance);
 
 	private static final String packageName = AtomSql.class.getPackageName();
 
@@ -425,7 +423,7 @@ public class AtomSql {
 					if (elementString.contains(packageName) || elementString.contains("(Unknown Source)"))
 						continue;
 
-					if (config.logStackTracePattern.matcher(elementString).find())
+					if (Configure.instance.logStackTracePattern.matcher(elementString).find())
 						log.info(" " + elementString);
 				}
 
