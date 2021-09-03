@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -26,9 +27,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.RowMapper;
 
 import jp.ats.atomsql.annotation.InsecureSql;
 import jp.ats.atomsql.annotation.Sql;
@@ -50,22 +49,16 @@ public class AtomSql {
 
 	private final Map<Class<?>, Object> cache = new HashMap<>();
 
-	private final Executor executor = new JdbcTemplateExecutor();
+	private final Executor executor;
 
 	private final SqlProxyInvocationHandler handler = new SqlProxyInvocationHandler();
 
-	private final JdbcTemplate jdbcTemplate;
-
 	/**
 	 * 
-	 * @param jdbcTemplate
+	 * @param executor
 	 */
-	public AtomSql(JdbcTemplate jdbcTemplate) {
-		this.jdbcTemplate = jdbcTemplate;
-	}
-
-	AtomSql() {
-		this.jdbcTemplate = null;
+	public AtomSql(Executor executor) {
+		this.executor = Objects.requireNonNull(executor);
 	}
 
 	/**
@@ -125,7 +118,7 @@ public class AtomSql {
 		batchResources.get().forEach((sql, helpers) -> {
 			var startNanos = System.nanoTime();
 			try {
-				executor().batchUpdate(sql, new BatchPreparedStatementSetter() {
+				executor.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
 					@Override
 					public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -145,40 +138,6 @@ public class AtomSql {
 				logElapsed(startNanos);
 			}
 		});
-	}
-
-	// MySQLのPareparedStatement#toString()対策でSQLの先頭に改行を付与
-	private class JdbcTemplateExecutor implements Executor {
-
-		@Override
-		public void batchUpdate(String sql, BatchPreparedStatementSetter pss) {
-			jdbcTemplate.batchUpdate(Constants.NEW_LINE + sql, pss);
-
-		}
-
-		@Override
-		public <T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-			return jdbcTemplate.queryForStream(Constants.NEW_LINE + sql, pss, rowMapper);
-		}
-
-		@Override
-		public int update(String sql, PreparedStatementSetter pss) {
-			return jdbcTemplate.update(Constants.NEW_LINE + sql, pss);
-		}
-
-		@Override
-		public void logSql(Logger log, String originalSql, String sql, boolean insecure, PreparedStatement ps) {
-			if (insecure) {
-				log.info(originalSql);
-			} else {
-				log.info(ps.toString());
-			}
-		}
-	}
-
-	private Executor executor() {
-		var executor = Sandbox.executor.get();
-		return executor == null ? this.executor : executor;
 	}
 
 	private class SqlProxyInvocationHandler implements InvocationHandler {
@@ -235,7 +194,7 @@ public class AtomSql {
 				helper = new SqlProxyHelper(sql, insecure, find.parameters(), find.dataObjectClass(), args);
 			}
 
-			var atom = new Atom<Object>(AtomSql.this, executor(), helper, true);
+			var atom = new Atom<Object>(AtomSql.this, executor, helper, true);
 
 			var returnType = method.getReturnType();
 
@@ -429,7 +388,7 @@ public class AtomSql {
 
 				log.info("sql:");
 
-				executor().logSql(log, originalSql, sql, insecure, ps);
+				executor.logSql(log, originalSql, sql, insecure, ps);
 
 				log.info("------  SQL END  ------");
 			});

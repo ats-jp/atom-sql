@@ -22,10 +22,6 @@ import org.springframework.jdbc.core.RowMapper;
  */
 public class Sandbox {
 
-	static final ThreadLocal<Executor> executor = new ThreadLocal<>();
-
-	private static final Executor myExecutor = new SandboxExecutor();
-
 	private static final ThreadLocal<List<Pair>> pairs = new ThreadLocal<>();
 
 	/**
@@ -33,12 +29,10 @@ public class Sandbox {
 	 */
 	public static void execute(Consumer<AtomSql> process) {
 		pairs.set(new LinkedList<Pair>());
-		executor.set(myExecutor);
 		try {
-			process.accept(new AtomSql());
+			process.accept(new AtomSql(new SandboxExecutor()));
 		} finally {
 			pairs.remove();
-			executor.remove();
 		}
 	}
 

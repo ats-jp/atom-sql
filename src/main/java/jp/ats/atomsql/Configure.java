@@ -26,15 +26,6 @@ public class Configure {
 	 */
 	public final Pattern logStackTracePattern;
 
-	private final String[] jdbcTemplateNames;
-
-	/**
-	 * @return jdbcTemplateNames
-	 */
-	public String[] jdbcTemplateNames() {
-		return jdbcTemplateNames.clone();
-	}
-
 	private Configure() {
 		var config = new Properties();
 
@@ -50,7 +41,5 @@ public class Configure {
 		enableLog = Boolean.valueOf(config.getProperty("enable-log", "true"));
 
 		logStackTracePattern = Pattern.compile(config.getProperty("log-stacktrace-pattern", ".+"));
-
-		jdbcTemplateNames = config.getProperty("jdbc-template-names", "").split(" *, *");
 	}
 }

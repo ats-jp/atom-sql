@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -18,6 +19,27 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 public class AtomSqlInitializer implements ApplicationContextInitializer<AnnotationConfigApplicationContext> {
 
+	private final String name;
+
+	private final boolean primary;
+
+	/**
+	 * 
+	 */
+	public AtomSqlInitializer() {
+		this.name = null;
+		primary = false;
+	}
+
+	/**
+	 * @param name
+	 * @param primary
+	 */
+	public AtomSqlInitializer(String name, boolean primary) {
+		this.name = Objects.requireNonNull(name);
+		this.primary = primary;
+	}
+
 	@Override
 	public void initialize(AnnotationConfigApplicationContext context) {
 		List<Class<?>> classes;
@@ -27,37 +49,33 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Annotat
 			throw new UncheckedIOException(e);
 		}
 
-		var names = Configure.instance.jdbcTemplateNames();
-
 		BeanDefinitionCustomizer customizer = bd -> {
 			bd.setScope(BeanDefinition.SCOPE_SINGLETON);
 			bd.setLazyInit(true);
 			bd.setAutowireCandidate(true);
+			bd.setPrimary(primary);
 		};
 
-		Arrays.stream(names).forEach(n -> {
-			var name = n.isEmpty() ? null : n;
-			context.registerBean(name, AtomSql.class, () -> {
+		context.registerBean(name, AtomSql.class, () -> {
+			if (name == null) {
+				return new AtomSql(new JdbcTemplateExecutor(context.getBean(JdbcTemplate.class)));
+			}
+
+			return new AtomSql(new JdbcTemplateExecutor(context.getBean(name, JdbcTemplate.class)));
+		}, customizer);
+
+		classes.forEach(c -> {
+			@SuppressWarnings("unchecked")
+			var casted = (Class<Object>) c;
+			context.registerBean(name, casted, () -> {
 				if (name == null) {
-					return new AtomSql(context.getBean(JdbcTemplate.class));
+					var atomSql = new AtomSql(new JdbcTemplateExecutor(context.getBean(JdbcTemplate.class)));
+					return atomSql.of(c);
 				}
 
-				return new AtomSql(context.getBean(name, JdbcTemplate.class));
+				var atomSql = new AtomSql(new JdbcTemplateExecutor(context.getBean(name, JdbcTemplate.class)));
+				return atomSql.of(c);
 			}, customizer);
-
-			classes.forEach(c -> {
-				@SuppressWarnings("unchecked")
-				var casted = (Class<Object>) c;
-				context.registerBean(name, casted, () -> {
-					if (name == null) {
-						var atomSql = new AtomSql(context.getBean(JdbcTemplate.class));
-						return atomSql.of(c);
-					}
-
-					var atomSql = new AtomSql(context.getBean(name, JdbcTemplate.class));
-					return atomSql.of(c);
-				}, customizer);
-			});
 		});
 	}
 
