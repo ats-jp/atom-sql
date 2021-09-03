@@ -28,7 +28,7 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Annotat
 	 */
 	public AtomSqlInitializer() {
 		this.name = null;
-		primary = false;
+		primary = true;
 	}
 
 	/**
