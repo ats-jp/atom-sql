@@ -47,8 +47,6 @@ public class AtomSql {
 
 	private static final ThreadLocal<Map<String, List<SqlProxyHelper>>> batchResources = new ThreadLocal<>();
 
-	private final Map<Class<?>, Object> cache = new HashMap<>();
-
 	private final Executor executor;
 
 	private final SqlProxyInvocationHandler handler = new SqlProxyInvocationHandler();
@@ -71,17 +69,16 @@ public class AtomSql {
 		if (!proxyInterface.isInterface())
 			throw new IllegalArgumentException(proxyInterface + " is not interface");
 
-		synchronized (cache) {
-			@SuppressWarnings("unchecked")
-			T instance = (T) cache.computeIfAbsent(
-				proxyInterface,
-				k -> Proxy.newProxyInstance(
-					AtomSql.class.getClassLoader(),
-					new Class<?>[] { proxyInterface },
-					handler));
+		if (!proxyInterface.isAnnotationPresent(SqlProxy.class))
+			throw new IllegalStateException("annotation " + SqlProxy.class.getSimpleName() + " not found");
 
-			return instance;
-		}
+		@SuppressWarnings("unchecked")
+		T instance = (T) Proxy.newProxyInstance(
+			AtomSql.class.getClassLoader(),
+			new Class<?>[] { proxyInterface },
+			handler);
+
+		return instance;
 	}
 
 	/**
@@ -145,9 +142,6 @@ public class AtomSql {
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			var proxyClass = proxy.getClass().getInterfaces()[0];
-
-			if (!proxyClass.isAnnotationPresent(SqlProxy.class))
-				throw new IllegalStateException("annotation " + SqlProxy.class.getSimpleName() + " not found");
 
 			var proxyClassName = proxyClass.getName();
 
@@ -239,7 +233,7 @@ public class AtomSql {
 		if (url == null)
 			throw new IllegalStateException(sqlFileName + " not found");
 
-		return new String(Utils.readBytes(url.openStream()), Constants.SQL_CHARSET);
+		return new String(Utils.readBytes(url.openStream()), Constants.CHARSET);
 	}
 
 	class SqlProxyHelper implements PreparedStatementSetter {

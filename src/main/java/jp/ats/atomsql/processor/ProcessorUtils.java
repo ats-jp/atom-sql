@@ -1,9 +1,15 @@
 package jp.ats.atomsql.processor;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.SimpleElementVisitor8;
+import javax.tools.StandardLocation;
 
 /**
  * @author 千葉 哲嗣
@@ -25,6 +31,11 @@ class ProcessorUtils {
 		} while (packageElement == null);
 
 		return packageElement;
+	}
+
+	static Path getClassOutputPath(ProcessingEnvironment env) throws IOException {
+		var classOutput = env.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", "");
+		return Paths.get(classOutput.toUri().toURL().toString().substring("file:/".length()));
 	}
 
 	private static class PackageExtractor extends SimpleElementVisitor8<PackageElement, Void> {

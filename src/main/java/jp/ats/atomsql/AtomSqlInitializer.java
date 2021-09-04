@@ -2,7 +2,6 @@ package jp.ats.atomsql;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -81,13 +80,14 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Annotat
 
 	private static List<Class<?>> loadProxyClasses() throws IOException {
 		try (var proxyList = AtomSqlInitializer.class.getClassLoader().getResourceAsStream(Constants.PROXY_LIST)) {
-			return Arrays.stream(new String(Utils.readBytes(proxyList), StandardCharsets.UTF_8).split("\\s+")).map(l -> {
+			return Arrays.stream(new String(Utils.readBytes(proxyList), Constants.CHARSET).split("\\s+")).map(l -> {
 				try {
 					return Class.forName(l);
 				} catch (ClassNotFoundException e) {
-					throw new IllegalStateException(e);
+					//コンパイラの動作によっては削除されたクラスがまだ残っているかもしれないのでスキップ
+					return null;
 				}
-			}).collect(Collectors.toList());
+			}).filter(c -> c != null).collect(Collectors.toList());
 		}
 	}
 }

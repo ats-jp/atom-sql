@@ -3,7 +3,8 @@ package jp.ats.atomsql.processor;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -80,11 +81,20 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		if (!roundEnv.processingOver()) return true;
 
 		try {
-			var data = String.join(Constants.NEW_LINE, sqlProxyList).getBytes(StandardCharsets.UTF_8);
+			//他のクラスで作られた過去分を追加
+			if (Files.exists(ProcessorUtils.getClassOutputPath(super.processingEnv).resolve(Constants.PROXY_LIST))) {
+				var listFile = super.processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", Constants.PROXY_LIST);
+				try (var input = listFile.openInputStream()) {
+					Arrays.stream(
+						new String(Utils.readBytes(input), Constants.CHARSET).split("\\s+"))
+						.forEach(l -> sqlProxyList.add(l));
+				}
+			}
 
-			var listFile = super.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", Constants.PROXY_LIST);
+			var data = String.join(Constants.NEW_LINE, sqlProxyList).getBytes(Constants.CHARSET);
 
-			try (var output = new BufferedOutputStream(listFile.openOutputStream())) {
+			try (var output = new BufferedOutputStream(
+				super.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", Constants.PROXY_LIST).openOutputStream())) {
 				output.write(data);
 			}
 		} catch (IOException ioe) {

@@ -16,7 +16,7 @@ public interface Constants {
 	/**
 	 * 
 	 */
-	public static final Charset SQL_CHARSET = StandardCharsets.UTF_8;
+	public static final Charset CHARSET = StandardCharsets.UTF_8;
 
 	/**
 	 * 
@@ -27,4 +27,9 @@ public interface Constants {
 	 * 
 	 */
 	public static final String PROXY_LIST = "jp.ats.atom-sql.proxy-list";
+
+	/**
+	 * 
+	 */
+	public static final String PARAMETERS_LIST = "jp.ats.atom-sql.parameters-list";
 }
