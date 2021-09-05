@@ -7,6 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
+ * 自動生成されるSQLパラメータの名前を示すアノテーションです。
  * @author 千葉 哲嗣
  */
 @Target({ METHOD })

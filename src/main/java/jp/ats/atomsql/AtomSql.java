@@ -35,6 +35,8 @@ import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.processor.annotation.Methods;
 
 /**
+ * Atom SQLの実行時の処理のほとんどを行うコアクラスです。<br>
+ * {@link SqlProxy}の生成および更新処理のバッチ実行の操作が可能です。
  * @author 千葉 哲嗣
  */
 public class AtomSql {
@@ -52,25 +54,30 @@ public class AtomSql {
 	private final SqlProxyInvocationHandler handler = new SqlProxyInvocationHandler();
 
 	/**
-	 * 
-	 * @param executor
+	 * 唯一のコンストラクタです。<br>
+	 * {@link Executor}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
+	 * @param executor {@link Executor}
 	 */
 	public AtomSql(Executor executor) {
 		this.executor = Objects.requireNonNull(executor);
 	}
 
 	/**
-	 * 
-	 * @param <T>
-	 * @param proxyInterface
-	 * @return T
+	 * {@link SqlProxy}が付与されたインターフェイスから{@link Proxy}オブジェクトを作成します。
+	 * @see Proxy
+	 * @see SqlProxy
+	 * @param <T> 生成される{@link Proxy}の型
+	 * @param proxyInterface {@link SqlProxy}が付与されたインターフェイス
+	 * @return 生成された{@link Proxy}
+	 * @throws IllegalArgumentException proxyInterfaceがインターフェイスではない場合
+	 * @throws IllegalArgumentException proxyInterfaceに{@link SqlProxy}が付与されていない場合
 	 */
 	public <T> T of(Class<T> proxyInterface) {
 		if (!proxyInterface.isInterface())
 			throw new IllegalArgumentException(proxyInterface + " is not interface");
 
 		if (!proxyInterface.isAnnotationPresent(SqlProxy.class))
-			throw new IllegalStateException("annotation " + SqlProxy.class.getSimpleName() + " not found");
+			throw new IllegalArgumentException("annotation " + SqlProxy.class.getSimpleName() + " not found");
 
 		@SuppressWarnings("unchecked")
 		T instance = (T) Proxy.newProxyInstance(
@@ -82,8 +89,10 @@ public class AtomSql {
 	}
 
 	/**
-	 * 
-	 * @param runnable
+	 * バッチ処理を実施します。<br>
+	 * {@link Runnable}内で行われる更新処理はすべて、即時実行はされずに集められ、{@Runnable}の処理が終了したのち一括で実行されます。<br>
+	 * 大量の更新処理を行わなければならない場合、処理の高速化を見込むことが可能です。
+	 * @param runnable 更新処理を含む汎用処理
 	 */
 	public void batch(Runnable runnable) {
 		batchResources.set(new LinkedHashMap<>());
@@ -96,10 +105,12 @@ public class AtomSql {
 	}
 
 	/**
-	 * 
-	 * @param <T>
-	 * @param supplier
-	 * @return T
+	 * バッチ処理を実施します。<br>
+	 * {@link Runnable}と違い、何らかの処理結果を取り出したい場合に使用します<br>
+	 * @param <T> 返却値の型
+	 * @see #batch(Runnable)
+	 * @param supplier 結果を返却が可能な更新処理を含む汎用処理
+	 * @return {@link Supplier}の返却値
 	 */
 	public <T> T batch(Supplier<T> supplier) {
 		batchResources.set(new LinkedHashMap<>());

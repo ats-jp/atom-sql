@@ -1,5 +1,6 @@
 package jp.ats.atomsql;
 
+import java.sql.ResultSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -10,10 +11,14 @@ import java.util.stream.Stream;
 import org.springframework.jdbc.core.RowMapper;
 
 import jp.ats.atomsql.AtomSql.SqlProxyHelper;
+import jp.ats.atomsql.annotation.DataObject;
+import jp.ats.atomsql.annotation.SqlProxy;
 
 /**
+ * {@link SqlProxy}が生成する中間形態オブジェクトを表すクラスです。<br>
+ * 内部にSQL文を保持しており、その実行、またSQL文が断片だった場合は断片同士の結合等を行うことが可能です。
  * @author 千葉 哲嗣
- * @param <T> 
+ * @param <T> {@link DataObject}が付与された型
  */
 public class Atom<T> {
 
@@ -33,7 +38,10 @@ public class Atom<T> {
 	}
 
 	/**
-	 * @return results
+	 * 検索結果を{@link Stream}として返します。<br>
+	 * 内部的に{@link ResultSet}を使用して逐次行取得しており、{@link Stream}の終端に到達するまで{@link ResultSet}が閉じられないので注意が必要です。<br>
+	 * 検索結果全件に対して操作を行いたい（{@link Stream#map}等）、結果オブジェクトすべてが必要でない場合は{@link List}で結果取得するよりも若干効率的です。
+	 * @return {@DataObject}付与結果オブジェクトの{@link Stream}
 	 */
 	public Stream<T> stream() {
 		var startNanos = System.nanoTime();
@@ -49,23 +57,31 @@ public class Atom<T> {
 	}
 
 	/**
-	 * @return results
+	 * 検索結果を{@link List}として返します。<br>
+	 * 内部的に{@link ResultSet}から全件結果取得してから{@link List}として返却しています。<br>
+	 * @return {@DataObject}付与結果オブジェクトの{@link List}
 	 */
 	public List<T> list() {
 		return stream().collect(Collectors.toList());
 	}
 
 	/**
-	 * @return result
+	 * 検索結果が1件であることが判明している場合（PKを条件に検索した場合等）、このメソッドを使用することでその1件のみ取得することが可能です。<br>
+	 * 検索結果が0件の場合、空の{@link Optional}が返されます。<br>
+	 * 検索結果が1件以上ある場合、不正な状態であると判断し例外がスローされます。
+	 * @return {@link DataObject}付与型の結果オブジェクト
+	 * @throws IllegalStateException 検索結果が2件以上ある場合
 	 */
 	public Optional<T> get() {
 		return get(list());
 	}
 
 	/**
-	 * @param mapper 
-	 * @param <R> 
-	 * @return results
+	 * {@link RowMapper}により生成された結果オブジェクトを{@link Stream}として返します。<br>
+	 * @see #stream
+	 * @param mapper {@link RowMapper}
+	 * @param <R> {@link RowMapper}の生成した結果オブジェクトの型
+	 * @return 結果オブジェクトの{@link Stream}
 	 */
 	public <R> Stream<R> stream(RowMapper<R> mapper) {
 		Objects.requireNonNull(mapper);
@@ -79,27 +95,34 @@ public class Atom<T> {
 	}
 
 	/**
-	 * @param mapper 
-	 * @param <R> 
-	 * @return results
+	 * {@link RowMapper}により生成された結果オブジェクトを{@link List}として返します。<br>
+	 * @see #list
+	 * @param mapper {@link RowMapper}
+	 * @param <R> {@link RowMapper}の生成した結果オブジェクトの型
+	 * @return 結果オブジェクトの{@link List}
 	 */
 	public <R> List<R> list(RowMapper<R> mapper) {
 		return stream(mapper).collect(Collectors.toList());
 	}
 
 	/**
-	 * @param mapper 
-	 * @param <R> 
-	 * @return result
+	 * {@link RowMapper}により生成された結果オブジェクト一件を{@link Optional}にラップして返します。<br>
+	 * @see #get
+	 * @param mapper {@link RowMapper}
+	 * @param <R> {@link RowMapper}の生成した結果オブジェクトの型
+	 * @return 結果オブジェクト
+	 * @throws IllegalStateException 検索結果が2件以上ある場合
 	 */
 	public <R> Optional<R> get(RowMapper<R> mapper) {
 		return get(list(mapper));
 	}
 
 	/**
-	 * @param mapper 
-	 * @param <R> 
-	 * @return results
+	 * {@link SimpleRowMapper}により生成された結果オブジェクトを{@link Stream}として返します。<br>
+	 * @see #stream
+	 * @param mapper {@link SimpleRowMapper}
+	 * @param <R> {@link SimpleRowMapper}の生成した結果オブジェクトの型
+	 * @return 結果オブジェクトの{@link Stream}
 	 */
 	public <R> Stream<R> stream(SimpleRowMapper<R> mapper) {
 		Objects.requireNonNull(mapper);
@@ -113,32 +136,39 @@ public class Atom<T> {
 	}
 
 	/**
-	 * @param mapper 
-	 * @param <R> 
-	 * @return results
+	 * {@link SimpleRowMapper}により生成された結果オブジェクトを{@link List}として返します。<br>
+	 * @see #list
+	 * @param mapper {@link SimpleRowMapper}
+	 * @param <R> {@link SimpleRowMapper}の生成した結果オブジェクトの型
+	 * @return 結果オブジェクトの{@link List}
 	 */
 	public <R> List<R> list(SimpleRowMapper<R> mapper) {
 		return stream(mapper).collect(Collectors.toList());
 	}
 
 	/**
-	 * @param mapper 
-	 * @param <R> 
-	 * @return result
+	 * {@link SimpleRowMapper}により生成された結果オブジェクト一件を{@link Optional}にラップして返します。<br>
+	 * @see #get
+	 * @param mapper {@link SimpleRowMapper}
+	 * @param <R> {@link SimpleRowMapper}の生成した結果オブジェクトの型
+	 * @return 結果オブジェクト
+	 * @throws IllegalStateException 検索結果が2件以上ある場合
 	 */
 	public <R> Optional<R> get(SimpleRowMapper<R> mapper) {
 		return get(list(mapper));
 	}
 
 	/**
-	 * @return SQL
+	 * このインスタンスが持つ?プレースホルダ変換前のSQL文もしくはその一部を返します。
+	 * @return SQL文もしくはその一部
 	 */
 	public String sql() {
 		return helper.originalSql;
 	}
 
 	/**
-	 * @return SQL
+	 * @see Atom#sql
+	 * @return SQL文もしくはその一部
 	 */
 	@Override
 	public String toString() {
@@ -146,7 +176,8 @@ public class Atom<T> {
 	}
 
 	/**
-	 * @return isEmpty
+	 * 内部に持つSQLが空文字列かどうかを返します。
+	 * @return 内部に持つSQLが空文字列である場合、true
 	 */
 	public boolean isEmpty() {
 		return helper.originalSql.isEmpty();
@@ -160,7 +191,9 @@ public class Atom<T> {
 	}
 
 	/**
-	 * @return updated row count
+	 * 更新処理（INSERT, UPDATE）、DML文を実行します。<br>
+	 * バッチ実行の場合、結果は常に0となります。
+	 * @return 更新処理の場合、その結果件数
 	 */
 	public int execute() {
 		var resources = helper.batchResources().get();
@@ -179,8 +212,10 @@ public class Atom<T> {
 	}
 
 	/**
-	 * @param another
-	 * @return {@link Atom}
+	 * 内部に持つSQL文の一部同士を" "をはさんで文字列結合します。<br>
+	 * このインスタンス及びもう一方の内部SQLは変化せず、結合された新たな{@link Atom}が返されます。
+	 * @param another 結合対象
+	 * @return 結合された新しい{@link Atom}
 	 */
 	public Atom<T> concat(Atom<?> another) {
 		Objects.requireNonNull(another);
@@ -195,16 +230,24 @@ public class Atom<T> {
 	}
 
 	/**
-	 * @param another
-	 * @return {@link Atom}
+	 * 内部に持つSQL文の一部同士を" AND "をはさんで文字列結合します。<br>
+	 * このインスタンスかもう一方のもつSQLが空の場合、結合は行われず、SQLが空ではない側のインスタンスが返されます。<br>
+	 * このインスタンスかもう一方のもつSQLが既に{@link #or}を使用して結合されたものであった場合、OR側のSQLは外側に()が付与され保護されます。<br>
+	 * このインスタンス及びもう一方の内部SQLは変化せず、結合された新たな{@link Atom}が返されます。
+	 * @param another 結合対象
+	 * @return 結合された新しい{@link Atom}
 	 */
 	public Atom<T> and(Atom<?> another) {
 		return andOr(" AND ", another, true);
 	}
 
 	/**
-	 * @param another
-	 * @return {@link Atom}
+	 * 内部に持つSQL文の一部同士を" OR "をはさんで文字列結合します。<br>
+	 * このインスタンスかもう一方のもつSQLが空の場合、結合は行われず、SQLが空ではない側のインスタンスが返されます。<br>
+	 * {@link #or}を使用して結合されたインスタンスを{@link #and}を使用して結合した場合、このインスタンスのSQLは外側に()が付与され保護されます。<br>
+	 * このインスタンス及びもう一方の内部SQLは変化せず、結合された新たな{@link Atom}が返されます。
+	 * @param another 結合対象
+	 * @return 結合された新しい{@link Atom}
 	 */
 	public Atom<T> or(Atom<?> another) {
 		//どちらか一方でも空の場合OR結合が発生しないのでAND状態のままとする

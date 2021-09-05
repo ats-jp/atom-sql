@@ -13,7 +13,7 @@ import org.springframework.jdbc.core.RowMapper;
 /**
  * @author 千葉 哲嗣
  */
-public class JdbcTemplateExecutor implements Executor {
+class JdbcTemplateExecutor implements Executor {
 
 	private final JdbcTemplate jdbcTemplate;
 

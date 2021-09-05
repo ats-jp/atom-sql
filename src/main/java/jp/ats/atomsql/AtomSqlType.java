@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
+ * Atom SQLで使用可能な型を定義した列挙型です。<br>
+ * ここで定義されている以外の型は{@link Object}型として扱われます。
  * @author 千葉 哲嗣
  */
 public enum AtomSqlType {
@@ -94,7 +96,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * Boolean
+	 * {@link Boolean}
 	 */
 	BOOLEAN {
 
@@ -119,7 +121,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * boolean
+	 * プリミティブboolean
 	 */
 	P_BOOLEAN {
 
@@ -217,7 +219,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * Double
+	 * {@link Double}
 	 */
 	DOUBLE {
 
@@ -242,7 +244,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * double
+	 * プリミティブdouble
 	 */
 	P_DOUBLE {
 
@@ -264,7 +266,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * Float
+	 * {@link Float}
 	 */
 	FLOAT {
 
@@ -289,7 +291,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * float
+	 * プリミティブfloat
 	 */
 	P_FLOAT {
 
@@ -311,7 +313,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * Integer
+	 * {@link Integer}
 	 */
 	INTEGER {
 
@@ -336,7 +338,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * int
+	 * プリミティブint
 	 */
 	P_INT {
 
@@ -358,7 +360,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * Long
+	 * {@link Long}
 	 */
 	LONG {
 
@@ -383,7 +385,7 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * long
+	 * プリミティブlong
 	 */
 	P_LONG {
 
@@ -481,6 +483,7 @@ public enum AtomSqlType {
 
 	/**
 	 * Comma Separated Values
+	 * @see Csv
 	 */
 	CSV {
 
@@ -511,6 +514,7 @@ public enum AtomSqlType {
 	};
 
 	/**
+	 * この型に対応するJavaでの型を返します。
 	 * @return type
 	 */
 	public abstract Class<?> type();
@@ -530,7 +534,8 @@ public enum AtomSqlType {
 	}
 
 	/**
-	 * @param o
+	 * 渡されたオブジェクトの型から対応する{@link AtomSqlType}を返します。
+	 * @param o 対象となるオブジェクト
 	 * @return {@link AtomSqlType}
 	 */
 	public static AtomSqlType select(Object o) {
@@ -544,7 +549,9 @@ public enum AtomSqlType {
 	}
 
 	/**
-	 * @param name
+	 * enum名をもとに{@link AtomSqlType}のインスタンスを返します。<br>
+	 * 対応する型が存在しない場合はOBJECTを返します。
+	 * @param name {@link AtomSqlType}enum名
 	 * @return {@link AtomSqlType}
 	 */
 	public static AtomSqlType safeValueOf(String name) {
@@ -556,7 +563,9 @@ public enum AtomSqlType {
 	}
 
 	/**
-	 * @param name
+	 * 型パラメータとしてこのenumが使用される場合のインスタンスを返します。
+	 * 対応する型が存在しない場合はOBJECTを返します。
+	 * @param name {@link AtomSqlType}enum名
 	 * @return {@link AtomSqlType}
 	 */
 	public static AtomSqlType safeTypeArgumentValueOf(String name) {

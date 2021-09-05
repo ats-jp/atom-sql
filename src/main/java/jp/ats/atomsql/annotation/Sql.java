@@ -15,7 +15,6 @@ public @interface Sql {
 
 	/**
 	 * SQL
-	 * 
 	 * @return SQL
 	 */
 	String value();

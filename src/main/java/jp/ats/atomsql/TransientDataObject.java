@@ -8,11 +8,21 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
+
+import org.springframework.jdbc.core.RowMapper;
 
 import jp.ats.atomsql.annotation.DataObject;
 
 /**
+ * {@link ResultSet}から値を取り出すための簡易{@link DataObject}クラスです。<br>
+ * 注意点として、このクラスのインスタンスは{@link ResultSet}から値を取り出してインスタンス内に保持するのではなく、各種getメソッドを呼ばれたときに{@link ResultSet}の各getメソッドを呼ぶため、検索結果を{@link List}で受け取るメソッドでは利用することができません。<br>
+ * 検索結果を{@link Stream}で受け取るメソッドで使用するようにしてください。
+ * @see Atom#stream()
+ * @see Atom#stream(RowMapper)
+ * @see Atom#stream(SimpleRowMapper)
  * @author 千葉 哲嗣
  */
 @DataObject
@@ -21,15 +31,16 @@ public class TransientDataObject {
 	private final ResultSet base;
 
 	/**
-	 * @param base
+	 * {@link ResultSet}を必要とする唯一のコンストラクタです。
+	 * @param base {@link ResultSet}
 	 */
 	public TransientDataObject(ResultSet base) {
 		this.base = Objects.requireNonNull(base);
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public boolean getBoolean(String columnName) {
 		try {
@@ -40,8 +51,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public double getDouble(String columnName) {
 		try {
@@ -52,8 +63,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public float getFloat(String columnName) {
 		try {
@@ -64,8 +75,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public int getInt(String columnName) {
 		try {
@@ -76,8 +87,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public long getLong(String columnName) {
 		try {
@@ -88,8 +99,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public String getString(String columnName) {
 		try {
@@ -100,8 +111,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public Timestamp getTimestamp(String columnName) {
 		try {
@@ -112,8 +123,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public BigDecimal getBigDecimal(String columnName) {
 		try {
@@ -124,8 +135,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public InputStream getBinaryStream(String columnName) {
 		try {
@@ -136,8 +147,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public Reader getCharacterStream(String columnName) {
 		try {
@@ -148,8 +159,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public Object getObject(String columnName) {
 		try {
@@ -160,8 +171,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public byte[] getBytes(String columnName) {
 		try {
@@ -172,8 +183,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public Blob getBlob(String columnName) {
 		try {
@@ -184,8 +195,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnName
-	 * @return result
+	 * @param columnName SELECT句カラム名
+	 * @return result 検索結果
 	 */
 	public Clob getClob(String columnName) {
 		try {
@@ -196,8 +207,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public boolean getBoolean(int columnIndex) {
 		try {
@@ -208,8 +219,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public double getDouble(int columnIndex) {
 		try {
@@ -220,8 +231,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public float getFloat(int columnIndex) {
 		try {
@@ -232,8 +243,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public int getInt(int columnIndex) {
 		try {
@@ -244,8 +255,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public long getLong(int columnIndex) {
 		try {
@@ -256,8 +267,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public String getString(int columnIndex) {
 		try {
@@ -268,8 +279,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public Timestamp getTimestamp(int columnIndex) {
 		try {
@@ -280,8 +291,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public BigDecimal getBigDecimal(int columnIndex) {
 		try {
@@ -292,8 +303,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public Object getObject(int columnIndex) {
 		try {
@@ -304,8 +315,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public InputStream getBinaryStream(int columnIndex) {
 		try {
@@ -316,8 +327,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public Reader getCharacterStream(int columnIndex) {
 		try {
@@ -328,8 +339,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public byte[] getBytes(int columnIndex) {
 		try {
@@ -340,8 +351,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public Blob getBlob(int columnIndex) {
 		try {
@@ -352,8 +363,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @param columnIndex
-	 * @return result
+	 * @param columnIndex SELECT句カラム位置
+	 * @return result 検索結果
 	 */
 	public Clob getClob(int columnIndex) {
 		try {
@@ -364,7 +375,8 @@ public class TransientDataObject {
 	}
 
 	/**
-	 * @return was null
+	 * @see ResultSet#wasNull()
+	 * @return 最後に取得したカラムの値がNULLの場合、true
 	 */
 	public boolean wasNull() {
 		try {
