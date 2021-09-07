@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * 内部使用ユーティリティクラスです。
  * @author 千葉 哲嗣
  */
 @SuppressWarnings("javadoc")

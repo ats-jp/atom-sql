@@ -17,7 +17,11 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 
+import jp.ats.atomsql.annotation.SqlProxy;
+
 /**
+ * Spring FrameworkやDBが稼働していない環境でも、実装した{@link SqlProxy}から出力されるSQL文の確認などを行えるようにするサンドボックス環境を提供するクラスです。<br>
+ * サンドボックス環境内で実行された{@link SqlProxy}の処理は、すべて{JdbcTemplate}には渡されず、DBに対する実際の操作は何も行われないので確認やテストなどを安全に行うことが可能です。
  * @author 千葉 哲嗣
  */
 public class Sandbox {
@@ -25,7 +29,8 @@ public class Sandbox {
 	private static final ThreadLocal<List<Pair>> pairs = new ThreadLocal<>();
 
 	/**
-	 * @param process
+	 * このサンドボックス環境用の{@link AtomSql}が提供されるので、使用者はそれにより{@SqlProxy}を生成、検査を行います。
+	 * @param process 検査したい処理
 	 */
 	public static void execute(Consumer<AtomSql> process) {
 		pairs.set(new LinkedList<Pair>());

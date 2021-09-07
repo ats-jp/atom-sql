@@ -7,13 +7,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
+import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import jp.ats.atomsql.annotation.SqlProxy;
+
 /**
+ * Atom SQLをSpringで使用できるように初期化するクラスです。<br>
+ * {@link SqlProxy}が付与されたクラスを{@link Autowired}可能にします。<br>
+ * {@link JdbcTemplate}が{@link Qualifier}によって複数設定されている環境のために、{SqlProxy}にも同じ識別子が使用可能になるように設定可能です。
+ * @see SpringApplication#addInitializers(ApplicationContextInitializer...)
  * @author 千葉 哲嗣
  */
 public class AtomSqlInitializer implements ApplicationContextInitializer<AnnotationConfigApplicationContext> {
@@ -23,7 +32,7 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Annotat
 	private final boolean primary;
 
 	/**
-	 * 
+	 * {@link JdbcTemplate}を単体で使用する場合に使用するコンストラクタです。
 	 */
 	public AtomSqlInitializer() {
 		this.name = null;
@@ -31,8 +40,10 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Annotat
 	}
 
 	/**
-	 * @param name
-	 * @param primary
+	 * {@link JdbcTemplate}を複数で使用する場合に使用するコンストラクタです。<br>
+	 * primaryは、{@AtomSqlInitializer}を複数設定する場合、一つのインスタンスでのみtrueにしてください。
+	 * @param name {@link JdbcTemplate}用識別子（{@link Qualifier}）
+	 * @param primary {@link Qualifier}を指定しない場合に優先するか
 	 */
 	public AtomSqlInitializer(String name, boolean primary) {
 		this.name = Objects.requireNonNull(name);

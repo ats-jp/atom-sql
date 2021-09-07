@@ -5,24 +5,26 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 /**
+ * Atom SQL用の設定をロードし、保持するクラスです。
  * @author 千葉 哲嗣
  */
 public class Configure {
 
 	/**
-	 * 
+	 * シングルトンインスタンス
 	 */
 	public static final Configure instance = new Configure();
 
 	private final String configFileName = "atom-sql.properties";
 
 	/**
-	 * 
+	 * SQLのログ出力を行う場合、true
 	 */
 	public final boolean enableLog;
 
 	/**
-	 * 
+	 * SQLログに含まれる呼び出し元情報のフィルタパターン<br>
+	 * パターンにマッチしたものがログに出力される
 	 */
 	public final Pattern logStackTracePattern;
 

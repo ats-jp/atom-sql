@@ -3,6 +3,7 @@ package jp.ats.atomsql;
 import java.sql.SQLException;
 
 /**
+ * {@link SQLException}を検査なし例外にするためのラッパー例外クラスです。
  * @author 千葉 哲嗣
  */
 public class AtomSqlException extends RuntimeException {

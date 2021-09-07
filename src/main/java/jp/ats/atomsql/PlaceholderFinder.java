@@ -5,6 +5,8 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
+ * 内部使用クラスです。<br>
+ * SQL文から、プレースホルダを探します。
  * @author 千葉 哲嗣
  */
 @SuppressWarnings("javadoc")
