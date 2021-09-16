@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,10 +41,13 @@ import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.Csv;
+import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
+import jp.ats.atomsql.processor.MethodExtractor.Result;
+import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 
 /**
  * @author 千葉 哲嗣
@@ -65,6 +69,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 	private final ReturnTypeChecker returnTypeChecker = new ReturnTypeChecker();
 
 	private final Set<String> sqlProxyList = new HashSet<>();
+
+	private final MethodExtractor extractor = new MethodExtractor(() -> SqlProxyAnnotationProcessor.super.processingEnv);
 
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -432,15 +438,39 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			var checker = new ParameterTypeChecker(e);
 
 			parameters.forEach(parameter -> {
-				var typeArg = parameter.asType().accept(checker, parameter);
-
 				info.parameterNames.add(parameter.getSimpleName().toString());
 
 				info.parameterTypes.add(parameter.asType().accept(typeNameExtractor, e));
 
-				if (typeArg != null)
+				var typeArg = parameter.asType().accept(checker, parameter);
+				if (typeArg != null) {
 					info.sqlParametersClassName = typeArg.accept(typeNameExtractor, e);
+				}
 			});
+
+			Result result;
+			try {
+				//SQLファイルが存在するかチェックするために不要でも実行
+				result = extractor.execute(e);
+			} catch (SqlFileNotFoundException sfnfe) {
+				error("method " + e.getSimpleName() + " needs SQL file", e);
+				hasError.set(true);
+				return DEFAULT_VALUE;
+			}
+
+			if (info.sqlParametersClassName == null) {
+				//通常のメソッド引数が存在するので検査対象
+				Set<String> placeholders = new TreeSet<>();
+				PlaceholderFinder.execute(result.sql, f -> {
+					placeholders.add(f.placeholder);
+				});
+
+				if (!new TreeSet<>(info.parameterNames).equals(placeholders)) {
+					error("placeholders in SQL does not match the name of parameters", e);
+					hasError.set(true);
+					return DEFAULT_VALUE;
+				}
+			}
 
 			var dataObjectType = e.getReturnType().accept(returnTypeChecker, e);
 

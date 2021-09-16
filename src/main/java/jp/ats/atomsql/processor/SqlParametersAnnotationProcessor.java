@@ -2,9 +2,7 @@ package jp.ats.atomsql.processor;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.io.Writer;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,7 +18,6 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
@@ -29,15 +26,14 @@ import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.Utils;
-import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlParameters;
+import jp.ats.atomsql.processor.MethodExtractor.Result;
+import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 
 @SupportedAnnotationTypes("jp.ats.atomsql.annotation.SqlParameters")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SuppressWarnings("javadoc")
 public class SqlParametersAnnotationProcessor extends AbstractProcessor {
-
-	private static final Class<?> DEFAULT_SQL_FILE_RESOLVER_CLASS = SimpleMavenSqlFileResolver.class;
 
 	// 二重作成防止チェッカー
 	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
@@ -46,6 +42,8 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 	//生成クラス名, メソッド名
 	//メソッドのパラメータの型はConsumer<SqlParameters>固定なので識別にはメソッド名だけでOK
 	private final Map<String, MethodInfo> allParameters = new HashMap<>();
+
+	private final MethodExtractor extractor = new MethodExtractor(() -> super.processingEnv);
 
 	private static class MethodInfo {
 
@@ -126,12 +124,16 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 			return;
 		}
 
-		var clazz = e.getEnclosingElement().accept(TypeConverter.instance, null);
+		Result result;
+		try {
+			result = extractor.execute(e);
+		} catch (SqlFileNotFoundException sfnfe) {
+			error("method " + e.getSimpleName() + " needs SQL file", e);
+			return;
+		}
 
-		PackageElement packageElement = ProcessorUtils.getPackageElement(clazz);
-
-		var className = clazz.getQualifiedName().toString();
-		var packageName = packageElement.getQualifiedName().toString();
+		var className = result.className;
+		var packageName = result.packageName;
 
 		var newClassName = packageName.isEmpty() ? generateClassName : packageName + "." + generateClassName;
 
@@ -146,7 +148,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 		if (alreadyCreatedFiles.contains(newClassName)) return;
 
-		var sql = extractSql(packageName, className, e);
+		var sql = result.sql;
 
 		String template = Formatter.readTemplate(SqlParametersTemplate.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);
@@ -186,48 +188,6 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		alreadyCreatedFiles.add(newClassName);
 
 		info(newClassName + " generated");
-	}
-
-	private String extractSql(String packageName, String className, Element method) {
-		var sql = method.getAnnotation(Sql.class);
-		if (sql != null)
-			return sql.value();
-
-		var sqlFileName = Utils.extractSimpleClassName(className, packageName) + "." + method.getSimpleName() + ".sql";
-
-		try {
-			return new String(
-				resolver(method).resolve(
-					ProcessorUtils.getClassOutputPath(super.processingEnv),
-					packageName.toString(),
-					sqlFileName,
-					super.processingEnv.getOptions()),
-				Constants.CHARSET);
-		} catch (IOException ioe) {
-			throw new UncheckedIOException(ioe);
-		}
-	}
-
-	private SqlFileResolver resolver(Element method) {
-		var className = super.processingEnv.getOptions().get("sql-file-resolver");
-
-		var clazz = DEFAULT_SQL_FILE_RESOLVER_CLASS;
-		if (className != null) {
-			try {
-				clazz = Class.forName(className);
-			} catch (ClassNotFoundException e) {
-				error("class [" + className + "] was not found", method);
-				throw new ProcessException();
-			}
-		}
-
-		try {
-			return (SqlFileResolver) clazz.getConstructor().newInstance();
-		} catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException
-			| InstantiationException e) {
-			error("error occurs while instantiation class [" + className + "]", method);
-			throw new ProcessException();
-		}
 	}
 
 	private void info(String message) {
