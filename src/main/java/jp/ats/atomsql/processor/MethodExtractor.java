@@ -51,7 +51,9 @@ class MethodExtractor {
 		if (sqlAnnotation != null) {
 			sql = sqlAnnotation.value();
 		} else {
-			var sqlFileName = Utils.extractSimpleClassName(className, packageName) + "." + method.getSimpleName() + ".sql";
+			//SQLファイルはクラスのバイナリ名と一致していないといけない
+			var classBinaryName = Utils.extractSimpleClassName(className, packageName).replace('.', '$');
+			var sqlFileName = classBinaryName + "." + method.getSimpleName() + ".sql";
 
 			var env = envSupplier.get();
 			try {
