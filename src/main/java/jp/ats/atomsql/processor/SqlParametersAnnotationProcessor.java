@@ -186,12 +186,6 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		}
 
 		alreadyCreatedFiles.add(newClassName);
-
-		info(newClassName + " generated");
-	}
-
-	private void info(String message) {
-		super.processingEnv.getMessager().printMessage(Kind.NOTE, message);
 	}
 
 	private void error(String message, Element e) {

@@ -170,8 +170,6 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 
 		alreadyCreatedFiles.add(fileName);
-
-		info(fileName + " generated");
 	}
 
 	private String packageName(Element e) {
@@ -216,10 +214,6 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			methodContents.add("dataObjectClass = " + info.dataObjectClassName + ".class");
 
 		return "@Method(" + String.join(", ", methodContents) + ")";
-	}
-
-	private void info(String message) {
-		super.processingEnv.getMessager().printMessage(Kind.NOTE, message);
 	}
 
 	private void error(String message, Element e) {

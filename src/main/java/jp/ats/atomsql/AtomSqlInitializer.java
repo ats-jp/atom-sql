@@ -13,7 +13,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import jp.ats.atomsql.annotation.SqlProxy;
@@ -25,7 +25,7 @@ import jp.ats.atomsql.annotation.SqlProxy;
  * @see SpringApplication#addInitializers(ApplicationContextInitializer...)
  * @author 千葉 哲嗣
  */
-public class AtomSqlInitializer implements ApplicationContextInitializer<AnnotationConfigApplicationContext> {
+public class AtomSqlInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
 	private final String name;
 
@@ -51,7 +51,7 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Annotat
 	}
 
 	@Override
-	public void initialize(AnnotationConfigApplicationContext context) {
+	public void initialize(GenericApplicationContext context) {
 		List<Class<?>> classes;
 		try {
 			classes = loadProxyClasses();
