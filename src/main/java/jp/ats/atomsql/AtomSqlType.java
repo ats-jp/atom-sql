@@ -4,11 +4,13 @@ import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -39,6 +41,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getBigDecimal(columnLabel);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -62,6 +69,11 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return new BinaryStream(rs.getBinaryStream(columnLabel), -1);
 		}
 
 		@Override
@@ -90,6 +102,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getBlob(columnLabel);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -115,6 +132,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getBoolean(columnLabel);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -134,6 +156,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getBoolean(columnLabel);
 		}
 
 		@Override
@@ -159,6 +186,11 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getBytes(columnLabel);
 		}
 
 		@Override
@@ -188,6 +220,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return new CharacterStream(rs.getCharacterStream(columnLabel), -1);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -210,6 +247,11 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getClob(columnLabel);
 		}
 
 		@Override
@@ -238,6 +280,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getDouble(columnLabel);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -257,6 +304,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getDouble(columnLabel);
 		}
 
 		@Override
@@ -285,6 +337,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getFloat(columnLabel);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -304,6 +361,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getFloat(columnLabel);
 		}
 
 		@Override
@@ -332,6 +394,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getInt(columnLabel);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -351,6 +418,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getInt(columnLabel);
 		}
 
 		@Override
@@ -379,6 +451,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getLong(columnLabel);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -398,6 +475,11 @@ public enum AtomSqlType {
 		void bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getLong(columnLabel);
 		}
 
 		@Override
@@ -426,6 +508,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getObject(columnLabel);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -451,6 +538,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getString(columnLabel);
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return this;
 		}
@@ -473,6 +565,11 @@ public enum AtomSqlType {
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			return rs.getTimestamp(columnLabel);
 		}
 
 		@Override
@@ -508,6 +605,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		AtomSqlType toTypeArgument() {
 			return OBJECT;
 		}
@@ -520,6 +622,8 @@ public enum AtomSqlType {
 	public abstract Class<?> type();
 
 	abstract void bind(int index, PreparedStatement statement, Object value);
+
+	abstract Object get(ResultSet rs, String columnLabel) throws SQLException;
 
 	abstract AtomSqlType toTypeArgument();
 
@@ -546,6 +650,19 @@ public enum AtomSqlType {
 
 		var type = types.get(o.getClass());
 		return type == null ? OBJECT : type;
+	}
+
+	/**
+	 * 渡されたクラスから対応する{@link AtomSqlType}を返します。
+	 * @param c 対象となるクラス
+	 * @return {@link AtomSqlType}
+	 */
+	public static AtomSqlType get(Class<?> c) {
+		var type = types.get(Objects.requireNonNull(c));
+
+		if (type == null) throw new UnknownTypeException(c);
+
+		return type;
 	}
 
 	/**

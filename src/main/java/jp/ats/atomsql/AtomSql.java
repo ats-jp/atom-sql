@@ -348,8 +348,9 @@ public class AtomSql {
 			}
 
 			Arrays.stream(dataObjectClass.getFields()).forEach(f -> {
+				var type = AtomSqlType.get(f.getType());
 				try {
-					f.set(object, rs.getObject(f.getName()));
+					f.set(object, type.get(rs, f.getName()));
 				} catch (SQLException e) {
 					throw new AtomSqlException(e);
 				} catch (IllegalAccessException e) {
