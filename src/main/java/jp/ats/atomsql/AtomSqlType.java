@@ -634,7 +634,7 @@ public enum AtomSqlType {
 	private static final Map<Class<?>, AtomSqlType> types = new HashMap<>();
 
 	static {
-		Arrays.stream(AtomSqlType.values()).filter(b -> !b.equals(OBJECT)).forEach(b -> types.put(b.type(), b));
+		Arrays.stream(AtomSqlType.values()).forEach(b -> types.put(b.type(), b));
 	}
 
 	/**
