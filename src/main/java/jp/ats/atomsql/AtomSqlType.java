@@ -14,6 +14,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import jp.ats.atomsql.annotation.DataObject;
+
 /**
  * Atom SQLで使用可能な型を定義した列挙型です。<br>
  * ここで定義されている以外の型は{@link Object}型として扱われます。
@@ -133,7 +135,8 @@ public enum AtomSqlType {
 
 		@Override
 		Object get(ResultSet rs, String columnLabel) throws SQLException {
-			return rs.getBoolean(columnLabel);
+			var val = rs.getBoolean(columnLabel);
+			return rs.wasNull() ? null : val;
 		}
 
 		@Override
@@ -281,7 +284,8 @@ public enum AtomSqlType {
 
 		@Override
 		Object get(ResultSet rs, String columnLabel) throws SQLException {
-			return rs.getDouble(columnLabel);
+			var val = rs.getDouble(columnLabel);
+			return rs.wasNull() ? null : val;
 		}
 
 		@Override
@@ -338,7 +342,8 @@ public enum AtomSqlType {
 
 		@Override
 		Object get(ResultSet rs, String columnLabel) throws SQLException {
-			return rs.getFloat(columnLabel);
+			var val = rs.getFloat(columnLabel);
+			return rs.wasNull() ? null : val;
 		}
 
 		@Override
@@ -395,7 +400,8 @@ public enum AtomSqlType {
 
 		@Override
 		Object get(ResultSet rs, String columnLabel) throws SQLException {
-			return rs.getInt(columnLabel);
+			var val = rs.getInt(columnLabel);
+			return rs.wasNull() ? null : val;
 		}
 
 		@Override
@@ -452,7 +458,8 @@ public enum AtomSqlType {
 
 		@Override
 		Object get(ResultSet rs, String columnLabel) throws SQLException {
-			return rs.getLong(columnLabel);
+			var val = rs.getLong(columnLabel);
+			return rs.wasNull() ? null : val;
 		}
 
 		@Override
@@ -579,7 +586,8 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * Comma Separated Values
+	 * Comma Separated Values<br>
+	 * {@link DataObject}では使用できません。
 	 * @see Csv
 	 */
 	CSV {
