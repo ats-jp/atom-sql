@@ -76,7 +76,7 @@ public class Sandbox {
 			try {
 				pss.setValues(statement);
 			} catch (SQLException e) {
-				throw new IllegalStateException();
+				throw new IllegalStateException(e);
 			}
 
 			return 0;

@@ -120,7 +120,8 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		var generateClassName = e.getAnnotation(SqlParameters.class).value();
 
 		if (generateClassName.isBlank()) {
-			error("value of " + SqlParameters.class.getSimpleName() + " is blank", e);
+			//SqlParametersの値は空白です
+			error("The value of " + SqlParameters.class.getSimpleName() + " is blank", e);
 			return;
 		}
 
@@ -128,7 +129,8 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		try {
 			result = extractor.execute(e);
 		} catch (SqlFileNotFoundException sfnfe) {
-			error("method " + e.getSimpleName() + " needs SQL file", e);
+			//メソッドeにはSQLファイルが必要です
+			error("Method " + e.getSimpleName() + " requires a SQL file", e);
 			return;
 		}
 
@@ -140,7 +142,8 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		var info = allParameters.get(newClassName);
 		var methodName = e.getSimpleName().toString();
 		if (info != null && (!info.clazz.equals(className) || !info.method.equals(methodName))) {
-			error("duplicate name [" + generateClassName + "]", e);
+			//generateClassNameという名前は既に他で使われています
+			error("The name [" + generateClassName + "] has already been used elsewhere", e);
 			return;
 		}
 

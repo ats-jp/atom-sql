@@ -115,7 +115,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 	private void execute(Element e) {
 		ElementKind kind = e.getKind();
 		if (kind != ElementKind.INTERFACE) {
-			error("cannot annotate" + kind.name() + " with " + SqlProxy.class.getSimpleName(), e);
+			//kindにSqlProxyを注釈することはできません
+			error("Cannot annotate" + kind.name() + " with " + SqlProxy.class.getSimpleName(), e);
 
 			throw new ProcessException();
 		}
@@ -224,7 +225,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		protected TypeMirror defaultAction(TypeMirror e, ExecutableElement p) {
-			error("cannot use return type [" + e + "]", p);
+			//リターンタイプeは使用できません
+			error("Return type [" + e + "] cannot be used", p);
 			hasError.set(true);
 			return DEFAULT_VALUE;
 		}
@@ -277,7 +279,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		protected TypeMirror defaultAction(TypeMirror e, VariableElement p) {
-			error("cannot use parameter type [" + e + "]", p);
+			//パラメータタイプeは使用できません
+			error("Parameter type [" + e + "] cannot be used", p);
 			hasError.set(true);
 			return DEFAULT_VALUE;
 		}
@@ -366,7 +369,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			var element = typeArg.accept(ElementConverter.instance, null);
 			if (element == null) {
-				error("Consumer needs type argument that is annotated " + SqlParameters.class.getSimpleName(), p);
+				//Consumerは、型の引数としてSqlParametersでアノテーションされた型を必要とします
+				error("Consumer requires the type annotated with " + SqlParameters.class.getSimpleName() + " as a type argument", p);
 				hasError.set(true);
 				return DEFAULT_VALUE;
 			}
@@ -380,7 +384,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			var annotation = method.getAnnotation(SqlParameters.class);
 			if (annotation == null) {
-				error("Consumer needs type argument that is annotated " + SqlParameters.class.getSimpleName(), p);
+				//Consumerは、型の引数としてSqlParametersでアノテーションされた型を必要とします
+				error("Consumer requires the type annotated with " + SqlParameters.class.getSimpleName() + " as a type argument", p);
 				hasError.set(true);
 				return DEFAULT_VALUE;
 			}
@@ -388,6 +393,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			var annotationValue = annotation.value();
 
 			if (!typeName.equals(annotationValue)) {
+				//annotationValueとtypeNameが一致しません
 				error("[" + annotationValue + "] and [" + typeName + "] do not match", p);
 				hasError.set(true);
 				return DEFAULT_VALUE;
@@ -406,7 +412,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		@Override
 		public Void visitExecutable(ExecutableElement e, List<MethodInfo> p) {
 			if (e.getModifiers().contains(Modifier.DEFAULT)) {
-				error("cannot use default method", e);
+				//デフォルトメソッドは使用できません
+				error("The default method cannot be used", e);
 				throw new ProcessException();
 			}
 
@@ -418,10 +425,11 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			var annotation = e.getAnnotation(SqlParameters.class);
 			if (annotation != null) {
 				if (parameters.size() != 1 || !ProcessorUtils.sameClass(toTypeElement(parameters.get(0)), Consumer.class)) {
+					//メソッドeは、Consumer<annotation>の1つのパラメータを必要とします
 					error(
-						"method ["
+						"Method ["
 							+ e.getSimpleName()
-							+ "] needs one parameter of Consumer<"
+							+ "] requires one parameter of Consumer<"
 							+ annotation.value()
 							+ ">",
 						e);
@@ -447,7 +455,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				//SQLファイルが存在するかチェックするために不要でも実行
 				result = extractor.execute(e);
 			} catch (SqlFileNotFoundException sfnfe) {
-				error("method " + e.getSimpleName() + " needs SQL file", e);
+				//メソッドeにはSQLファイルが必要です
+				error("Method " + e.getSimpleName() + " requires a SQL file", e);
 				hasError.set(true);
 				return DEFAULT_VALUE;
 			}
@@ -460,7 +469,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				});
 
 				if (!new TreeSet<>(info.parameterNames).equals(placeholders)) {
-					error("placeholders in SQL does not match the name of parameters", e);
+					//SQLのプレースホルダーがパラメータの名前と一致しません
+					error("SQL placeholders do not match parameter names", e);
 					hasError.set(true);
 					return DEFAULT_VALUE;
 				}
@@ -473,8 +483,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 				var dataObjectElement = dataObjectType.accept(ElementConverter.instance, null);
 				if (dataObjectElement.getAnnotation(DataObject.class) == null) {
+					//dataObjectClassNameにはDataObjectのアノテーションが必要です
 					error(
-						"[" + dataObjectClassName + "] must be annotated with " + DataObject.class.getSimpleName(),
+						"[" + dataObjectClassName + "] requires to be annotated with " + DataObject.class.getSimpleName(),
 						e);
 				} else {
 					info.dataObjectClassName = dataObjectClassName;
@@ -491,7 +502,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		protected String defaultAction(TypeMirror e, Element p) {
-			error("unknown error occurred", p);
+			//不明なエラーが発生しました
+			error("Unknown error occurred", p);
 			return DEFAULT_VALUE;
 		}
 

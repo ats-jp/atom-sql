@@ -602,7 +602,7 @@ public enum AtomSqlType {
 			var values = ((Csv<?>) value).values();
 			IntStream.range(0, values.size()).forEach(i -> {
 				var v = values.get(i);
-				select(v).bind(index + i, statement, v);
+				selectForPreparedStatement(v).bind(index + i, statement, v);
 			});
 		}
 
@@ -650,7 +650,7 @@ public enum AtomSqlType {
 	 * @param o 対象となるオブジェクト
 	 * @return {@link AtomSqlType}
 	 */
-	public static AtomSqlType select(Object o) {
+	public static AtomSqlType selectForPreparedStatement(Object o) {
 		// nullの場合はsetObject(i, null)
 		// DBによってはエラーとなる可能性があるため、その場合はsetNull(int, int)の使用を検討する
 		if (o == null)
@@ -665,7 +665,7 @@ public enum AtomSqlType {
 	 * @param c 対象となるクラス
 	 * @return {@link AtomSqlType}
 	 */
-	public static AtomSqlType get(Class<?> c) {
+	public static AtomSqlType selectForResultSet(Class<?> c) {
 		var type = types.get(Objects.requireNonNull(c));
 
 		if (type == null) throw new UnknownTypeException(c);

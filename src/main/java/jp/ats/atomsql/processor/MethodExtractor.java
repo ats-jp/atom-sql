@@ -87,7 +87,8 @@ class MethodExtractor {
 			try {
 				clazz = Class.forName(className);
 			} catch (ClassNotFoundException e) {
-				error("class [" + className + "] was not found");
+				//クラスclassNameは見つかりませんでした
+				error("Class [" + className + "] was not found");
 				throw new ProcessException();
 			}
 		}
@@ -96,7 +97,8 @@ class MethodExtractor {
 			resolver = (SqlFileResolver) clazz.getConstructor().newInstance();
 		} catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException
 			| InstantiationException e) {
-			error("error occurs while instantiation class [" + className + "]");
+			//クラスclassNameのインスタンス化の際にエラーが発生しました
+			error("An error occurred when instantiating class [" + className + "]");
 			throw new ProcessException();
 		}
 

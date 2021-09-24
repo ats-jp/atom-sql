@@ -74,10 +74,12 @@ public class AtomSql {
 	 */
 	public <T> T of(Class<T> proxyInterface) {
 		if (!proxyInterface.isInterface())
+			//proxyInterfaceはインターフェイスではありません
 			throw new IllegalArgumentException(proxyInterface + " is not interface");
 
 		if (!proxyInterface.isAnnotationPresent(SqlProxy.class))
-			throw new IllegalArgumentException("annotation " + SqlProxy.class.getSimpleName() + " not found");
+			//アノテーションSqlProxyが見つかりません
+			throw new IllegalArgumentException("Annotation " + SqlProxy.class.getSimpleName() + " is not found");
 
 		@SuppressWarnings("unchecked")
 		T instance = (T) Proxy.newProxyInstance(
@@ -214,8 +216,8 @@ public class AtomSql {
 			} else if (returnType.equals(int.class)) {
 				return atom.execute();
 			} else {
-				// 戻り値の型が不正です
-				throw new IllegalStateException("Return type is incorrect: " + returnType);
+				//不正な戻り値の型
+				throw new IllegalStateException("Incorrect return type: " + returnType);
 			}
 		}
 	}
@@ -242,7 +244,8 @@ public class AtomSql {
 
 		var url = decreredClass.getResource(sqlFileName);
 		if (url == null)
-			throw new IllegalStateException(sqlFileName + " not found");
+			//sqlFileNameが見つかりませんでした
+			throw new IllegalStateException(sqlFileName + " was not found");
 
 		return new String(Utils.readBytes(url.openStream()), Constants.CHARSET);
 	}
@@ -282,11 +285,12 @@ public class AtomSql {
 				converted.append(f.gap);
 
 				if (!argMap.containsKey(f.placeholder))
-					throw new IllegalStateException("place holder [" + f.placeholder + "] was not found");
+					//プレースホルダplaceholderは見つかりませんでした
+					throw new IllegalStateException("Place holder [" + f.placeholder + "] was not found");
 
 				var value = argMap.get(f.placeholder);
 
-				var type = AtomSqlType.select(value);
+				var type = AtomSqlType.selectForPreparedStatement(value);
 
 				converted.append(type.placeholderExpression(value));
 
@@ -348,7 +352,7 @@ public class AtomSql {
 			}
 
 			Arrays.stream(dataObjectClass.getFields()).forEach(f -> {
-				var type = AtomSqlType.get(f.getType());
+				var type = AtomSqlType.selectForResultSet(f.getType());
 				try {
 					f.set(object, type.get(rs, f.getName()));
 				} catch (SQLException e) {

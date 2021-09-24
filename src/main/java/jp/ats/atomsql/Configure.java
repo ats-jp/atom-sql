@@ -37,7 +37,7 @@ public class Configure {
 			if (input != null)
 				config.load(input);
 		} catch (IOException e) {
-			throw new IllegalStateException();
+			throw new IllegalStateException(e);
 		}
 
 		enableLog = Boolean.valueOf(config.getProperty("enable-log", "true"));

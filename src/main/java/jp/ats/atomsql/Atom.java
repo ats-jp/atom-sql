@@ -185,7 +185,8 @@ public class Atom<T> {
 
 	private <E> Optional<E> get(List<E> list) {
 		if (list.size() > 1)
-			throw new IllegalStateException("result row is over 1");
+			//結果は1行以下でなければなりません
+			throw new IllegalStateException("The result must be less than or equal to one row");
 
 		return list.stream().findFirst();
 	}

@@ -36,7 +36,8 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 			roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
 				ElementKind kind = e.getKind();
 				if (kind != ElementKind.CLASS) {
-					error("cannot annotate" + kind.name() + " with " + DataObject.class.getSimpleName(), e);
+					//kindにDataObjectを注釈することはできません
+					error("Cannot annotate" + kind.name() + " with " + DataObject.class.getSimpleName(), e);
 
 					return;
 				}
@@ -48,9 +49,10 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 				});
 
 				if (!result[0])
+					//DataObjectは、パラメーターがResultSetのみであるか、パラメーターがないコンストラクターが必要です
 					error(
 						DataObject.class.getSimpleName()
-							+ " requires a constructor whose only parameter is ResultSet or no parameters",
+							+ " requires a constructor with only ResultSet parameter or no parameter",
 						e);
 			});
 		});
