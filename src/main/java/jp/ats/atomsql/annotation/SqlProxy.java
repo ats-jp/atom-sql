@@ -6,11 +6,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import jp.ats.atomsql.AtomSql;
-import jp.ats.atomsql.AtomSqlInitializer;
 
 /**
  * {@link AtomSql} のProxy作成対象となるインターフェイスであることを表すアノテーションです。<br>
@@ -36,12 +34,4 @@ import jp.ats.atomsql.AtomSqlInitializer;
 @Target({ TYPE })
 @Retention(RUNTIME)
 public @interface SqlProxy {
-
-	/**
-	 * この{@link SqlProxy}を登録する対象となるJdbcTemplate識別子（{@link Qualifier}）を定義します。<br>
-	 * {@link AtomSqlInitializer}生成時に渡したnameに一致する値を定義するか又は何も定義しない場合に、この{@link SqlProxy}がBeanとして登録されます。
-	 * @see AtomSqlInitializer#AtomSqlInitializer(String, boolean)
-	 * @return JdbcTemplate識別子
-	 */
-	String forName() default "";
 }

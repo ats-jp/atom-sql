@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import jp.ats.atomsql.annotation.JdbcTemplateName;
 import jp.ats.atomsql.annotation.SqlProxy;
 
 /**
@@ -78,10 +79,10 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Generic
 			@SuppressWarnings("unchecked")
 			var casted = (Class<Object>) c;
 
-			var forName = casted.getAnnotation(SqlProxy.class).forName();
+			var jdbcTemplateName = casted.getAnnotation(JdbcTemplateName.class);
 
-			//forNameが空もしくは一致する場合のみBeanとして登録
-			if (!forName.isEmpty() && name.map(n -> !n.equals(forName)).orElse(false)) return;
+			//JdbcTemplateNameが付与されていないもしくはJdbcTemplateName.value()が一致する場合のみBeanとして登録
+			if (jdbcTemplateName != null && name.map(n -> !n.equals(jdbcTemplateName.value())).orElse(false)) return;
 
 			var className = c.getName();
 			context.registerBean(name.map(n -> className + "." + n).orElse(className), casted, () -> {
