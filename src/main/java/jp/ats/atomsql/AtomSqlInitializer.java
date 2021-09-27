@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ import jp.ats.atomsql.annotation.SqlProxy;
  */
 public class AtomSqlInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
-	private final String name;
+	private final Optional<String> name;
 
 	private final boolean primary;
 
@@ -35,7 +35,7 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Generic
 	 * {@link JdbcTemplate}を単体で使用する場合に使用するコンストラクタです。
 	 */
 	public AtomSqlInitializer() {
-		this.name = null;
+		this.name = Optional.empty();
 		primary = true;
 	}
 
@@ -46,7 +46,7 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Generic
 	 * @param primary {@link Qualifier}を指定しない場合に優先するか
 	 */
 	public AtomSqlInitializer(String name, boolean primary) {
-		this.name = Objects.requireNonNull(name);
+		this.name = Optional.of(name);
 		this.primary = primary;
 	}
 
@@ -66,25 +66,32 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Generic
 			bd.setPrimary(primary);
 		};
 
-		context.registerBean(name, AtomSql.class, () -> {
-			if (name == null) {
-				return new AtomSql(new JdbcTemplateExecutor(context.getBean(JdbcTemplate.class)));
-			}
+		var atomSqlName = AtomSql.class.getName();
 
-			return new AtomSql(new JdbcTemplateExecutor(context.getBean(name, JdbcTemplate.class)));
+		context.registerBean(name.map(n -> atomSqlName + "." + n).orElse(atomSqlName), AtomSql.class, () -> {
+			return name
+				.map(n -> new AtomSql(new JdbcTemplateExecutor(context.getBean(n, JdbcTemplate.class))))
+				.orElseGet(() -> new AtomSql(new JdbcTemplateExecutor(context.getBean(JdbcTemplate.class))));
 		}, customizer);
 
 		classes.forEach(c -> {
 			@SuppressWarnings("unchecked")
 			var casted = (Class<Object>) c;
-			context.registerBean(name, casted, () -> {
-				if (name == null) {
-					var atomSql = new AtomSql(new JdbcTemplateExecutor(context.getBean(JdbcTemplate.class)));
-					return atomSql.of(c);
-				}
 
-				var atomSql = new AtomSql(new JdbcTemplateExecutor(context.getBean(name, JdbcTemplate.class)));
-				return atomSql.of(c);
+			var forName = casted.getAnnotation(SqlProxy.class).forName();
+
+			//forNameが空もしくは一致する場合のみBeanとして登録
+			if (!forName.isEmpty() && name.map(n -> !n.equals(forName)).orElse(false)) return;
+
+			var className = c.getName();
+			context.registerBean(name.map(n -> className + "." + n).orElse(className), casted, () -> {
+				return name.map(n -> {
+					var atomSql = new AtomSql(new JdbcTemplateExecutor(context.getBean(n, JdbcTemplate.class)));
+					return atomSql.of(casted);
+				}).orElseGet(() -> {
+					var atomSql = new AtomSql(new JdbcTemplateExecutor(context.getBean(JdbcTemplate.class)));
+					return atomSql.of(casted);
+				});
 			}, customizer);
 		});
 	}

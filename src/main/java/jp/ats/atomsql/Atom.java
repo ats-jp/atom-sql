@@ -62,7 +62,7 @@ public class Atom<T> {
 	 * @return {@DataObject}付与結果オブジェクトの{@link List}
 	 */
 	public List<T> list() {
-		return stream().collect(Collectors.toList());
+		return listAndClose(stream());
 	}
 
 	/**
@@ -102,7 +102,7 @@ public class Atom<T> {
 	 * @return 結果オブジェクトの{@link List}
 	 */
 	public <R> List<R> list(RowMapper<R> mapper) {
-		return stream(mapper).collect(Collectors.toList());
+		return listAndClose(stream(mapper));
 	}
 
 	/**
@@ -143,7 +143,7 @@ public class Atom<T> {
 	 * @return 結果オブジェクトの{@link List}
 	 */
 	public <R> List<R> list(SimpleRowMapper<R> mapper) {
-		return stream(mapper).collect(Collectors.toList());
+		return listAndClose(stream(mapper));
 	}
 
 	/**
@@ -297,5 +297,11 @@ public class Atom<T> {
 		private String sql;
 
 		private String originalSql;
+	}
+
+	private static <T> List<T> listAndClose(Stream<T> stream) {
+		try (stream) {
+			return stream.collect(Collectors.toList());
+		}
 	}
 }
