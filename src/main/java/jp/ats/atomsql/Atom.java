@@ -194,7 +194,7 @@ public class Atom<T> {
 	 */
 	public int execute() {
 		var resources = AtomSql.batchResources();
-		if (resources == null) {// バッチ実行中ではない
+		if (resources == null) {//バッチ実行中ではない
 			var startNanos = System.nanoTime();
 			try {
 				return helper.entry.executor.update(helper.sql, helper);

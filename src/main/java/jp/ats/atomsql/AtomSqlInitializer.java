@@ -46,10 +46,7 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Generic
 			@SuppressWarnings("unchecked")
 			var casted = (Class<Object>) c;
 
-			context.registerBean(c.getName(), casted, () -> {
-				var atomSql = new AtomSql(convert(context));
-				return atomSql.of(casted);
-			}, customizer);
+			context.registerBean(c.getName(), casted, () -> new AtomSql(convert(context)).of(casted), customizer);
 		});
 	}
 
