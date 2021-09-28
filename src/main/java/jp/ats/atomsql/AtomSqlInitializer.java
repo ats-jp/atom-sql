@@ -67,6 +67,10 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Generic
 		var map = context.getBeansOfType(JdbcTemplate.class);
 		var primary = context.getBean(JdbcTemplate.class);
 
+		if (map.size() == 1) {
+			return new Executors(new JdbcTemplateExecutor(primary));
+		}
+
 		var entries = map.entrySet().stream().map(e -> {
 			var jdbcTemplate = e.getValue();
 			return new Executors.Entry(e.getKey(), new JdbcTemplateExecutor(jdbcTemplate), jdbcTemplate == primary);
