@@ -193,7 +193,7 @@ public class Atom<T> {
 	 * @return 更新処理の場合、その結果件数
 	 */
 	public int execute() {
-		var resources = helper.batchResources();
+		var resources = AtomSql.batchResources();
 		if (resources == null) {// バッチ実行中ではない
 			var startNanos = System.nanoTime();
 			try {
@@ -221,7 +221,7 @@ public class Atom<T> {
 		var originalSql = concat(" ", helper.originalSql, another.helper.originalSql);
 		return new Atom<T>(
 			atomsql,
-			atomsql.new SqlProxyHelper(sql, originalSql, helper, another.helper),
+			new SqlProxyHelper(sql, originalSql, helper, another.helper),
 			true);
 	}
 
@@ -262,7 +262,7 @@ public class Atom<T> {
 
 		return new Atom<T>(
 			atomsql,
-			atomsql.new SqlProxyHelper(sql, originalSql, helper, another.helper),
+			new SqlProxyHelper(sql, originalSql, helper, another.helper),
 			andTypeCurrent);
 	}
 

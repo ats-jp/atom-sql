@@ -147,6 +147,10 @@ public class AtomSql {
 		}
 	}
 
+	static BatchResources batchResources() {
+		return batchResources.get();
+	}
+
 	private void executeBatch() {
 		batchResources.get().forEach((name, sql, helpers) -> {
 			var startNanos = System.nanoTime();
@@ -168,7 +172,7 @@ public class AtomSql {
 					}
 				});
 			} finally {
-				logElapsed(startNanos);
+				logElapsed(sqlLogger, startNanos);
 			}
 		});
 	}
@@ -225,9 +229,17 @@ public class AtomSql {
 					insecure,
 					names.toArray(String[]::new),
 					find.dataObjectClass(),
-					values.toArray(Object[]::new));
+					values.toArray(Object[]::new),
+					sqlLogger);
 			} else {
-				helper = new SqlProxyHelper(sql, entry, insecure, find.parameters(), find.dataObjectClass(), args);
+				helper = new SqlProxyHelper(
+					sql,
+					entry,
+					insecure,
+					find.parameters(),
+					find.dataObjectClass(),
+					args,
+					sqlLogger);
 			}
 
 			var atom = new Atom<Object>(AtomSql.this, helper, true);
@@ -251,7 +263,7 @@ public class AtomSql {
 		}
 	}
 
-	private void logElapsed(long startNanos) {
+	private static void logElapsed(SqlLogger sqlLogger, long startNanos) {
 		sqlLogger.perform(log -> {
 			var elapsed = (System.nanoTime() - startNanos) / 1000000f;
 			log.info("elapsed: " + new BigDecimal(elapsed).setScale(2, RoundingMode.DOWN) + "ms");
@@ -279,7 +291,7 @@ public class AtomSql {
 		return new String(Utils.readBytes(url.openStream()), Constants.CHARSET);
 	}
 
-	class SqlProxyHelper implements PreparedStatementSetter {
+	static class SqlProxyHelper implements PreparedStatementSetter {
 
 		final String sql;
 
@@ -295,17 +307,21 @@ public class AtomSql {
 
 		private final Class<?> dataObjectClass;
 
+		private final SqlLogger sqlLogger;
+
 		private SqlProxyHelper(
 			String sql,
 			Executors.Entry entry,
 			boolean insecure,
 			String[] argNames,
 			Class<?> dataObjectClass,
-			Object[] args) {
+			Object[] args,
+			SqlLogger sqlLogger) {
 			originalSql = sql.trim();
 			this.entry = entry;
 			this.insecure = insecure;
 			this.dataObjectClass = dataObjectClass;
+			this.sqlLogger = sqlLogger;
 
 			var argMap = new HashMap<String, Object>();
 			for (int i = 0; i < argNames.length; i++) {
@@ -336,11 +352,16 @@ public class AtomSql {
 			this.sql = converted.toString().trim();
 		}
 
-		SqlProxyHelper(String sql, String originalSql, SqlProxyHelper main, SqlProxyHelper sub) {
+		SqlProxyHelper(
+			String sql,
+			String originalSql,
+			SqlProxyHelper main,
+			SqlProxyHelper sub) {
 			this.sql = sql;
 			this.originalSql = originalSql;
 			this.entry = main.entry;
 			this.dataObjectClass = main.dataObjectClass;
+			this.sqlLogger = main.sqlLogger;
 
 			// セキュアではない場合すべて汚染される
 			this.insecure = main.insecure || sub.insecure;
@@ -400,11 +421,7 @@ public class AtomSql {
 		}
 
 		void logElapsed(long startNanos) {
-			AtomSql.this.logElapsed(startNanos);
-		}
-
-		BatchResources batchResources() {
-			return batchResources.get();
+			AtomSql.logElapsed(sqlLogger, startNanos);
 		}
 
 		@Override
@@ -417,6 +434,10 @@ public class AtomSql {
 
 			sqlLogger.perform(log -> {
 				log.info("------ SQL START ------");
+
+				if (entry.name != null) {
+					log.info("bean name: " + entry.name);
+				}
 
 				log.info("call from:");
 				var elements = new Throwable().getStackTrace();
