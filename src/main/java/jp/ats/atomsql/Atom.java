@@ -1,7 +1,6 @@
 package jp.ats.atomsql;
 
 import java.sql.ResultSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,15 +23,12 @@ public class Atom<T> {
 
 	private final AtomSql atomsql;
 
-	private final Executor executor;
-
 	private final SqlProxyHelper helper;
 
 	private final boolean andType;
 
-	Atom(AtomSql atomsql, Executor executor, SqlProxyHelper helper, boolean andType) {
+	Atom(AtomSql atomsql, SqlProxyHelper helper, boolean andType) {
 		this.atomsql = atomsql;
-		this.executor = executor;
 		this.helper = helper;
 		this.andType = andType;
 	}
@@ -46,7 +42,7 @@ public class Atom<T> {
 	public Stream<T> stream() {
 		var startNanos = System.nanoTime();
 		try {
-			return executor.queryForStream(helper.sql, helper, (r, n) -> {
+			return helper.entry.executor.queryForStream(helper.sql, helper, (r, n) -> {
 				@SuppressWarnings("unchecked")
 				var object = (T) helper.createDataObject(r);
 				return object;
@@ -88,7 +84,7 @@ public class Atom<T> {
 
 		var startNanos = System.nanoTime();
 		try {
-			return executor.queryForStream(helper.sql, helper, mapper);
+			return helper.entry.executor.queryForStream(helper.sql, helper, mapper);
 		} finally {
 			helper.logElapsed(startNanos);
 		}
@@ -129,7 +125,7 @@ public class Atom<T> {
 
 		var startNanos = System.nanoTime();
 		try {
-			return executor.queryForStream(helper.sql, helper, (r, n) -> mapper.mapRow(r));
+			return helper.entry.executor.queryForStream(helper.sql, helper, (r, n) -> mapper.mapRow(r));
 		} finally {
 			helper.logElapsed(startNanos);
 		}
@@ -197,17 +193,17 @@ public class Atom<T> {
 	 * @return 更新処理の場合、その結果件数
 	 */
 	public int execute() {
-		var resources = helper.batchResources().get();
+		var resources = helper.batchResources();
 		if (resources == null) {// バッチ実行中ではない
 			var startNanos = System.nanoTime();
 			try {
-				return executor.update(helper.sql, helper);
+				return helper.entry.executor.update(helper.sql, helper);
 			} finally {
 				helper.logElapsed(startNanos);
 			}
 		}
 
-		resources.computeIfAbsent(helper.sql, s -> new LinkedList<>()).add(helper);
+		resources.put(helper.entry.name, helper);
 
 		return 0;
 	}
@@ -225,7 +221,6 @@ public class Atom<T> {
 		var originalSql = concat(" ", helper.originalSql, another.helper.originalSql);
 		return new Atom<T>(
 			atomsql,
-			executor,
 			atomsql.new SqlProxyHelper(sql, originalSql, helper, another.helper),
 			true);
 	}
@@ -267,7 +262,6 @@ public class Atom<T> {
 
 		return new Atom<T>(
 			atomsql,
-			executor,
 			atomsql.new SqlProxyHelper(sql, originalSql, helper, another.helper),
 			andTypeCurrent);
 	}

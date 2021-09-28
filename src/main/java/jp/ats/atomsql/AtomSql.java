@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +29,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 
 import jp.ats.atomsql.annotation.InsecureSql;
+import jp.ats.atomsql.annotation.JdbcTemplateName;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.processor.annotation.Methods;
@@ -47,19 +47,42 @@ public class AtomSql {
 
 	private static final String packageName = AtomSql.class.getPackageName();
 
-	private static final ThreadLocal<Map<String, List<SqlProxyHelper>>> batchResources = new ThreadLocal<>();
+	private static final ThreadLocal<BatchResources> batchResources = new ThreadLocal<>();
 
-	private final Executor executor;
+	private final Executors executors;
 
 	private final SqlProxyInvocationHandler handler = new SqlProxyInvocationHandler();
 
+	static class BatchResources {
+
+		Map<String, Map<String, List<SqlProxyHelper>>> resources = new HashMap<>();
+
+		void put(String name, SqlProxyHelper helper) {
+			resources.computeIfAbsent(name, n -> new HashMap<>()).computeIfAbsent(helper.sql, s -> new LinkedList<>()).add(helper);
+		}
+
+		private void forEach(BatchResourceConsumer consumer) {
+			resources.forEach((name, map) -> {
+				map.forEach((sql, helpers) -> {
+					consumer.accept(name, sql, helpers);
+				});
+			});
+		}
+	}
+
+	@FunctionalInterface
+	static interface BatchResourceConsumer {
+
+		void accept(String name, String sql, List<SqlProxyHelper> helpers);
+	}
+
 	/**
 	 * 唯一のコンストラクタです。<br>
-	 * {@link Executor}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
-	 * @param executor {@link Executor}
+	 * {@link Executors}の持つ{@link Executor}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
+	 * @param executors {@link Executors}
 	 */
-	public AtomSql(Executor executor) {
-		this.executor = Objects.requireNonNull(executor);
+	public AtomSql(Executors executors) {
+		this.executors = Objects.requireNonNull(executors);
 	}
 
 	/**
@@ -97,7 +120,7 @@ public class AtomSql {
 	 * @param runnable 更新処理を含む汎用処理
 	 */
 	public void batch(Runnable runnable) {
-		batchResources.set(new LinkedHashMap<>());
+		batchResources.set(new BatchResources());
 		try {
 			runnable.run();
 		} finally {
@@ -115,7 +138,7 @@ public class AtomSql {
 	 * @return {@link Supplier}の返却値
 	 */
 	public <T> T batch(Supplier<T> supplier) {
-		batchResources.set(new LinkedHashMap<>());
+		batchResources.set(new BatchResources());
 		try {
 			return supplier.get();
 		} finally {
@@ -125,10 +148,10 @@ public class AtomSql {
 	}
 
 	private void executeBatch() {
-		batchResources.get().forEach((sql, helpers) -> {
+		batchResources.get().forEach((name, sql, helpers) -> {
 			var startNanos = System.nanoTime();
 			try {
-				executor.batchUpdate(sql, new BatchPreparedStatementSetter() {
+				executors.get(name).executor.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
 					@Override
 					public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -156,6 +179,10 @@ public class AtomSql {
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			var proxyClass = proxy.getClass().getInterfaces()[0];
 
+			//メソッドに付与されたアノテーション > クラスに付与されたアノテーション
+			var nameAnnotation = method.getAnnotation(JdbcTemplateName.class);
+			if (nameAnnotation == null) nameAnnotation = proxyClass.getAnnotation(JdbcTemplateName.class);
+
 			var proxyClassName = proxyClass.getName();
 
 			var sql = loadSql(proxyClass, method);
@@ -174,6 +201,7 @@ public class AtomSql {
 			var insecure = method.getAnnotation(InsecureSql.class) != null;
 
 			SqlProxyHelper helper;
+			var entry = nameAnnotation == null ? executors.get() : executors.get(nameAnnotation.value());
 			if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
 				var sqlParametersClass = find.sqlParametersClass();
 				var sqlParameters = sqlParametersClass.getConstructor().newInstance();
@@ -193,15 +221,16 @@ public class AtomSql {
 
 				helper = new SqlProxyHelper(
 					sql,
+					entry,
 					insecure,
 					names.toArray(String[]::new),
 					find.dataObjectClass(),
 					values.toArray(Object[]::new));
 			} else {
-				helper = new SqlProxyHelper(sql, insecure, find.parameters(), find.dataObjectClass(), args);
+				helper = new SqlProxyHelper(sql, entry, insecure, find.parameters(), find.dataObjectClass(), args);
 			}
 
-			var atom = new Atom<Object>(AtomSql.this, executor, helper, true);
+			var atom = new Atom<Object>(AtomSql.this, helper, true);
 
 			var returnType = method.getReturnType();
 
@@ -256,6 +285,8 @@ public class AtomSql {
 
 		final String originalSql;
 
+		final Executors.Entry entry;
+
 		private final boolean insecure;
 
 		private final List<AtomSqlType> argumentTypes = new ArrayList<>();
@@ -266,11 +297,13 @@ public class AtomSql {
 
 		private SqlProxyHelper(
 			String sql,
+			Executors.Entry entry,
 			boolean insecure,
 			String[] argNames,
 			Class<?> dataObjectClass,
 			Object[] args) {
 			originalSql = sql.trim();
+			this.entry = entry;
 			this.insecure = insecure;
 			this.dataObjectClass = dataObjectClass;
 
@@ -306,6 +339,7 @@ public class AtomSql {
 		SqlProxyHelper(String sql, String originalSql, SqlProxyHelper main, SqlProxyHelper sub) {
 			this.sql = sql;
 			this.originalSql = originalSql;
+			this.entry = main.entry;
 			this.dataObjectClass = main.dataObjectClass;
 
 			// セキュアではない場合すべて汚染される
@@ -369,8 +403,8 @@ public class AtomSql {
 			AtomSql.this.logElapsed(startNanos);
 		}
 
-		ThreadLocal<Map<String, List<SqlProxyHelper>>> batchResources() {
-			return batchResources;
+		BatchResources batchResources() {
+			return batchResources.get();
 		}
 
 		@Override
@@ -398,7 +432,7 @@ public class AtomSql {
 
 				log.info("sql:");
 
-				executor.logSql(log, originalSql, sql, insecure, ps);
+				entry.executor.logSql(log, originalSql, sql, insecure, ps);
 
 				log.info("------  SQL END  ------");
 			});
