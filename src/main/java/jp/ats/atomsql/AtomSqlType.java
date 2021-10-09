@@ -664,8 +664,9 @@ public enum AtomSqlType {
 	 * 渡されたクラスから対応する{@link AtomSqlType}を返します。
 	 * @param c 対象となるクラス
 	 * @return {@link AtomSqlType}
+	 * @throws UnknownTypeException {@link AtomSqlType}に定義されていない型を使用した場合
 	 */
-	public static AtomSqlType selectForResultSet(Class<?> c) {
+	public static AtomSqlType select(Class<?> c) {
 		var type = types.get(Objects.requireNonNull(c));
 
 		if (type == null) throw new UnknownTypeException(c);

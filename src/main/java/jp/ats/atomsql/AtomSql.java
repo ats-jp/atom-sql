@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 
-import jp.ats.atomsql.annotation.InsecureSql;
+import jp.ats.atomsql.annotation.ConfidentialSql;
 import jp.ats.atomsql.annotation.JdbcTemplateName;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlProxy;
@@ -202,7 +202,7 @@ public class AtomSql {
 
 			var parameterTypes = find.parameterTypes();
 
-			var insecure = method.getAnnotation(InsecureSql.class) != null;
+			var confidential = method.getAnnotation(ConfidentialSql.class) != null;
 
 			SqlProxyHelper helper;
 			var entry = nameAnnotation == null ? executors.get() : executors.get(nameAnnotation.value());
@@ -226,7 +226,7 @@ public class AtomSql {
 				helper = new SqlProxyHelper(
 					sql,
 					entry,
-					insecure,
+					confidential,
 					names.toArray(String[]::new),
 					find.dataObjectClass(),
 					values.toArray(Object[]::new),
@@ -235,7 +235,7 @@ public class AtomSql {
 				helper = new SqlProxyHelper(
 					sql,
 					entry,
-					insecure,
+					confidential,
 					find.parameters(),
 					find.dataObjectClass(),
 					args,
@@ -299,7 +299,7 @@ public class AtomSql {
 
 		final Executors.Entry entry;
 
-		private final boolean insecure;
+		private final boolean confidential;
 
 		private final List<AtomSqlType> argumentTypes = new ArrayList<>();
 
@@ -312,14 +312,14 @@ public class AtomSql {
 		private SqlProxyHelper(
 			String sql,
 			Executors.Entry entry,
-			boolean insecure,
+			boolean confidential,
 			String[] argNames,
 			Class<?> dataObjectClass,
 			Object[] args,
 			SqlLogger sqlLogger) {
 			originalSql = sql.trim();
 			this.entry = entry;
-			this.insecure = insecure;
+			this.confidential = confidential;
 			this.dataObjectClass = dataObjectClass;
 			this.sqlLogger = sqlLogger;
 
@@ -364,7 +364,7 @@ public class AtomSql {
 			this.sqlLogger = main.sqlLogger;
 
 			// セキュアではない場合すべて汚染される
-			this.insecure = main.insecure || sub.insecure;
+			this.confidential = main.confidential || sub.confidential;
 
 			argumentTypes.addAll(main.argumentTypes);
 			argumentTypes.addAll(sub.argumentTypes);
@@ -407,7 +407,7 @@ public class AtomSql {
 			}
 
 			Arrays.stream(dataObjectClass.getFields()).forEach(f -> {
-				var type = AtomSqlType.selectForResultSet(f.getType());
+				var type = AtomSqlType.select(f.getType());
 				try {
 					f.set(object, type.get(rs, f.getName()));
 				} catch (SQLException e) {
@@ -453,7 +453,7 @@ public class AtomSql {
 
 				log.info("sql:");
 
-				entry.executor.logSql(log, originalSql, sql, insecure, ps);
+				entry.executor.logSql(log, originalSql, sql, confidential, ps);
 
 				log.info("------  SQL END  ------");
 			});

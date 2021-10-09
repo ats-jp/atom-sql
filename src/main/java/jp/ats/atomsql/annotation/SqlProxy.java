@@ -11,7 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import jp.ats.atomsql.AtomSql;
 
 /**
- * {@link AtomSql} のProxy作成対象となるインターフェイスであることを表すアノテーションです。<br>
+ * {@link AtomSql}のProxy作成対象となるインターフェイスであることを表すアノテーションです。<br>
  * {@link AtomSql}によって作成されたProxyインスタンスは、内部で{@link JdbcTemplate}を使用してDB操作を行うことが可能になります。<br>
  * DB操作の実行にはSQL文が必要となり、{@link Sql}アノテーションによって設定されるか、または同一パッケージに<br>
  * クラス名.メソッド名.sql<br>
