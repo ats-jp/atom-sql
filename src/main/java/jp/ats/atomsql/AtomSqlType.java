@@ -666,8 +666,11 @@ public enum AtomSqlType {
 	 * @return {@link AtomSqlType}
 	 * @throws UnknownTypeException {@link AtomSqlType}に定義されていない型を使用した場合
 	 */
-	public static AtomSqlType select(Class<?> c) {
+	public static AtomSqlType selectForResultSet(Class<?> c) {
 		var type = types.get(Objects.requireNonNull(c));
+
+		//CSVは結果値として使用不可
+		if (type == CSV) throw new UnknownTypeException(c);
 
 		if (type == null) throw new UnknownTypeException(c);
 

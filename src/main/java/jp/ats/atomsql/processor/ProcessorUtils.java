@@ -8,7 +8,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.SimpleElementVisitor8;
+import javax.lang.model.util.SimpleElementVisitor14;
 import javax.tools.StandardLocation;
 
 /**
@@ -38,7 +38,7 @@ class ProcessorUtils {
 		return Paths.get(classOutput.toUri().toURL().toString().substring("file:/".length()));
 	}
 
-	private static class PackageExtractor extends SimpleElementVisitor8<PackageElement, Void> {
+	private static class PackageExtractor extends SimpleElementVisitor14<PackageElement, Void> {
 
 		@Override
 		protected PackageElement defaultAction(Element e, Void p) {

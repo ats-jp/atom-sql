@@ -2,19 +2,14 @@ package jp.ats.atomsql.processor;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -32,8 +27,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.SimpleElementVisitor8;
-import javax.lang.model.util.SimpleTypeVisitor8;
+import javax.lang.model.util.SimpleTypeVisitor14;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
@@ -46,6 +40,8 @@ import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
+import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
+import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 
@@ -53,24 +49,20 @@ import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
  * @author 千葉 哲嗣
  */
 @SupportedAnnotationTypes("jp.ats.atomsql.annotation.SqlProxy")
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(SourceVersion.RELEASE_16)
 public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
-	private static final ThreadLocal<Boolean> hasError = ThreadLocal.withInitial(() -> false);
+	private final TypeNameExtractor typeNameExtractor = new TypeNameExtractor(() -> SqlProxyAnnotationProcessor.super.processingEnv);
 
-	// 二重作成防止チェッカー
-	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
-	private final Set<String> alreadyCreatedFiles = new HashSet<>();
-
-	private final TypeNameExtractor typeNameExtractor = new TypeNameExtractor();
-
-	private final MethodVisitor methodVisitor = new MethodVisitor();
+	private final SqlProxyAnnotationProcessorMethodVisitor methodVisitor = new SqlProxyAnnotationProcessorMethodVisitor();
 
 	private final ReturnTypeChecker returnTypeChecker = new ReturnTypeChecker();
 
 	private final Set<String> sqlProxyList = new HashSet<>();
 
 	private final MethodExtractor extractor = new MethodExtractor(() -> SqlProxyAnnotationProcessor.super.processingEnv);
+
+	private final MetadataBuilder builder = new MetadataBuilder(() -> super.processingEnv, methodVisitor);
 
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -113,7 +105,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private void execute(Element e) {
-		ElementKind kind = e.getKind();
+		var kind = e.getKind();
 		if (kind != ElementKind.INTERFACE) {
 			//kindにSqlProxyを注釈することはできません
 			error("Cannot annotate" + kind.name() + " with " + SqlProxy.class.getSimpleName(), e);
@@ -121,113 +113,20 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			throw new ProcessException();
 		}
 
-		List<MethodInfo> infos = new LinkedList<>();
-
-		hasError.set(false);
-
-		e.getEnclosedElements().forEach(enc -> {
-			enc.accept(methodVisitor, infos);
-		});
-
-		if (hasError.get()) {
-			return;
-		}
-
-		sqlProxyList.add(e.accept(TypeConverter.instance, null).getQualifiedName().toString());
-
-		String template = Formatter.readTemplate(AtomSqlMetadataTemplate.class, "UTF-8");
-		template = Formatter.convertToTemplate(template);
-
-		Map<String, String> param = new HashMap<>();
-
-		String packageName = packageName(e);
-
-		String className = className(packageName, e) + Constants.METADATA_CLASS_SUFFIX;
-
-		String fileName = packageName.isEmpty() ? className : packageName + "." + className;
-
-		if (alreadyCreatedFiles.contains(fileName))
-			return;
-
-		param.put("PROCESSOR", SqlProxyAnnotationProcessor.class.getName());
-
-		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
-		param.put("INTERFACE", className);
-
-		String methodPart = buildMetodsPart(infos);
-
-		template = Formatter.erase(template, methodPart.isEmpty());
-
-		param.put("METHODS", methodPart);
-
-		template = Formatter.format(template, param);
-
-		try {
-			try (Writer writer = super.processingEnv.getFiler().createSourceFile(fileName, e).openWriter()) {
-				writer.write(template);
-			}
-		} catch (IOException ioe) {
-			error(ioe.getMessage(), e);
-		}
-
-		alreadyCreatedFiles.add(fileName);
-	}
-
-	private String packageName(Element e) {
-		return super.processingEnv.getElementUtils().getPackageOf(e).getQualifiedName().toString();
-	}
-
-	private String className(String packageName, Element element) {
-		TypeElement type = element.accept(TypeConverter.instance, null);
-		String name = type.getQualifiedName().toString();
-
-		name = name.substring(packageName.length());
-
-		name = name.replaceFirst("^\\.", "");
-
-		return name.replace('.', '$');
-	}
-
-	private static String buildMetodsPart(List<MethodInfo> infos) {
-		return String.join(
-			", ",
-			infos.stream().map(SqlProxyAnnotationProcessor::methodPart).collect(Collectors.toList()));
-	}
-
-	private static String methodPart(MethodInfo info) {
-		String parameters = String.join(
-			", ",
-			info.parameterNames.stream().map(n -> "\"" + n + "\"").collect(Collectors.toList()));
-
-		String types = String.join(
-			", ",
-			info.parameterTypes.stream().map(t -> t + ".class").collect(Collectors.toList()));
-
-		var methodContents = new LinkedList<String>();
-		methodContents.add("name = \"" + info.name + "\"");
-		methodContents.add("parameters = {" + parameters + "}");
-		methodContents.add("parameterTypes = {" + types + "}");
-
-		if (info.sqlParametersClassName != null)
-			methodContents.add("sqlParametersClass = " + info.sqlParametersClassName + ".class");
-
-		if (info.dataObjectClassName != null)
-			methodContents.add("dataObjectClass = " + info.dataObjectClassName + ".class");
-
-		return "@Method(" + String.join(", ", methodContents) + ")";
+		builder.build(e);
 	}
 
 	private void error(String message, Element e) {
 		super.processingEnv.getMessager().printMessage(Kind.ERROR, message, e);
 	}
 
-	private class ReturnTypeChecker extends SimpleTypeVisitor8<TypeMirror, ExecutableElement> {
+	private class ReturnTypeChecker extends SimpleTypeVisitor14<TypeMirror, ExecutableElement> {
 
 		@Override
 		protected TypeMirror defaultAction(TypeMirror e, ExecutableElement p) {
 			//リターンタイプeは使用できません
 			error("Return type [" + e + "] cannot be used", p);
-			hasError.set(true);
+			builder.setError();
 			return DEFAULT_VALUE;
 		}
 
@@ -269,7 +168,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private class ParameterTypeChecker extends SimpleTypeVisitor8<TypeMirror, VariableElement> {
+	private class ParameterTypeChecker extends SimpleTypeVisitor14<TypeMirror, VariableElement> {
 
 		private final ExecutableElement method;
 
@@ -281,7 +180,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		protected TypeMirror defaultAction(TypeMirror e, VariableElement p) {
 			//パラメータタイプeは使用できません
 			error("Parameter type [" + e + "] cannot be used", p);
-			hasError.set(true);
+			builder.setError();
 			return DEFAULT_VALUE;
 		}
 
@@ -355,7 +254,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public TypeMirror visitError(ErrorType t, VariableElement p) {
-			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
+			var type = t.asElement().accept(TypeConverter.instance, null);
 
 			if (ProcessorUtils.sameClass(type, Consumer.class)) {
 				return processConsumerType(p);
@@ -371,7 +270,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			if (element == null) {
 				//Consumerは、型の引数としてSqlParametersでアノテーションされた型を必要とします
 				error("Consumer requires the type annotated with " + SqlParameters.class.getSimpleName() + " as a type argument", p);
-				hasError.set(true);
+				builder.setError();
 				return DEFAULT_VALUE;
 			}
 
@@ -386,7 +285,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			if (annotation == null) {
 				//Consumerは、型の引数としてSqlParametersでアノテーションされた型を必要とします
 				error("Consumer requires the type annotated with " + SqlParameters.class.getSimpleName() + " as a type argument", p);
-				hasError.set(true);
+				builder.setError();
 				return DEFAULT_VALUE;
 			}
 
@@ -395,7 +294,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			if (!typeName.equals(annotationValue)) {
 				//annotationValueとtypeNameが一致しません
 				error("[" + annotationValue + "] and [" + typeName + "] do not match", p);
-				hasError.set(true);
+				builder.setError();
 				return DEFAULT_VALUE;
 			}
 
@@ -407,7 +306,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		return e.asType().accept(ElementConverter.instance, null).accept(TypeConverter.instance, null);
 	}
 
-	private class MethodVisitor extends SimpleElementVisitor8<Void, List<MethodInfo>> {
+	private class SqlProxyAnnotationProcessorMethodVisitor extends MethodVisitor {
 
 		@Override
 		public Void visitExecutable(ExecutableElement e, List<MethodInfo> p) {
@@ -433,7 +332,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 							+ annotation.value()
 							+ ">",
 						e);
-					hasError.set(true);
+
+					builder.setError();
 				}
 			}
 
@@ -452,12 +352,14 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			Result result;
 			try {
-				//SQLファイルが存在するかチェックするために不要でも実行
+				//SQLファイルが存在するかチェックするために実行
 				result = extractor.execute(e);
 			} catch (SqlFileNotFoundException sfnfe) {
 				//メソッドeにはSQLファイルが必要です
 				error("Method " + e.getSimpleName() + " requires a SQL file", e);
-				hasError.set(true);
+
+				builder.setError();
+
 				return DEFAULT_VALUE;
 			}
 
@@ -471,7 +373,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				if (!new TreeSet<>(info.parameterNames).equals(placeholders)) {
 					//SQLのプレースホルダーがパラメータの名前と一致しません
 					error("SQL placeholders do not match parameter names", e);
-					hasError.set(true);
+
+					builder.setError();
+
 					return DEFAULT_VALUE;
 				}
 			}
@@ -498,52 +402,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private class TypeNameExtractor extends SimpleTypeVisitor8<String, Element> {
-
-		@Override
-		protected String defaultAction(TypeMirror e, Element p) {
-			//不明なエラーが発生しました
-			error("Unknown error occurred", p);
-			return DEFAULT_VALUE;
-		}
-
-		@Override
-		public String visitPrimitive(PrimitiveType t, Element p) {
-			switch (t.getKind()) {
-			case BOOLEAN:
-				return boolean.class.getName();
-			case BYTE:
-				return byte.class.getName();
-			case SHORT:
-				return short.class.getName();
-			case INT:
-				return int.class.getName();
-			case LONG:
-				return long.class.getName();
-			case CHAR:
-				return char.class.getName();
-			case FLOAT:
-				return float.class.getName();
-			case DOUBLE:
-				return double.class.getName();
-			default:
-				return defaultAction(t, p);
-			}
-		}
-
-		@Override
-		public String visitDeclared(DeclaredType t, Element p) {
-			return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();
-		}
-
-		// Consumer<SqlParameter>等型パラメータのあるものがここに来る
-		@Override
-		public String visitError(ErrorType t, Element p) {
-			return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();
-		}
-	}
-
-	private static class ElementConverter extends SimpleTypeVisitor8<Element, Void> {
+	private static class ElementConverter extends SimpleTypeVisitor14<Element, Void> {
 
 		private static ElementConverter instance = new ElementConverter();
 
@@ -563,7 +422,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private static class AnnotationExtractor extends SimpleTypeVisitor8<Boolean, ExecutableElement> {
+	private static class AnnotationExtractor extends SimpleTypeVisitor14<Boolean, ExecutableElement> {
 
 		private static final AnnotationExtractor instance = new AnnotationExtractor();
 
@@ -578,7 +437,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private static class TypeArgumentsExtractor extends SimpleTypeVisitor8<List<? extends TypeMirror>, Void> {
+	private static class TypeArgumentsExtractor extends SimpleTypeVisitor14<List<? extends TypeMirror>, Void> {
 
 		private static final TypeArgumentsExtractor instance = new TypeArgumentsExtractor();
 
@@ -596,18 +455,5 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		public List<? extends TypeMirror> visitError(ErrorType t, Void p) {
 			return t.getTypeArguments();
 		}
-	}
-
-	private static class MethodInfo {
-
-		private String name;
-
-		private final List<String> parameterNames = new LinkedList<>();
-
-		private final List<String> parameterTypes = new LinkedList<>();
-
-		private String sqlParametersClassName;
-
-		private String dataObjectClassName;
 	}
 }

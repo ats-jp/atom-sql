@@ -377,6 +377,10 @@ public class AtomSql {
 			if (dataObjectClass == Object.class)
 				throw new IllegalStateException();
 
+			if (dataObjectClass.isRecord()) {
+				return createRecordDataObject(dataObjectClass, rs);
+			}
+
 			Constructor<?> constructor;
 			try {
 				constructor = dataObjectClass.getConstructor(ResultSet.class);
@@ -391,23 +395,47 @@ public class AtomSql {
 			}
 		}
 
-		private Object createNoParametersConstructorDataObject(ResultSet rs) {
-			Constructor<?> constructor;
+		private Object createRecordDataObject(Class<?> dataObjectClass, ResultSet rs) {
+			Methods methods;
 			try {
-				constructor = dataObjectClass.getConstructor();
-			} catch (NoSuchMethodException e) {
+				methods = Class.forName(dataObjectClass.getName() + Constants.METADATA_CLASS_SUFFIX).getAnnotation(Methods.class);
+			} catch (ClassNotFoundException e) {
 				throw new IllegalStateException(e);
 			}
 
+			var method = methods.value()[0];
+			var parameterNames = method.parameters();
+			var parameterTypes = method.parameterTypes();
+			var parameters = new Object[parameterNames.length];
+
+			for (var i = 0; i < parameterNames.length; i++) {
+				var type = AtomSqlType.selectForResultSet(parameterTypes[i]);
+				try {
+					parameters[i] = type.get(rs, parameterNames[i]);
+				} catch (SQLException e) {
+					throw new AtomSqlException(e);
+				}
+			}
+
+			try {
+				var constructor = dataObjectClass.getConstructor(parameterTypes);
+				return constructor.newInstance(parameters);
+			} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
+				throw new IllegalStateException(e);
+			}
+		}
+
+		private Object createNoParametersConstructorDataObject(ResultSet rs) {
 			Object object;
 			try {
+				var constructor = dataObjectClass.getConstructor();
 				object = constructor.newInstance();
-			} catch (InvocationTargetException | IllegalAccessException | InstantiationException e) {
+			} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
 				throw new IllegalStateException(e);
 			}
 
 			Arrays.stream(dataObjectClass.getFields()).forEach(f -> {
-				var type = AtomSqlType.select(f.getType());
+				var type = AtomSqlType.selectForResultSet(f.getType());
 				try {
 					f.set(object, type.get(rs, f.getName()));
 				} catch (SQLException e) {

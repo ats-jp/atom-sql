@@ -58,7 +58,7 @@ class MethodExtractor {
 			var env = envSupplier.get();
 			try {
 				sql = new String(
-					resolver().resolve(
+					resolver(method).resolve(
 						ProcessorUtils.getClassOutputPath(env),
 						packageName.toString(),
 						sqlFileName,
@@ -77,7 +77,7 @@ class MethodExtractor {
 		return result;
 	}
 
-	private SqlFileResolver resolver() {
+	private SqlFileResolver resolver(Element method) {
 		if (resolver != null) return resolver;
 
 		var className = envSupplier.get().getOptions().get("sql-file-resolver");
@@ -88,7 +88,7 @@ class MethodExtractor {
 				clazz = Class.forName(className);
 			} catch (ClassNotFoundException e) {
 				//クラスclassNameは見つかりませんでした
-				error("Class [" + className + "] was not found");
+				error("Class [" + className + "] was not found", method);
 				throw new ProcessException();
 			}
 		}
@@ -98,14 +98,14 @@ class MethodExtractor {
 		} catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException
 			| InstantiationException e) {
 			//クラスclassNameのインスタンス化の際にエラーが発生しました
-			error("An error occurred when instantiating class [" + className + "]");
+			error("An error occurred when instantiating class [" + className + "]", method);
 			throw new ProcessException();
 		}
 
 		return resolver;
 	}
 
-	private void error(String message) {
-		envSupplier.get().getMessager().printMessage(Kind.ERROR, message);
+	private void error(String message, Element e) {
+		envSupplier.get().getMessager().printMessage(Kind.ERROR, message, e);
 	}
 }

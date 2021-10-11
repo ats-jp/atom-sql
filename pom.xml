@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>jp.ats</groupId>
 	<artifactId>atom-sql</artifactId>
-	<version>0.1.12</version>
+	<version>0.2.0</version>
 	<name>Atom SQL</name>
 	<description>Spring JdbcTemplate Wrapper</description>
 
@@ -21,7 +21,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<maven.compiler.release>11</maven.compiler.release>
+		<maven.compiler.release>16</maven.compiler.release>
 		<github.global.server>github-ats-jp</github.global.server>
 	</properties>
 	<dependencies>

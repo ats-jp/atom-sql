@@ -31,7 +31,7 @@ import jp.ats.atomsql.processor.MethodExtractor.Result;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 
 @SupportedAnnotationTypes("jp.ats.atomsql.annotation.SqlParameters")
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(SourceVersion.RELEASE_16)
 @SuppressWarnings("javadoc")
 public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
@@ -153,7 +153,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 		var sql = result.sql;
 
-		String template = Formatter.readTemplate(SqlParametersTemplate.class, "UTF-8");
+		var template = Formatter.readTemplate(SqlParametersTemplate.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);
 
 		Map<String, String> param = new HashMap<>();
