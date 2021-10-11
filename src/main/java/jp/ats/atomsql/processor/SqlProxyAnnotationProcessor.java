@@ -114,6 +114,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 
 		builder.build(e);
+
+		if (!builder.hasError())
+			sqlProxyList.add(e.accept(TypeConverter.instance, null).getQualifiedName().toString());
 	}
 
 	private void error(String message, Element e) {

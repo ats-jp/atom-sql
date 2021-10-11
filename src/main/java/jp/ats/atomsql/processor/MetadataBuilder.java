@@ -42,6 +42,10 @@ class MetadataBuilder {
 		hasError = true;
 	}
 
+	boolean hasError() {
+		return hasError;
+	}
+
 	void build(Element e) {
 		List<MethodInfo> infos = new LinkedList<>();
 
