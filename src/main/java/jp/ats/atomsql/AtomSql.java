@@ -49,6 +49,8 @@ public class AtomSql {
 
 	private static final ThreadLocal<BatchResources> batchResources = new ThreadLocal<>();
 
+	private static final ThreadLocal<List<Stream<?>>> streams = new ThreadLocal<>();
+
 	private final Executors executors;
 
 	private final SqlProxyInvocationHandler handler = new SqlProxyInvocationHandler();
@@ -77,12 +79,22 @@ public class AtomSql {
 	}
 
 	/**
-	 * 唯一のコンストラクタです。<br>
+	 * 通常のコンストラクタです。<br>
 	 * {@link Executors}の持つ{@link Executor}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
 	 * @param executors {@link Executors}
 	 */
 	public AtomSql(Executors executors) {
 		this.executors = Objects.requireNonNull(executors);
+	}
+
+	/**
+	 * コピーコンストラクタです。<br>
+	 * baseと同じ接続先をもつ別インスタンスが生成されます。<br>
+	 * バッチの実施単位を分けたい場合などに使用します。
+	 * @param base コピー元
+	 */
+	public AtomSql(AtomSql base) {
+		this.executors = base.executors;
 	}
 
 	/**
@@ -119,7 +131,7 @@ public class AtomSql {
 	 * 大量の更新処理を行わなければならない場合、処理の高速化を見込むことが可能です。
 	 * @param runnable 更新処理を含む汎用処理
 	 */
-	public void batch(Runnable runnable) {
+	public void tryBatch(Runnable runnable) {
 		batchResources.set(new BatchResources());
 		try {
 			runnable.run();
@@ -133,11 +145,11 @@ public class AtomSql {
 	 * バッチ処理を実施します。<br>
 	 * {@link Runnable}と違い、何らかの処理結果を取り出したい場合に使用します<br>
 	 * @param <T> 返却値の型
-	 * @see #batch(Runnable)
+	 * @see #tryBatch(Runnable)
 	 * @param supplier 結果を返却が可能な更新処理を含む汎用処理
 	 * @return {@link Supplier}の返却値
 	 */
-	public <T> T batch(Supplier<T> supplier) {
+	public <T> T tryBatch(Supplier<T> supplier) {
 		batchResources.set(new BatchResources());
 		try {
 			return supplier.get();
@@ -173,6 +185,53 @@ public class AtomSql {
 				});
 			} finally {
 				logElapsed(sqlLogger, startNanos);
+			}
+		});
+	}
+
+	/**
+	 * {@link Stream}を検索結果として使用する処理を実施します。<br>
+	 * 処理内で発生した{@link Stream}は{@link Stream#close()}を明示的に行わなくても処理終了と同時にすべてクローズされます。
+	 * @see Atom#stream()
+	 * @see Atom#stream(org.springframework.jdbc.core.RowMapper)
+	 * @see Atom#stream(SimpleRowMapper)
+	 * @param runnable {@link Stream}を使用した検索処理を含む汎用処理
+	 */
+	public void tryStream(Runnable runnable) {
+		streams.set(new LinkedList<>());
+		try {
+			runnable.run();
+		} finally {
+			closeStreams();
+			streams.remove();
+		}
+	}
+
+	/**
+	 * {@link Stream}を検索結果として使用する処理を実施します。<br>
+	 * 処理内で発生した{@link Stream}は{@link Stream#close()}を明示的に行わなくても処理終了と同時にすべてクローズされます。
+	 * {@link Runnable}と違い、何らかの処理結果を取り出したい場合に使用します<br>
+	 * @param <T> 返却値の型
+	 * @see #tryStream(Runnable)
+	 * @param supplier {@link Stream}を使用した検索処理を含む汎用処理
+	 * @return {@link Supplier}の返却値
+	 */
+	public <T> T tryStream(Supplier<T> supplier) {
+		streams.set(new LinkedList<>());
+		try {
+			return supplier.get();
+		} finally {
+			closeStreams();
+			streams.remove();
+		}
+	}
+
+	private void closeStreams() {
+		streams.get().forEach(s -> {
+			try {
+				s.close();
+			} catch (Throwable t) {
+				logger.warn("Error occured while Stream closing", t);
 			}
 		});
 	}

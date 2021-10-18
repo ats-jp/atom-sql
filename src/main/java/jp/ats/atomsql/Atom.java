@@ -35,8 +35,9 @@ public class Atom<T> {
 
 	/**
 	 * 検索結果を{@link Stream}として返します。<br>
-	 * 内部的に{@link ResultSet}を使用して逐次行取得しており、{@link Stream}の終端に到達するまで{@link ResultSet}が閉じられないので注意が必要です。<br>
+	 * 内部的に{@link ResultSet}を使用して逐次行取得しており、明示的に{@link Stream#close()}するまで{@link ResultSet}が閉じられないので注意が必要です。<br>
 	 * 検索結果全件に対して操作を行いたい（{@link Stream#map}等）、結果オブジェクトすべてが必要でない場合は{@link List}で結果取得するよりも若干効率的です。
+	 * @see AtomSql#tryStream(Runnable)
 	 * @return {@DataObject}付与結果オブジェクトの{@link Stream}
 	 */
 	public Stream<T> stream() {
@@ -73,8 +74,9 @@ public class Atom<T> {
 	}
 
 	/**
-	 * {@link RowMapper}により生成された結果オブジェクトを{@link Stream}として返します。<br>
+	 * {@link RowMapper}により生成された結果オブジェクトを{@link Stream}として返します。
 	 * @see #stream
+	 * @see AtomSql#tryStream(Runnable)
 	 * @param mapper {@link RowMapper}
 	 * @param <R> {@link RowMapper}の生成した結果オブジェクトの型
 	 * @return 結果オブジェクトの{@link Stream}
