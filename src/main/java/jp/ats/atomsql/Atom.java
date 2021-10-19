@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.jdbc.core.RowMapper;
@@ -297,7 +296,7 @@ public class Atom<T> {
 
 	private static <T> List<T> listAndClose(Stream<T> stream) {
 		try (stream) {
-			return stream.collect(Collectors.toList());
+			return stream.toList();
 		}
 	}
 }

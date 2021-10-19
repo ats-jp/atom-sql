@@ -4,12 +4,14 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -28,6 +30,8 @@ public class Sandbox {
 
 	private static final ThreadLocal<List<Pair>> pairs = new ThreadLocal<>();
 
+	private static final ThreadLocal<Result> resultHolder = new ThreadLocal<>();
+
 	/**
 	 * このサンドボックス環境用の{@link AtomSql}が提供されるので、使用者はそれにより{@SqlProxy}を生成、検査を行います。
 	 * @param process 検査したい処理
@@ -38,7 +42,19 @@ public class Sandbox {
 			process.accept(new AtomSql(new Executors(new SandboxExecutor())));
 		} finally {
 			pairs.remove();
+			resultHolder.remove();
 		}
+	}
+
+	/**
+	 * サンドボックス処理内で永続するダミーの検索結果を設定します。<br>
+	 * 再設定しない限り、同じ検索結果となります。
+	 * @param consumer {@link Result}に値をセットする{@link Consumer}
+	 */
+	public static void resultSet(Consumer<Result> consumer) {
+		var result = new Result();
+		consumer.accept(result);
+		resultHolder.set(result);
 	}
 
 	private static class SandboxExecutor implements Executor {
@@ -66,7 +82,23 @@ public class Sandbox {
 				throw new IllegalStateException(e);
 			}
 
-			return Stream.of();
+			var result = resultHolder.get();
+			if (result == null) return Stream.of();
+
+			int[] i = { 0 };
+			return result.convert().stream().map(row -> {
+				var handler = new ResultSetInvocationHandler(row);
+				var resultSet = (ResultSet) Proxy.newProxyInstance(
+					Sandbox.class.getClassLoader(),
+					new Class<?>[] { ResultSet.class },
+					handler);
+
+				try {
+					return rowMapper.mapRow(resultSet, i[0]++);
+				} catch (SQLException e) {
+					throw new IllegalStateException(e);
+				}
+			});
 		}
 
 		@Override
@@ -99,9 +131,46 @@ public class Sandbox {
 			handler.allArgs.forEach(a -> {
 				var args = Arrays.stream(a.args)
 					.map(v -> v == null ? "null" : (v instanceof Number ? v.toString() : "[" + v.toString() + "]"))
-					.collect(Collectors.toList());
+					.toList();
 				log.info(a.method.getName() + "(" + String.join(", ", args) + ")");
 			});
+		}
+	}
+
+	/**
+	 * ダミー検索結果セット用クラス
+	 */
+	public static class Result {
+
+		private String[] columnNames = {};
+
+		private final List<Object[]> rows = new LinkedList<>();
+
+		/**
+		 * 検索結果の全項目名をセットします。
+		 * @param columnNames 検索結果の全項目名
+		 */
+		public void setColumnNames(String... columnNames) {
+			this.columnNames = columnNames.clone();
+		}
+
+		/**
+		 * 検索結果を一行追加します。
+		 * @param values 検索結果一行
+		 */
+		public void addRow(Object... values) {
+			rows.add(values.clone());
+		}
+
+		private List<Map<String, Object>> convert() {
+			return rows.stream().map(r -> {
+				Map<String, Object> map = new HashMap<>();
+				for (var i = 0; i < columnNames.length; i++) {
+					map.put(columnNames[i], r[i]);
+				}
+
+				return map;
+			}).toList();
 		}
 	}
 
@@ -141,6 +210,20 @@ public class Sandbox {
 			allArgs.add(arg);
 
 			return null;
+		}
+	}
+
+	private static class ResultSetInvocationHandler implements InvocationHandler {
+
+		private final Map<String, Object> map;
+
+		private ResultSetInvocationHandler(Map<String, Object> map) {
+			this.map = map;
+		}
+
+		@Override
+		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+			return map.get(args[0]);
 		}
 	}
 

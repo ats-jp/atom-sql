@@ -80,7 +80,7 @@ class MetadataBuilder {
 
 		var methodPart = String.join(
 			", ",
-			infos.stream().map(MetadataBuilder::methodPart).collect(Collectors.toList()));
+			infos.stream().map(MetadataBuilder::methodPart).toList());
 
 		template = Formatter.erase(template, methodPart.isEmpty());
 
@@ -102,7 +102,7 @@ class MetadataBuilder {
 	private static String methodPart(MethodInfo info) {
 		var parameters = String.join(
 			", ",
-			info.parameterNames.stream().map(n -> "\"" + n + "\"").collect(Collectors.toList()));
+			info.parameterNames.stream().map(n -> "\"" + n + "\"").toList());
 
 		var types = String.join(
 			", ",

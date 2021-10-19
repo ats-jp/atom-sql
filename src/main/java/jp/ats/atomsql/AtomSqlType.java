@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import jp.ats.atomsql.annotation.DataObject;
@@ -609,7 +608,7 @@ public enum AtomSqlType {
 		@Override
 		String placeholderExpression(Object value) {
 			var values = ((Csv<?>) value).values();
-			return String.join(", ", values.stream().map(v -> "?").collect(Collectors.toList()));
+			return String.join(", ", values.stream().map(v -> "?").toList());
 		}
 
 		@Override
