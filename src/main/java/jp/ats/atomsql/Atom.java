@@ -20,16 +20,24 @@ import jp.ats.atomsql.annotation.SqlProxy;
  */
 public class Atom<T> {
 
-	private final AtomSql atomsql;
+	private final AtomSql atomSql;
 
 	private final SqlProxyHelper helper;
 
 	private final boolean andType;
 
+	private final RowMapper<T> dataObjectCreator;
+
 	Atom(AtomSql atomsql, SqlProxyHelper helper, boolean andType) {
-		this.atomsql = atomsql;
+		this.atomSql = atomsql;
 		this.helper = helper;
 		this.andType = andType;
+
+		dataObjectCreator = (r, n) -> {
+			@SuppressWarnings("unchecked")
+			var object = (T) helper.createDataObject(r);
+			return object;
+		};
 	}
 
 	/**
@@ -40,16 +48,7 @@ public class Atom<T> {
 	 * @return {@DataObject}付与結果オブジェクトの{@link Stream}
 	 */
 	public Stream<T> stream() {
-		var startNanos = System.nanoTime();
-		try {
-			return helper.entry.executor.queryForStream(helper.sql, helper, (r, n) -> {
-				@SuppressWarnings("unchecked")
-				var object = (T) helper.createDataObject(r);
-				return object;
-			});
-		} finally {
-			helper.logElapsed(startNanos);
-		}
+		return stream(dataObjectCreator);
 	}
 
 	/**
@@ -58,7 +57,7 @@ public class Atom<T> {
 	 * @return {@DataObject}付与結果オブジェクトの{@link List}
 	 */
 	public List<T> list() {
-		return listAndClose(stream());
+		return listAndClose(streamInternal(dataObjectCreator));
 	}
 
 	/**
@@ -81,6 +80,23 @@ public class Atom<T> {
 	 * @return 結果オブジェクトの{@link Stream}
 	 */
 	public <R> Stream<R> stream(RowMapper<R> mapper) {
+		var stream = streamInternal(mapper);
+		atomSql.registerStream(stream);
+		return stream;
+	}
+
+	/**
+	 * {@link RowMapper}により生成された結果オブジェクトを{@link List}として返します。<br>
+	 * @see #list
+	 * @param mapper {@link RowMapper}
+	 * @param <R> {@link RowMapper}の生成した結果オブジェクトの型
+	 * @return 結果オブジェクトの{@link List}
+	 */
+	public <R> List<R> list(RowMapper<R> mapper) {
+		return listAndClose(streamInternal(mapper));
+	}
+
+	private <R> Stream<R> streamInternal(RowMapper<R> mapper) {
 		Objects.requireNonNull(mapper);
 
 		var startNanos = System.nanoTime();
@@ -92,29 +108,6 @@ public class Atom<T> {
 	}
 
 	/**
-	 * {@link RowMapper}により生成された結果オブジェクトを{@link List}として返します。<br>
-	 * @see #list
-	 * @param mapper {@link RowMapper}
-	 * @param <R> {@link RowMapper}の生成した結果オブジェクトの型
-	 * @return 結果オブジェクトの{@link List}
-	 */
-	public <R> List<R> list(RowMapper<R> mapper) {
-		return listAndClose(stream(mapper));
-	}
-
-	/**
-	 * {@link RowMapper}により生成された結果オブジェクト一件を{@link Optional}にラップして返します。<br>
-	 * @see #get
-	 * @param mapper {@link RowMapper}
-	 * @param <R> {@link RowMapper}の生成した結果オブジェクトの型
-	 * @return 結果オブジェクト
-	 * @throws IllegalStateException 検索結果が2件以上ある場合
-	 */
-	public <R> Optional<R> get(RowMapper<R> mapper) {
-		return get(list(mapper));
-	}
-
-	/**
 	 * {@link SimpleRowMapper}により生成された結果オブジェクトを{@link Stream}として返します。<br>
 	 * @see #stream
 	 * @param mapper {@link SimpleRowMapper}
@@ -122,14 +115,7 @@ public class Atom<T> {
 	 * @return 結果オブジェクトの{@link Stream}
 	 */
 	public <R> Stream<R> stream(SimpleRowMapper<R> mapper) {
-		Objects.requireNonNull(mapper);
-
-		var startNanos = System.nanoTime();
-		try {
-			return helper.entry.executor.queryForStream(helper.sql, helper, (r, n) -> mapper.mapRow(r));
-		} finally {
-			helper.logElapsed(startNanos);
-		}
+		return stream((r, n) -> mapper.mapRow(r));
 	}
 
 	/**
@@ -140,7 +126,7 @@ public class Atom<T> {
 	 * @return 結果オブジェクトの{@link List}
 	 */
 	public <R> List<R> list(SimpleRowMapper<R> mapper) {
-		return listAndClose(stream(mapper));
+		return listAndClose(streamInternal((r, n) -> mapper.mapRow(r)));
 	}
 
 	/**
@@ -194,7 +180,7 @@ public class Atom<T> {
 	 * @return 更新処理の場合、その結果件数
 	 */
 	public int execute() {
-		var resources = AtomSql.batchResources();
+		var resources = atomSql.batchResources();
 		if (resources == null) {//バッチ実行中ではない
 			var startNanos = System.nanoTime();
 			try {
@@ -221,7 +207,7 @@ public class Atom<T> {
 		var sql = concat(" ", helper.sql, another.helper.sql);
 		var originalSql = concat(" ", helper.originalSql, another.helper.originalSql);
 		return new Atom<T>(
-			atomsql,
+			atomSql,
 			new SqlProxyHelper(sql, originalSql, helper, another.helper),
 			true);
 	}
@@ -262,7 +248,7 @@ public class Atom<T> {
 		var originalSql = concat(delimiter, sqls.originalSql, anotherSqls.originalSql);
 
 		return new Atom<T>(
-			atomsql,
+			atomSql,
 			new SqlProxyHelper(sql, originalSql, helper, another.helper),
 			andTypeCurrent);
 	}

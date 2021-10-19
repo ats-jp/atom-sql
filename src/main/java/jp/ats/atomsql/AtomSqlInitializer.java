@@ -40,13 +40,15 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Generic
 			bd.setPrimary(true);
 		};
 
-		context.registerBean(AtomSql.class.getName(), AtomSql.class, () -> new AtomSql(convert(context)), customizer);
+		var atomSql = new AtomSql(convert(context));
+
+		context.registerBean(AtomSql.class.getName(), AtomSql.class, () -> atomSql, customizer);
 
 		classes.forEach(c -> {
 			@SuppressWarnings("unchecked")
 			var casted = (Class<Object>) c;
 
-			context.registerBean(c.getName(), casted, () -> new AtomSql(convert(context)).of(casted), customizer);
+			context.registerBean(c.getName(), casted, () -> atomSql.of(casted), customizer);
 		});
 	}
 

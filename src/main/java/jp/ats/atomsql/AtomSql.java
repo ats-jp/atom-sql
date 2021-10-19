@@ -47,9 +47,9 @@ public class AtomSql {
 
 	private static final String packageName = AtomSql.class.getPackageName();
 
-	private static final ThreadLocal<BatchResources> batchResources = new ThreadLocal<>();
+	private final ThreadLocal<BatchResources> batchResources = new ThreadLocal<>();
 
-	private static final ThreadLocal<List<Stream<?>>> streams = new ThreadLocal<>();
+	private final ThreadLocal<List<Stream<?>>> streams = new ThreadLocal<>();
 
 	private final Executors executors;
 
@@ -159,7 +159,7 @@ public class AtomSql {
 		}
 	}
 
-	static BatchResources batchResources() {
+	BatchResources batchResources() {
 		return batchResources.get();
 	}
 
@@ -224,6 +224,13 @@ public class AtomSql {
 			closeStreams();
 			streams.remove();
 		}
+	}
+
+	void registerStream(Stream<?> stream) {
+		var list = streams.get();
+		if (list == null) return;
+
+		list.add(stream);
 	}
 
 	private void closeStreams() {
