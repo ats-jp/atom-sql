@@ -314,9 +314,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		@Override
 		public Void visitExecutable(ExecutableElement e, List<MethodInfo> p) {
 			if (e.getModifiers().contains(Modifier.DEFAULT)) {
-				//デフォルトメソッドは使用できません
-				error("The default method cannot be used", e);
-				throw new ProcessException();
+				//デフォルトメソッドは対象外
+				return DEFAULT_VALUE;
 			}
 
 			var info = new MethodInfo();
