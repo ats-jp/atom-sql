@@ -3,7 +3,7 @@ package jp.ats.atomsql;
 import java.sql.PreparedStatement;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
+import org.apache.commons.logging.Log;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
@@ -43,11 +43,11 @@ public interface Executor {
 	/**
 	 * SQLログ出力を行う設定にしている場合、実装に合わせたSQL文をログ出力します。
 	 * @see Configure#enableLog
-	 * @param log {@link Logger}
+	 * @param log {@link Log}
 	 * @param originalSql プレースホルダ変換前のSQL
 	 * @param sql プレースホルダ変換後のSQL
 	 * @param insecure @{InsecureSql}が付与されたSQL文の場合、true
 	 * @param ps プレースホルダ返還後SQLセット済みの{@link PreparedStatement}
 	 */
-	void logSql(Logger log, String originalSql, String sql, boolean insecure, PreparedStatement ps);
+	void logSql(Log log, String originalSql, String sql, boolean insecure, PreparedStatement ps);
 }

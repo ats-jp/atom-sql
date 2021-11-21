@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
+import org.apache.commons.logging.Log;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
@@ -44,7 +44,7 @@ class JdbcTemplateExecutor implements Executor {
 	}
 
 	@Override
-	public void logSql(Logger log, String originalSql, String sql, boolean insecure, PreparedStatement ps) {
+	public void logSql(Log log, String originalSql, String sql, boolean insecure, PreparedStatement ps) {
 		if (insecure) {
 			log.info(originalSql);
 		} else {

@@ -23,8 +23,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 
@@ -41,7 +41,7 @@ import jp.ats.atomsql.processor.annotation.Methods;
  */
 public class AtomSql {
 
-	static final Logger logger = LoggerFactory.getLogger(AtomSql.class);
+	static final Log log = LogFactory.getLog(AtomSql.class);
 
 	private final SqlLogger sqlLogger = SqlLogger.of(Configure.instance);
 
@@ -238,7 +238,7 @@ public class AtomSql {
 			try {
 				s.close();
 			} catch (Throwable t) {
-				logger.warn("Error occured while Stream closing", t);
+				log.warn("Error occured while Stream closing", t);
 			}
 		});
 	}

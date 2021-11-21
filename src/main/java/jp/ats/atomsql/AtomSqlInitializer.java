@@ -3,6 +3,7 @@ package jp.ats.atomsql;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,8 @@ public class AtomSqlInitializer implements ApplicationContextInitializer<Generic
 
 	private static List<Class<?>> loadProxyClasses() throws IOException {
 		try (var proxyList = AtomSqlInitializer.class.getClassLoader().getResourceAsStream(Constants.PROXY_LIST)) {
+			if (proxyList == null) return Collections.emptyList();
+
 			return Arrays.stream(new String(Utils.readBytes(proxyList), Constants.CHARSET).split("\\s+")).map(l -> {
 				try {
 					return Class.forName(l);

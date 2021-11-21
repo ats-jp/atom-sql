@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
+import org.apache.commons.logging.Log;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
@@ -115,7 +115,7 @@ public class Sandbox {
 		}
 
 		@Override
-		public void logSql(Logger log, String originalSql, String sql, boolean insecure, PreparedStatement ps) {
+		public void logSql(Log log, String originalSql, String sql, boolean insecure, PreparedStatement ps) {
 			var handler = pairs.get().stream().filter(p -> p.statement == ps).findFirst().get().handler;
 
 			log.info(originalSql);
