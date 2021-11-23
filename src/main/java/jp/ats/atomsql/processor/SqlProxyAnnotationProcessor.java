@@ -108,7 +108,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		var kind = e.getKind();
 		if (kind != ElementKind.INTERFACE) {
 			//kindにSqlProxyを注釈することはできません
-			error("Cannot annotate" + kind.name() + " with " + SqlProxy.class.getSimpleName(), e);
+			error("Cannot annotate " + kind.name() + " with " + SqlProxy.class.getSimpleName(), e);
 
 			throw new ProcessException();
 		}
