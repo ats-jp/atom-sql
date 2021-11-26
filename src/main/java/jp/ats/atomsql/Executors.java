@@ -26,8 +26,10 @@ public class Executors {
 		map = new LinkedHashMap<>();
 		Entry primary = null;
 		for (var entry : entries) {
-			if (primary != null) throw new IllegalArgumentException("Primary entry is duplicate");
-			if (entry.primary) primary = entry;
+			if (entry.primary) {
+				if (primary != null) throw new IllegalArgumentException("Primary entry is duplicate");
+				primary = entry;
+			}
 
 			map.put(entry.name, entry);
 		}
