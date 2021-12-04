@@ -4,26 +4,22 @@ import java.sql.PreparedStatement;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.RowMapper;
 
 /**
- * {@link JdbcTemplate}のもつ豊富な機能のうち、Atom SQLで使用する機能のみを操作可能にするためのインターフェイスです。
+ * JdbcTemplateのもつ豊富な機能のうち、Atom SQLで使用する機能のみを操作可能にするためのインターフェイスです。
  * @author 千葉 哲嗣
  */
 public interface Executor {
 
 	/**
-	 * @see JdbcTemplate#batchUpdate(String, BatchPreparedStatementSetter)
+	 * JdbcTemplate#batchUpdate(String, BatchPreparedStatementSetter)を参考にしたメソッドです。
 	 * @param sql
-	 * @param pss
+	 * @param bpss
 	 */
-	void batchUpdate(String sql, BatchPreparedStatementSetter pss);
+	void batchUpdate(String sql, BatchPreparedStatementSetter bpss);
 
 	/**
-	 * @see JdbcTemplate#queryForStream(String, PreparedStatementSetter, RowMapper)
+	 * JdbcTemplate#queryForStream(String, PreparedStatementSetter, RowMapper)を参考にしたメソッドです。
 	 * @param <T>
 	 * @param sql
 	 * @param pss
@@ -33,7 +29,7 @@ public interface Executor {
 	<T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper);
 
 	/**
-	 * @see JdbcTemplate#update(String, PreparedStatementSetter)
+	 * JdbcTemplate#update(String, PreparedStatementSetter)を参考にしたメソッドです。
 	 * @param sql
 	 * @param pss
 	 * @return int

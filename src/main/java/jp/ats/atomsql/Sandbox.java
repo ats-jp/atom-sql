@@ -15,9 +15,6 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.RowMapper;
 
 import jp.ats.atomsql.annotation.SqlProxy;
 
@@ -60,11 +57,11 @@ public class Sandbox {
 	private static class SandboxExecutor implements Executor {
 
 		@Override
-		public void batchUpdate(String sql, BatchPreparedStatementSetter pss) {
-			var size = pss.getBatchSize();
+		public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
+			var size = bpss.getBatchSize();
 			for (var i = 0; i < size; i++) {
 				try {
-					pss.setValues(preparedStatement(), i);
+					bpss.setValues(preparedStatement(), i);
 				} catch (SQLException e) {
 					throw new IllegalStateException(e);
 				}

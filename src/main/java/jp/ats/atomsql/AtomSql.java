@@ -25,11 +25,9 @@ import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.PreparedStatementSetter;
 
 import jp.ats.atomsql.annotation.ConfidentialSql;
-import jp.ats.atomsql.annotation.JdbcTemplateName;
+import jp.ats.atomsql.annotation.Qualifier;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.processor.annotation.Methods;
@@ -193,7 +191,7 @@ public class AtomSql {
 	 * {@link Stream}を検索結果として使用する処理を実施します。<br>
 	 * 処理内で発生した{@link Stream}は{@link Stream#close()}を明示的に行わなくても処理終了と同時にすべてクローズされます。
 	 * @see Atom#stream()
-	 * @see Atom#stream(org.springframework.jdbc.core.RowMapper)
+	 * @see Atom#stream(RowMapper)
 	 * @see Atom#stream(SimpleRowMapper)
 	 * @param runnable {@link Stream}を使用した検索処理を含む汎用処理
 	 */
@@ -250,8 +248,8 @@ public class AtomSql {
 			var proxyClass = proxy.getClass().getInterfaces()[0];
 
 			//メソッドに付与されたアノテーション > クラスに付与されたアノテーション
-			var nameAnnotation = method.getAnnotation(JdbcTemplateName.class);
-			if (nameAnnotation == null) nameAnnotation = proxyClass.getAnnotation(JdbcTemplateName.class);
+			var nameAnnotation = method.getAnnotation(Qualifier.class);
+			if (nameAnnotation == null) nameAnnotation = proxyClass.getAnnotation(Qualifier.class);
 
 			var proxyClassName = proxyClass.getName();
 

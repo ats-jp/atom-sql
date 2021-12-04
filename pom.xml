@@ -4,9 +4,9 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>jp.ats</groupId>
 	<artifactId>atom-sql</artifactId>
-	<version>0.2.3</version>
+	<version>0.2.4</version>
 	<name>Atom SQL</name>
-	<description>Spring JdbcTemplate Wrapper</description>
+	<description>A JDBC wrapper with SQL injection resistant</description>
 
 	<url>https://github.com/ats-jp/atom-sql</url>
 
@@ -26,19 +26,9 @@
 	</properties>
 	<dependencies>
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-jdbc</artifactId>
-			<version>5.3.13</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-			<version>5.3.13</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot</artifactId>
-			<version>2.5.7</version>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>1.7.32</version>
 		</dependency>
 	</dependencies>
 	<build>

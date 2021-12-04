@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import org.springframework.jdbc.core.RowMapper;
-
 import jp.ats.atomsql.annotation.DataObject;
 
 /**

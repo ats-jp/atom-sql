@@ -3,8 +3,6 @@ package jp.ats.atomsql;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.springframework.jdbc.core.RowMapper;
-
 /**
  * {@link RowMapper}をより簡素化したファンクショナルインターフェイスです。
  * @see RowMapper

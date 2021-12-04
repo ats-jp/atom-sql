@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import org.springframework.jdbc.core.JdbcTemplate;
+import jp.ats.atomsql.annotation.Qualifier;
 
 /**
  * {@link Executor}を複数管理するためのマップクラスです。
@@ -48,7 +48,7 @@ public class Executors {
 	}
 
 	/**
-	 * {@link JdbcTemplate}のBean名をもとに対応する{@link Entry}を返します。
+	 * {@link Qualifier}の値をもとに対応する{@link Entry}を返します。
 	 * @param name Bean名 nullの場合プライマリ{@link Executor}が返却される
 	 * @return {@link Entry}
 	 */
@@ -76,7 +76,7 @@ public class Executors {
 		private final boolean primary;
 
 		/**
-		 * @param name {@link JdbcTemplate} Bean名
+		 * @param name {@link Qualifier}名
 		 * @param executor {@link Executor}
 		 * @param primary プライマリBeanかどうか
 		 */

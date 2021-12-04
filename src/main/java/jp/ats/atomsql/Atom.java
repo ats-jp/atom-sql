@@ -6,8 +6,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.springframework.jdbc.core.RowMapper;
-
 import jp.ats.atomsql.AtomSql.SqlProxyHelper;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlProxy;
