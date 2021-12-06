@@ -10,25 +10,38 @@ import java.util.regex.Pattern;
  */
 public class Configure {
 
-	/**
-	 * シングルトンインスタンス
-	 */
-	public static final Configure instance = new Configure();
-
 	private final String configFileName = "atom-sql.properties";
 
 	/**
+	 * enable-log<br>
+	 * SQLログを出力するかどうか<br>
 	 * SQLのログ出力を行う場合、true
 	 */
 	public final boolean enableLog;
 
 	/**
-	 * SQLログに含まれる呼び出し元情報のフィルタパターン<br>
+	 * log-stacktrace-pattern<br>
+	 * SQLログに含まれる呼び出し元情報のフィルタパターン（正規表現）<br>
 	 * パターンにマッチしたものがログに出力される
 	 */
 	public final Pattern logStackTracePattern;
 
-	private Configure() {
+	/**
+	 * 指定されたパラメーターからインスタンスを作成します。
+	 * @param enableLog SQLログを出力するかどうか
+	 * @param logStackTracePattern SQLログに含まれる呼び出し元情報のフィルタパターン（正規表現）
+	 */
+	public Configure(boolean enableLog, String logStackTracePattern) {
+		this.enableLog = enableLog;
+
+		if (logStackTracePattern == null || logStackTracePattern.isEmpty()) logStackTracePattern = ".+";
+		this.logStackTracePattern = Pattern.compile(logStackTracePattern);
+	}
+
+	/**
+	 * クラスパスのルートにあるatom-sql.propertiesから設定を読み込みインスタンスを作成します。
+	 */
+	public Configure() {
 		var config = new Properties();
 
 		try {
@@ -40,7 +53,7 @@ public class Configure {
 			throw new IllegalStateException(e);
 		}
 
-		enableLog = Boolean.valueOf(config.getProperty("enable-log", "true"));
+		enableLog = Boolean.valueOf(config.getProperty("enable-log", "false"));
 
 		logStackTracePattern = Pattern.compile(config.getProperty("log-stacktrace-pattern", ".+"));
 	}

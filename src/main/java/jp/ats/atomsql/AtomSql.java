@@ -41,7 +41,9 @@ public class AtomSql {
 
 	static final Log log = LogFactory.getLog(AtomSql.class);
 
-	private final SqlLogger sqlLogger = SqlLogger.of(Configure.instance);
+	private final Configure config;
+
+	private final SqlLogger sqlLogger;
 
 	private static final String packageName = AtomSql.class.getPackageName();
 
@@ -82,6 +84,20 @@ public class AtomSql {
 	 * @param executors {@link Executors}
 	 */
 	public AtomSql(Executors executors) {
+		config = new Configure();
+		sqlLogger = SqlLogger.of(config);
+		this.executors = Objects.requireNonNull(executors);
+	}
+
+	/**
+	 * 通常のコンストラクタです。<br>
+	 * {@link Executors}の持つ{@link Executor}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
+	 * @param config {@link Configure}
+	 * @param executors {@link Executors}
+	 */
+	public AtomSql(Configure config, Executors executors) {
+		this.config = config;
+		sqlLogger = SqlLogger.of(config);
 		this.executors = Objects.requireNonNull(executors);
 	}
 
@@ -92,6 +108,8 @@ public class AtomSql {
 	 * @param base コピー元
 	 */
 	public AtomSql(AtomSql base) {
+		config = base.config;
+		sqlLogger = base.sqlLogger;
 		this.executors = base.executors;
 	}
 
@@ -294,6 +312,7 @@ public class AtomSql {
 					names.toArray(String[]::new),
 					find.dataObjectClass(),
 					values.toArray(Object[]::new),
+					config,
 					sqlLogger);
 			} else {
 				helper = new SqlProxyHelper(
@@ -303,6 +322,7 @@ public class AtomSql {
 					find.parameters(),
 					find.dataObjectClass(),
 					args,
+					config,
 					sqlLogger);
 			}
 
@@ -371,6 +391,8 @@ public class AtomSql {
 
 		private final Class<?> dataObjectClass;
 
+		private final Configure config;
+
 		private final SqlLogger sqlLogger;
 
 		private SqlProxyHelper(
@@ -380,11 +402,13 @@ public class AtomSql {
 			String[] argNames,
 			Class<?> dataObjectClass,
 			Object[] args,
+			Configure config,
 			SqlLogger sqlLogger) {
 			originalSql = sql.trim();
 			this.entry = entry;
 			this.confidential = confidential;
 			this.dataObjectClass = dataObjectClass;
+			this.config = config;
 			this.sqlLogger = sqlLogger;
 
 			var argMap = new HashMap<String, Object>();
@@ -425,6 +449,7 @@ public class AtomSql {
 			this.originalSql = originalSql;
 			this.entry = main.entry;
 			this.dataObjectClass = main.dataObjectClass;
+			this.config = main.config;
 			this.sqlLogger = main.sqlLogger;
 
 			// セキュアではない場合すべて汚染される
@@ -528,7 +553,7 @@ public class AtomSql {
 				log.info("------ SQL START ------");
 
 				if (entry.name != null) {
-					log.info("bean name: " + entry.name);
+					log.info("name: " + entry.name);
 				}
 
 				log.info("call from:");
@@ -539,7 +564,7 @@ public class AtomSql {
 					if (elementString.contains(packageName) || elementString.contains("(Unknown Source)"))
 						continue;
 
-					if (Configure.instance.logStackTracePattern.matcher(elementString).find())
+					if (config.logStackTracePattern.matcher(elementString).find())
 						log.info(" " + elementString);
 				}
 

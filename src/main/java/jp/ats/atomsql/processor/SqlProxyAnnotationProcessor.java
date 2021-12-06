@@ -38,6 +38,7 @@ import jp.ats.atomsql.Csv;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.DataObject;
+import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
@@ -357,8 +358,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				//SQLファイルが存在するかチェックするために実行
 				result = extractor.execute(e);
 			} catch (SqlFileNotFoundException sfnfe) {
-				//メソッドeにはSQLファイルが必要です
-				error("Method " + e.getSimpleName() + " requires a SQL file", e);
+				//メソッドeにはSqlアノテーションかSQLファイルが必要です
+				error("Method " + e.getSimpleName() + " requires a " + Sql.class.getSimpleName() + " annotation or a SQL file", e);
 
 				builder.setError();
 
