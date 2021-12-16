@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>jp.ats</groupId>
 	<artifactId>atom-sql</artifactId>
-	<version>0.3.0</version>
+	<version>0.3.1</version>
 	<name>Atom SQL</name>
 	<description>A JDBC wrapper with SQL injection resistant</description>
 
@@ -21,7 +21,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<maven.compiler.release>17</maven.compiler.release>
+		<maven.compiler.release>16</maven.compiler.release>
 		<github.global.server>github-ats-jp</github.global.server>
 	</properties>
 	<dependencies>
