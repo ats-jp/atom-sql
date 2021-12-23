@@ -134,7 +134,7 @@ public class AtomSql {
 
 		@SuppressWarnings("unchecked")
 		T instance = (T) Proxy.newProxyInstance(
-			AtomSql.class.getClassLoader(),
+			Thread.currentThread().getContextClassLoader(),
 			new Class<?>[] { proxyInterface },
 			handler);
 
@@ -273,7 +273,10 @@ public class AtomSql {
 
 			var sql = loadSql(proxyClass, method);
 
-			var methods = Class.forName(proxyClassName + Constants.METADATA_CLASS_SUFFIX).getAnnotation(Methods.class);
+			var methods = Class.forName(
+				proxyClassName + Constants.METADATA_CLASS_SUFFIX,
+				true,
+				Thread.currentThread().getContextClassLoader()).getAnnotation(Methods.class);
 
 			var find = Arrays.asList(methods.value())
 				.stream()
@@ -487,7 +490,10 @@ public class AtomSql {
 		private Object createRecordDataObject(Class<?> dataObjectClass, ResultSet rs) {
 			Methods methods;
 			try {
-				methods = Class.forName(dataObjectClass.getName() + Constants.METADATA_CLASS_SUFFIX).getAnnotation(Methods.class);
+				methods = Class.forName(
+					dataObjectClass.getName() + Constants.METADATA_CLASS_SUFFIX,
+					true,
+					Thread.currentThread().getContextClassLoader()).getAnnotation(Methods.class);
 			} catch (ClassNotFoundException e) {
 				throw new IllegalStateException(e);
 			}
