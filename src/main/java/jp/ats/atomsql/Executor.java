@@ -12,6 +12,11 @@ import org.apache.commons.logging.Log;
 public interface Executor {
 
 	/**
+	 * @{link ConfidentialSql}が付与されたSQL文のログ上の目印
+	 */
+	public static final String CONFIDENTIAL = "[CONFIDENTIAL]";
+
+	/**
 	 * JdbcTemplate#batchUpdate(String, BatchPreparedStatementSetter)を参考にしたメソッドです。
 	 * @param sql
 	 * @param bpss
@@ -42,8 +47,8 @@ public interface Executor {
 	 * @param log {@link Log}
 	 * @param originalSql プレースホルダ変換前のSQL
 	 * @param sql プレースホルダ変換後のSQL
-	 * @param insecure @{InsecureSql}が付与されたSQL文の場合、true
+	 * @param confidential @{link ConfidentialSql}が付与されたSQL文の場合、true
 	 * @param ps プレースホルダ返還後SQLセット済みの{@link PreparedStatement}
 	 */
-	void logSql(Log log, String originalSql, String sql, boolean insecure, PreparedStatement ps);
+	void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps);
 }

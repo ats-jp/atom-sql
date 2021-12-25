@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
@@ -84,8 +85,8 @@ public class AtomSql {
 	 * @param executors {@link Executors}
 	 */
 	public AtomSql(Executors executors) {
-		config = new Configure();
-		sqlLogger = SqlLogger.of(config);
+		config = new PropertiesConfigure();
+		sqlLogger = new SqlLogger(config);
 		this.executors = Objects.requireNonNull(executors);
 	}
 
@@ -96,8 +97,8 @@ public class AtomSql {
 	 * @param executors {@link Executors}
 	 */
 	public AtomSql(Configure config, Executors executors) {
-		this.config = config;
-		sqlLogger = SqlLogger.of(config);
+		this.config = Objects.requireNonNull(config);
+		sqlLogger = new SqlLogger(config);
 		this.executors = Objects.requireNonNull(executors);
 	}
 
@@ -111,6 +112,46 @@ public class AtomSql {
 		config = base.config;
 		sqlLogger = base.sqlLogger;
 		this.executors = base.executors;
+	}
+
+	AtomSql() {
+		config = new Configure() {
+
+			@Override
+			public boolean enableLog() {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public Pattern logStackTracePattern() {
+				throw new UnsupportedOperationException();
+			}
+		};
+
+		sqlLogger = new SqlLogger(config);
+
+		executors = new Executors(new Executor() {
+
+			@Override
+			public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public <T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public int update(String sql, PreparedStatementSetter pss) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps) {
+				throw new UnsupportedOperationException();
+			}
+		});
 	}
 
 	/**
@@ -183,7 +224,7 @@ public class AtomSql {
 		batchResources.get().forEach((name, sql, helpers) -> {
 			var startNanos = System.nanoTime();
 			try {
-				executors.get(name).executor.batchUpdate(sql, new BatchPreparedStatementSetter() {
+				executors.get(name).executor().batchUpdate(sql, new BatchPreparedStatementSetter() {
 
 					@Override
 					public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -249,6 +290,18 @@ public class AtomSql {
 		list.add(stream);
 	}
 
+	SqlProxyHelper helper(String sql) {
+		return new SqlProxyHelper(
+			sql,
+			executors.get(),
+			false,
+			new String[0],
+			Object.class,
+			new Object[0],
+			config,
+			sqlLogger);
+	}
+
 	private void closeStreams() {
 		streams.get().forEach(s -> {
 			try {
@@ -271,7 +324,7 @@ public class AtomSql {
 
 			var proxyClassName = proxyClass.getName();
 
-			var sql = loadSql(proxyClass, method);
+			var sql = loadSql(proxyClass, method).trim();
 
 			var methods = Class.forName(
 				proxyClassName + Constants.METADATA_CLASS_SUFFIX,
@@ -402,12 +455,12 @@ public class AtomSql {
 			String sql,
 			Executors.Entry entry,
 			boolean confidential,
-			String[] argNames,
+			String[] parameterNames,
 			Class<?> dataObjectClass,
 			Object[] args,
 			Configure config,
 			SqlLogger sqlLogger) {
-			originalSql = sql.trim();
+			originalSql = sql;
 			this.entry = entry;
 			this.confidential = confidential;
 			this.dataObjectClass = dataObjectClass;
@@ -415,8 +468,8 @@ public class AtomSql {
 			this.sqlLogger = sqlLogger;
 
 			var argMap = new HashMap<String, Object>();
-			for (int i = 0; i < argNames.length; i++) {
-				argMap.put(argNames[i], args[i]);
+			for (int i = 0; i < parameterNames.length; i++) {
+				argMap.put(parameterNames[i], args[i]);
 			}
 
 			var converted = new StringBuilder();
@@ -440,7 +493,7 @@ public class AtomSql {
 
 			converted.append(sqlRemain);
 
-			this.sql = converted.toString().trim();
+			this.sql = converted.toString();
 		}
 
 		SqlProxyHelper(
@@ -455,7 +508,7 @@ public class AtomSql {
 			this.config = main.config;
 			this.sqlLogger = main.sqlLogger;
 
-			// セキュアではない場合すべて汚染される
+			// confidentialではない場合伝染する
 			this.confidential = main.confidential || sub.confidential;
 
 			argumentTypes.addAll(main.argumentTypes);
@@ -558,8 +611,8 @@ public class AtomSql {
 			sqlLogger.perform(log -> {
 				log.info("------ SQL START ------");
 
-				if (entry.name != null) {
-					log.info("name: " + entry.name);
+				if (entry.name() != null) {
+					log.info("name: " + entry.name());
 				}
 
 				log.info("call from:");
@@ -570,13 +623,13 @@ public class AtomSql {
 					if (elementString.contains(packageName) || elementString.contains("(Unknown Source)"))
 						continue;
 
-					if (config.logStackTracePattern.matcher(elementString).find())
+					if (config.logStackTracePattern().matcher(elementString).find())
 						log.info(" " + elementString);
 				}
 
 				log.info("sql:");
 
-				entry.executor.logSql(log, originalSql, sql, confidential, ps);
+				entry.executor().logSql(log, originalSql, sql, confidential, ps);
 
 				log.info("------  SQL END  ------");
 			});

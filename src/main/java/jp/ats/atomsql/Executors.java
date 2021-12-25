@@ -2,7 +2,6 @@ package jp.ats.atomsql;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import jp.ats.atomsql.annotation.Qualifier;
 
@@ -26,12 +25,12 @@ public class Executors {
 		map = new LinkedHashMap<>();
 		Entry primary = null;
 		for (var entry : entries) {
-			if (entry.primary) {
+			if (entry.primary()) {
 				if (primary != null) throw new IllegalArgumentException("Primary entry is duplicate");
 				primary = entry;
 			}
 
-			map.put(entry.name, entry);
+			map.put(entry.name(), entry);
 		}
 
 		if (primary == null) throw new IllegalArgumentException("Primary entry not found");
@@ -44,7 +43,7 @@ public class Executors {
 	 * @param primaryExecutor
 	 */
 	public Executors(Executor primaryExecutor) {
-		this(new Entry(primaryExecutor));
+		this(new Entry(null, primaryExecutor, true));
 	}
 
 	/**
@@ -66,33 +65,10 @@ public class Executors {
 
 	/**
 	 * {@link Executors}用要素
+	 * @param name {@link Qualifier}名
+	 * @param executor {@link Executor}
+	 * @param primary プライマリBeanかどうか
 	 */
-	public static class Entry {
-
-		final String name;
-
-		final Executor executor;
-
-		private final boolean primary;
-
-		/**
-		 * @param name {@link Qualifier}名
-		 * @param executor {@link Executor}
-		 * @param primary プライマリBeanかどうか
-		 */
-		public Entry(String name, Executor executor, boolean primary) {
-			this.name = Objects.requireNonNull(name);
-			this.executor = Objects.requireNonNull(executor);
-			this.primary = primary;
-		}
-
-		/**
-		 * @param executor {@link Executor}
-		 */
-		public Entry(Executor executor) {
-			this.name = null;
-			this.executor = Objects.requireNonNull(executor);
-			this.primary = true;
-		}
+	public static record Entry(String name, Executor executor, boolean primary) {
 	}
 }

@@ -112,7 +112,7 @@ public class Sandbox {
 		}
 
 		@Override
-		public void logSql(Log log, String originalSql, String sql, boolean insecure, PreparedStatement ps) {
+		public void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps) {
 			var handler = pairs.get().stream().filter(p -> p.statement == ps).findFirst().get().handler;
 
 			log.info(originalSql);
@@ -120,8 +120,10 @@ public class Sandbox {
 			log.info("processed to:");
 			log.info(sql);
 
-			if (insecure)
+			if (confidential) {
+				log.info(Executor.CONFIDENTIAL);
 				return;
+			}
 
 			log.info("binding values:");
 

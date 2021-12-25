@@ -1,5 +1,6 @@
 package jp.ats.atomsql;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import org.apache.commons.logging.Log;
@@ -7,34 +8,16 @@ import org.apache.commons.logging.Log;
 /**
  * @author 千葉 哲嗣
  */
-abstract class SqlLogger {
+class SqlLogger {
 
-	private static final SqlLogger logger = new SqlLoggerImpl();
+	private final Configure config;
 
-	private static final SqlLogger disabledLogger = new DisabledSqlLogger();
-
-	static SqlLogger of(Configure config) {
-		if (config.enableLog)
-			return logger;
-
-		return disabledLogger;
-
+	SqlLogger(Configure config) {
+		this.config = Objects.requireNonNull(config);
 	}
 
-	abstract void perform(Consumer<Log> consumer);
+	void perform(Consumer<Log> consumer) {
+		if (config.enableLog()) consumer.accept(AtomSql.log);
 
-	private static class SqlLoggerImpl extends SqlLogger {
-
-		@Override
-		void perform(Consumer<Log> consumer) {
-			consumer.accept(AtomSql.log);
-		}
-	}
-
-	private static class DisabledSqlLogger extends SqlLogger {
-
-		@Override
-		void perform(Consumer<Log> consumer) {
-		}
 	}
 }

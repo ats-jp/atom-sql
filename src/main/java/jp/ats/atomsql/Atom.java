@@ -18,6 +18,84 @@ import jp.ats.atomsql.annotation.SqlProxy;
  */
 public class Atom<T> {
 
+	/**
+	 * 空文字列
+	 */
+	public static final Atom<?> EMPTY = newInstance("");
+
+	/**
+	 * 空白
+	 */
+	public static final Atom<?> BLANK = newInstance(" ");
+
+	/**
+	 * ,
+	 */
+	public static final Atom<?> COMMA = newInstance(", ");
+
+	/**
+	 * ,<br>
+	 * COMMAの短縮形
+	 */
+	public static final Atom<?> C = COMMA;
+
+	/**
+	 * INNER JOIN
+	 */
+	public static final Atom<?> INNER_JOIN = newInstance("INNER JOIN");
+
+	/**
+	 * LEFT OUTER JOIN
+	 */
+	public static final Atom<?> LEFT_OUTER_JOIN = newInstance("LEFT OUTER JOIN");
+
+	/**
+	 * RIGHT OUTER JOIN
+	 */
+	public static final Atom<?> RIGHT_OUTER_JOIN = newInstance("RIGHT OUTER JOIN");
+
+	/**
+	 * WHERE
+	 */
+	public static final Atom<?> WHERE = newInstance("WHERE");
+
+	/**
+	 * HAVING
+	 */
+	public static final Atom<?> HAVING = newInstance("HAVING");
+
+	/**
+	 * ORDER BY
+	 */
+	public static final Atom<?> ORDER_BY = newInstance("ORDER BY");
+
+	/**
+	 * GROUP BY
+	 */
+	public static final Atom<?> GROUP_BY = newInstance("GROUP BY");
+
+	/**
+	 * (
+	 */
+	public static final Atom<?> LEFT_PAREN = newInstance("(");
+
+	/**
+	 * (<br>
+	 * LEFT_PARENの短縮形
+	 */
+	public static final Atom<?> L = LEFT_PAREN;
+
+	/**
+	 * )
+	 */
+	public static final Atom<?> RIGHT_PAREN = newInstance(")");
+
+	/**
+	 * )<br>
+	 * RIGHT_PARENの短縮形
+	 */
+	public static final Atom<?> R = RIGHT_PAREN;
+
 	private final AtomSql atomSql;
 
 	private final SqlProxyHelper helper;
@@ -36,6 +114,11 @@ public class Atom<T> {
 			var object = (T) helper.createDataObject(r);
 			return object;
 		};
+	}
+
+	private static Atom<?> newInstance(String sql) {
+		var atomSql = new AtomSql();
+		return new Atom<>(atomSql, atomSql.helper(sql), true);
 	}
 
 	/**
@@ -99,7 +182,7 @@ public class Atom<T> {
 
 		var startNanos = System.nanoTime();
 		try {
-			return helper.entry.executor.queryForStream(helper.sql, helper, mapper);
+			return helper.entry.executor().queryForStream(helper.sql, helper, mapper);
 		} finally {
 			helper.logElapsed(startNanos);
 		}
@@ -182,32 +265,71 @@ public class Atom<T> {
 		if (resources == null) {//バッチ実行中ではない
 			var startNanos = System.nanoTime();
 			try {
-				return helper.entry.executor.update(helper.sql, helper);
+				return helper.entry.executor().update(helper.sql, helper);
 			} finally {
 				helper.logElapsed(startNanos);
 			}
 		}
 
-		resources.put(helper.entry.name, helper);
+		resources.put(helper.entry.name(), helper);
 
 		return 0;
 	}
 
 	/**
 	 * 内部に持つSQL文の一部同士を" "をはさんで文字列結合します。<br>
-	 * このインスタンス及びもう一方の内部SQLは変化せず、結合された新たな{@link Atom}が返されます。
-	 * @param another 結合対象
+	 * このインスタンス及びもう一方の内部SQLは変化せず、結合された新たな{@link Atom}が返されます。<br>
+	 * 複数を一度に結合することが可能です。
+	 * @param others 結合対象
 	 * @return 結合された新しい{@link Atom}
 	 */
-	public Atom<T> concat(Atom<?> another) {
+	public Atom<T> join(Atom<?>... others) {
+		var result = this;
+		for (var another : others) {
+			result = this.concatInternal(" ", another);
+		}
+
+		return result;
+	}
+
+	/**
+	 * 内部に持つSQL文を、自身を先頭にdelimiterをはさんで文字列結合します。<br>
+	 * このインスタンス及びもう一方の内部SQLは変化せず、結合された新たな{@link Atom}が返されます。<br>
+	 * @param delimiter 区切り文字列
+	 * @param others 結合対象
+	 * @return 結合された新しい{@link Atom}
+	 */
+	public Atom<T> joinWith(Atom<?> delimiter, Atom<?>... others) {
+		var result = this;
+		var delimiterString = delimiter.helper.sql;
+		for (var another : others) {
+			result = this.concatInternal(delimiterString, another);
+		}
+
+		return result;
+	}
+
+	private Atom<T> concatInternal(String delimiter, Atom<?> another) {
 		Objects.requireNonNull(another);
 
-		var sql = concat(" ", helper.sql, another.helper.sql);
-		var originalSql = concat(" ", helper.originalSql, another.helper.originalSql);
+		var sql = concat(delimiter, helper.sql, another.helper.sql);
+		var originalSql = concat(delimiter, helper.originalSql, another.helper.originalSql);
 		return new Atom<T>(
 			atomSql,
 			new SqlProxyHelper(sql, originalSql, helper, another.helper),
 			true);
+	}
+
+	/**
+	 * 複数の{@link Atom}を、delimiterをはさんで文字列結合します。<br>
+	 * @param delimiter 区切り文字
+	 * @param members 結合対象
+	 * @return 結合された{@link Atom}
+	 */
+	public static Atom<?> join(Atom<?> delimiter, List<Atom<?>> members) {
+		return members.size() == 0
+			? BLANK
+			: members.get(0).joinWith(delimiter, members.subList(1, members.size()).toArray(Atom<?>[]::new));
 	}
 
 	/**
