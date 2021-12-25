@@ -44,6 +44,22 @@ public class Sandbox {
 	}
 
 	/**
+	 * このサンドボックス環境用の{@link AtomSql}が提供されるので、使用者はそれにより{@SqlProxy}を生成、検査を行います。<br>
+	 * デフォルトではない設定を使用できます。
+	 * @param config {@link Configure}
+	 * @param process 検査したい処理
+	 */
+	public static void execute(Configure config, Consumer<AtomSql> process) {
+		pairs.set(new LinkedList<Pair>());
+		try {
+			process.accept(new AtomSql(config, new Executors(new SandboxExecutor())));
+		} finally {
+			pairs.remove();
+			resultHolder.remove();
+		}
+	}
+
+	/**
 	 * サンドボックス処理内で永続するダミーの検索結果を設定します。<br>
 	 * 再設定しない限り、同じ検索結果となります。
 	 * @param consumer {@link Result}に値をセットする{@link Consumer}
@@ -117,7 +133,7 @@ public class Sandbox {
 
 			log.info(originalSql);
 
-			log.info("processed to:");
+			log.info("processed sql:");
 			log.info(sql);
 
 			if (confidential) {

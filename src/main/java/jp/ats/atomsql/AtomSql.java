@@ -395,7 +395,7 @@ public class AtomSql {
 			} else if (returnType.equals(Optional.class)) {
 				return atom.get();
 			} else if (returnType.equals(int.class)) {
-				return atom.execute();
+				return atom.update();
 			} else {
 				//不正な戻り値の型
 				throw new IllegalStateException("Incorrect return type: " + returnType);

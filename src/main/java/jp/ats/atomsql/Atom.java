@@ -34,6 +34,11 @@ public class Atom<T> {
 	public static final Atom<?> COMMA = newInstance(", ");
 
 	/**
+	 * 改行
+	 */
+	public static final Atom<?> CRLF = newInstance("\r\n");
+
+	/**
 	 * ,<br>
 	 * COMMAの短縮形
 	 */
@@ -256,11 +261,11 @@ public class Atom<T> {
 	}
 
 	/**
-	 * 更新処理（INSERT, UPDATE）、DML文を実行します。<br>
-	 * バッチ実行の場合、結果は常に0となります。
+	 * 更新処理（INSERT, UPDATE, DELETE）のDML文、DDL文を実行します。<br>
+	 * DDL、バッチ実行の場合、結果は常に0となります。
 	 * @return 更新処理の場合、その結果件数
 	 */
-	public int execute() {
+	public int update() {
 		var resources = atomSql.batchResources();
 		if (resources == null) {//バッチ実行中ではない
 			var startNanos = System.nanoTime();
@@ -286,7 +291,7 @@ public class Atom<T> {
 	public Atom<T> join(Atom<?>... others) {
 		var result = this;
 		for (var another : others) {
-			result = this.concatInternal(" ", another);
+			result = result.joinInternal(" ", another);
 		}
 
 		return result;
@@ -303,13 +308,13 @@ public class Atom<T> {
 		var result = this;
 		var delimiterString = delimiter.helper.sql;
 		for (var another : others) {
-			result = this.concatInternal(delimiterString, another);
+			result = result.joinInternal(delimiterString, another);
 		}
 
 		return result;
 	}
 
-	private Atom<T> concatInternal(String delimiter, Atom<?> another) {
+	private Atom<T> joinInternal(String delimiter, Atom<?> another) {
 		Objects.requireNonNull(another);
 
 		var sql = concat(delimiter, helper.sql, another.helper.sql);
