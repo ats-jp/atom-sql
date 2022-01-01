@@ -40,7 +40,12 @@ public class Csv<T> {
 	}
 
 	private void checkAndAdd(T value) {
-		if (AtomSqlType.selectForPreparedStatement(value).nonThreadSafe()) throw new NonThreadSafeException();
+		//Csvの中にCsvは不可
+		if (value instanceof Csv) throw new IllegalArgumentException("Csv cannot be used for Csv elements");
+
+		var type = AtomSqlType.selectForPreparedStatement(value);
+
+		if (type.nonThreadSafe()) throw new NonThreadSafeException();
 		values.add(value);
 	}
 }
