@@ -532,6 +532,38 @@ public enum AtomSqlType {
 	},
 
 	/**
+	 * null
+	 */
+	NULL {
+
+		@Override
+		public Class<?> type() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		void bind(int index, PreparedStatement statement, Object value) {
+			try {
+				// nullの場合はsetObject(i, null)
+				// DBによってはエラーとなる可能性があるため、その場合はsetNull(int, int)の使用を検討する
+				statement.setObject(index, null);
+			} catch (SQLException e) {
+				throw new AtomSqlException(e);
+			}
+		}
+
+		@Override
+		Object get(ResultSet rs, String columnLabel) throws SQLException {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			throw new UnsupportedOperationException();
+		}
+	},
+
+	/**
 	 * {@link String}
 	 */
 	STRING {
@@ -625,7 +657,7 @@ public enum AtomSqlType {
 
 		@Override
 		AtomSqlType toTypeArgument() {
-			return OBJECT;
+			throw new UnsupportedOperationException();
 		}
 	};
 
@@ -658,7 +690,7 @@ public enum AtomSqlType {
 	private static final Map<Class<?>, AtomSqlType> types = new HashMap<>();
 
 	static {
-		Arrays.stream(AtomSqlType.values()).forEach(b -> types.put(b.type(), b));
+		Arrays.stream(AtomSqlType.values()).filter(b -> b != NULL).forEach(b -> types.put(b.type(), b));
 	}
 
 	/**
@@ -667,10 +699,8 @@ public enum AtomSqlType {
 	 * @return {@link AtomSqlType}
 	 */
 	public static AtomSqlType selectForPreparedStatement(Object o) {
-		// nullの場合はsetObject(i, null)
-		// DBによってはエラーとなる可能性があるため、その場合はsetNull(int, int)の使用を検討する
 		if (o == null)
-			return OBJECT;
+			return NULL;
 
 		var type = types.get(o.getClass());
 		return type == null ? OBJECT : type;
