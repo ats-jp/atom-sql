@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jp.ats.atomsql.AtomSql.SqlProxyHelper;
@@ -34,15 +35,15 @@ public class Atom<T> {
 	public static final Atom<?> COMMA = newInstance(", ");
 
 	/**
-	 * 改行
-	 */
-	public static final Atom<?> CRLF = newInstance("\r\n");
-
-	/**
 	 * ,<br>
 	 * COMMAの短縮形
 	 */
 	public static final Atom<?> C = COMMA;
+
+	/**
+	 * 改行
+	 */
+	public static final Atom<?> CRLF = newInstance("\r\n");
 
 	/**
 	 * INNER JOIN
@@ -103,7 +104,9 @@ public class Atom<T> {
 
 	private final AtomSql atomSql;
 
-	private final SqlProxyHelper helper;
+	private final Supplier<SqlProxyHelper> helperSupplier;
+
+	private final Object nonThreadSafeHelperKey = new Object();
 
 	private final boolean andType;
 
@@ -111,7 +114,14 @@ public class Atom<T> {
 
 	Atom(AtomSql atomsql, SqlProxyHelper helper, boolean andType) {
 		this.atomSql = atomsql;
-		this.helper = helper;
+
+		if (helper.containsNonThreadSaleValues) {
+			atomSql.registerHelper(nonThreadSafeHelperKey, helper);
+			this.helperSupplier = () -> atomSql.getHelper(nonThreadSafeHelperKey);
+		} else {
+			this.helperSupplier = () -> helper;
+		}
+
 		this.andType = andType;
 
 		dataObjectCreator = (r, n) -> {
@@ -119,6 +129,10 @@ public class Atom<T> {
 			var object = (T) helper.createDataObject(r);
 			return object;
 		};
+	}
+
+	private SqlProxyHelper helper() {
+		return helperSupplier.get();
 	}
 
 	private static Atom<?> newInstance(String sql) {
@@ -185,6 +199,8 @@ public class Atom<T> {
 	private <R> Stream<R> streamInternal(RowMapper<R> mapper) {
 		Objects.requireNonNull(mapper);
 
+		var helper = helper();
+
 		var startNanos = System.nanoTime();
 		try {
 			return helper.entry.executor().queryForStream(helper.sql, helper, mapper);
@@ -232,7 +248,7 @@ public class Atom<T> {
 	 * @return SQL文もしくはその一部
 	 */
 	public String sql() {
-		return helper.originalSql;
+		return helper().originalSql;
 	}
 
 	/**
@@ -241,7 +257,7 @@ public class Atom<T> {
 	 */
 	@Override
 	public String toString() {
-		return helper.originalSql;
+		return helper().originalSql;
 	}
 
 	/**
@@ -249,7 +265,7 @@ public class Atom<T> {
 	 * @return 内部に持つSQLが空文字列である場合、true
 	 */
 	public boolean isEmpty() {
-		return helper.originalSql.isEmpty();
+		return helper().originalSql.isEmpty();
 	}
 
 	private <E> Optional<E> get(List<E> list) {
@@ -266,6 +282,8 @@ public class Atom<T> {
 	 * @return 更新処理の場合、その結果件数
 	 */
 	public int update() {
+		var helper = helper();
+
 		var resources = atomSql.batchResources();
 		if (resources == null) {//バッチ実行中ではない
 			var startNanos = System.nanoTime();
@@ -288,7 +306,7 @@ public class Atom<T> {
 	 * @param others 結合対象
 	 * @return 結合された新しい{@link Atom}
 	 */
-	public Atom<T> join(Atom<?>... others) {
+	public Atom<T> concat(Atom<?>... others) {
 		var result = this;
 		for (var another : others) {
 			result = result.joinInternal(" ", another);
@@ -304,9 +322,9 @@ public class Atom<T> {
 	 * @param others 結合対象
 	 * @return 結合された新しい{@link Atom}
 	 */
-	public Atom<T> joinWith(Atom<?> delimiter, Atom<?>... others) {
+	public Atom<T> joinAndConcat(Atom<?> delimiter, Atom<?>... others) {
 		var result = this;
-		var delimiterString = delimiter.helper.sql;
+		var delimiterString = delimiter.helper().sql;
 		for (var another : others) {
 			result = result.joinInternal(delimiterString, another);
 		}
@@ -317,11 +335,14 @@ public class Atom<T> {
 	private Atom<T> joinInternal(String delimiter, Atom<?> another) {
 		Objects.requireNonNull(another);
 
-		var sql = concat(delimiter, helper.sql, another.helper.sql);
-		var originalSql = concat(delimiter, helper.originalSql, another.helper.originalSql);
+		var helper = helper();
+		var anotherHelper = another.helper();
+
+		var sql = concat(delimiter, helper.sql, anotherHelper.sql);
+		var originalSql = concat(delimiter, helper.originalSql, anotherHelper.originalSql);
 		return new Atom<T>(
 			atomSql,
-			new SqlProxyHelper(sql, originalSql, helper, another.helper),
+			new SqlProxyHelper(sql, originalSql, helper, anotherHelper),
 			true);
 	}
 
@@ -334,7 +355,7 @@ public class Atom<T> {
 	public static Atom<?> join(Atom<?> delimiter, List<Atom<?>> members) {
 		return members.size() == 0
 			? BLANK
-			: members.get(0).joinWith(delimiter, members.subList(1, members.size()).toArray(Atom<?>[]::new));
+			: members.get(0).joinAndConcat(delimiter, members.subList(1, members.size()).toArray(Atom<?>[]::new));
 	}
 
 	/**
@@ -366,15 +387,18 @@ public class Atom<T> {
 	private Atom<T> andOr(String delimiter, Atom<?> another, boolean andTypeCurrent) {
 		Objects.requireNonNull(another);
 
+		var helper = helper();
+		var anotherHelper = another.helper();
+
 		var sqls = guardSql(andType, andTypeCurrent, helper);
-		var anotherSqls = guardSql(another.andType, andTypeCurrent, another.helper);
+		var anotherSqls = guardSql(another.andType, andTypeCurrent, anotherHelper);
 
 		var sql = concat(delimiter, sqls.sql, anotherSqls.sql);
 		var originalSql = concat(delimiter, sqls.originalSql, anotherSqls.originalSql);
 
 		return new Atom<T>(
 			atomSql,
-			new SqlProxyHelper(sql, originalSql, helper, another.helper),
+			new SqlProxyHelper(sql, originalSql, helper, anotherHelper),
 			andTypeCurrent);
 	}
 

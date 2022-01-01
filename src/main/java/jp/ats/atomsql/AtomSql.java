@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import jp.ats.atomsql.annotation.ConfidentialSql;
+import jp.ats.atomsql.annotation.NonThreadSafe;
 import jp.ats.atomsql.annotation.Qualifier;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlProxy;
@@ -51,6 +52,8 @@ public class AtomSql {
 	private final ThreadLocal<BatchResources> batchResources = new ThreadLocal<>();
 
 	private final ThreadLocal<List<Stream<?>>> streams = new ThreadLocal<>();
+
+	private final ThreadLocal<Map<Object, SqlProxyHelper>> nonThreadSafeHelpers = new ThreadLocal<>();
 
 	private final Executors executors;
 
@@ -200,7 +203,7 @@ public class AtomSql {
 
 	/**
 	 * バッチ処理を実施します。<br>
-	 * {@link Runnable}と違い、何らかの処理結果を取り出したい場合に使用します<br>
+	 * {@link #tryBatch(Runnable)}と違い、何らかの処理結果を取り出したい場合に使用します<br>
 	 * @param <T> 返却値の型
 	 * @see #tryBatch(Runnable)
 	 * @param supplier 結果を返却が可能な更新処理を含む汎用処理
@@ -267,7 +270,7 @@ public class AtomSql {
 	/**
 	 * {@link Stream}を検索結果として使用する処理を実施します。<br>
 	 * 処理内で発生した{@link Stream}は{@link Stream#close()}を明示的に行わなくても処理終了と同時にすべてクローズされます。
-	 * {@link Runnable}と違い、何らかの処理結果を取り出したい場合に使用します<br>
+	 * {@link #tryStream(Runnable)}と違い、何らかの処理結果を取り出したい場合に使用します<br>
 	 * @param <T> 返却値の型
 	 * @see #tryStream(Runnable)
 	 * @param supplier {@link Stream}を使用した検索処理を含む汎用処理
@@ -288,6 +291,61 @@ public class AtomSql {
 		if (list == null) return;
 
 		list.add(stream);
+	}
+
+	/**
+	 * パラメーターに{@link NonThreadSafe}が付与されている型を使用する処理を実施します。<br>
+	 * スレッドセーフではない値を使用した処理はすべてこの中で行われる必要があります。
+	 * @see AtomSqlType
+	 * @see NonThreadSafe
+	 * @see NonThreadSafeException
+	 * @param runnable パラメーターに{@link NonThreadSafe}が付与されている型を使用する汎用処理
+	 */
+	public void tryNonThreadSafe(Runnable runnable) {
+		nonThreadSafeHelpers.set(new HashMap<>());
+		try {
+			runnable.run();
+		} finally {
+			nonThreadSafeHelpers.remove();
+		}
+	}
+
+	/**
+	 * パラメーターに{@link NonThreadSafe}が付与されている型を使用する処理を実施します。<br>
+	 * スレッドセーフではない値を使用した処理はすべてこの中で行われる必要があります。<br>
+	 * {@link #tryNonThreadSafe(Runnable)}と違い、何らかの処理結果を取り出したい場合に使用します。
+	 * @param <T> 返却値の型
+	 * @see AtomSqlType
+	 * @see NonThreadSafe
+	 * @see NonThreadSafeException
+	 * @param supplier パラメーターに{@link NonThreadSafe}が付与されている型を使用する汎用処理
+	 * @return {@link Supplier}の返却値
+	 */
+	public <T> T tryNonThreadSafe(Supplier<T> supplier) {
+		nonThreadSafeHelpers.set(new HashMap<>());
+		try {
+			return supplier.get();
+		} finally {
+			nonThreadSafeHelpers.remove();
+		}
+	}
+
+	void registerHelper(Object key, SqlProxyHelper helper) {
+		helperMap().put(key, helper);
+	}
+
+	SqlProxyHelper getHelper(Object key) {
+		var result = helperMap().get(key);
+		if (result == null) throw new NonThreadSafeException();
+
+		return result;
+	}
+
+	private Map<Object, SqlProxyHelper> helperMap() {
+		var map = nonThreadSafeHelpers.get();
+		if (map == null) throw new NonThreadSafeException();
+
+		return map;
 	}
 
 	SqlProxyHelper helper(String sql) {
@@ -439,6 +497,9 @@ public class AtomSql {
 
 		final Executors.Entry entry;
 
+		//スレッドセーフではない型の値を含んでいる場合true
+		final boolean containsNonThreadSaleValues;
+
 		private final boolean confidential;
 
 		private final List<AtomSqlType> argumentTypes = new ArrayList<>();
@@ -474,6 +535,8 @@ public class AtomSql {
 
 			var converted = new StringBuilder();
 
+			boolean[] nonThreadSale = { false };
+
 			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
 				converted.append(f.gap);
 
@@ -485,6 +548,8 @@ public class AtomSql {
 
 				var type = AtomSqlType.selectForPreparedStatement(value);
 
+				nonThreadSale[0] = nonThreadSale[0] | type.nonThreadSafe();
+
 				converted.append(type.placeholderExpression(value));
 
 				argumentTypes.add(type);
@@ -494,6 +559,8 @@ public class AtomSql {
 			converted.append(sqlRemain);
 
 			this.sql = converted.toString();
+
+			containsNonThreadSaleValues = nonThreadSale[0];
 		}
 
 		SqlProxyHelper(
@@ -516,6 +583,8 @@ public class AtomSql {
 
 			values.addAll(main.values);
 			values.addAll(sub.values);
+
+			containsNonThreadSaleValues = main.containsNonThreadSaleValues | sub.containsNonThreadSaleValues;
 		}
 
 		Object createDataObject(ResultSet rs) {

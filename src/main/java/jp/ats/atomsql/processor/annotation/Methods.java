@@ -14,8 +14,8 @@ import java.lang.annotation.Target;
 public @interface Methods {
 
 	/**
-	 * メソッドの引数名
-	 * @return メソッドの引数名
+	 * メソッド
+	 * @return メソッド
 	 */
 	Method[] value();
 }

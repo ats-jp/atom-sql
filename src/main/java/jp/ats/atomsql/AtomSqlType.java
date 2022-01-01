@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 
 import jp.ats.atomsql.annotation.DataObject;
+import jp.ats.atomsql.annotation.NonThreadSafe;
 
 /**
  * Atom SQLで使用可能な型を定義した列挙型です。<br>
@@ -55,6 +56,7 @@ public enum AtomSqlType {
 	/**
 	 * {@link BinaryStream}
 	 */
+	@NonThreadSafe
 	BINARY_STREAM {
 
 		@Override
@@ -86,6 +88,7 @@ public enum AtomSqlType {
 	/**
 	 * {@link Blob}
 	 */
+	@NonThreadSafe
 	BLOB {
 
 		@Override
@@ -174,6 +177,7 @@ public enum AtomSqlType {
 	/**
 	 * byte[]
 	 */
+	@NonThreadSafe
 	BYTE_ARRAY {
 
 		@Override
@@ -204,6 +208,7 @@ public enum AtomSqlType {
 	/**
 	 * {@link CharacterStream}
 	 */
+	@NonThreadSafe
 	CHARACTER_STREAM {
 
 		@Override
@@ -235,6 +240,7 @@ public enum AtomSqlType {
 	/**
 	 * {@link Clob}
 	 */
+	@NonThreadSafe
 	CLOB {
 
 		@Override
@@ -497,6 +503,7 @@ public enum AtomSqlType {
 	/**
 	 * {@link Object}
 	 */
+	@NonThreadSafe
 	OBJECT {
 
 		@Override
@@ -622,6 +629,12 @@ public enum AtomSqlType {
 		}
 	};
 
+	private final boolean nonThreadSafe;
+
+	private AtomSqlType() {
+		nonThreadSafe = AtomSqlType.class.getFields()[ordinal()].getAnnotation(NonThreadSafe.class) != null;
+	}
+
 	/**
 	 * この型に対応するJavaでの型を返します。
 	 * @return type
@@ -633,6 +646,10 @@ public enum AtomSqlType {
 	abstract Object get(ResultSet rs, String columnLabel) throws SQLException;
 
 	abstract AtomSqlType toTypeArgument();
+
+	boolean nonThreadSafe() {
+		return nonThreadSafe;
+	}
 
 	String placeholderExpression(Object value) {
 		return "?";
@@ -667,9 +684,6 @@ public enum AtomSqlType {
 	 */
 	public static AtomSqlType selectForResultSet(Class<?> c) {
 		var type = types.get(Objects.requireNonNull(c));
-
-		//CSVは結果値として使用不可
-		if (type == CSV) throw new UnknownTypeException(c);
 
 		if (type == null) throw new UnknownTypeException(c);
 
