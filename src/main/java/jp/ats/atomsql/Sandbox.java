@@ -145,7 +145,7 @@ public class Sandbox {
 
 			handler.allArgs.forEach(a -> {
 				var args = Arrays.stream(a.args)
-					.map(v -> v == null ? "null" : (v instanceof Number ? v.toString() : "[" + v.toString() + "]"))
+					.map(v -> v == null ? "null" : (v instanceof Number ? v.toString() : (v instanceof byte[] ? "byte array" : ("[" + v.toString() + "]"))))
 					.toList();
 				log.info(a.method.getName() + "(" + String.join(", ", args) + ")");
 			});

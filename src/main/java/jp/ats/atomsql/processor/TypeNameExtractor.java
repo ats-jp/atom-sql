@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.PrimitiveType;
@@ -48,6 +49,11 @@ class TypeNameExtractor extends SimpleTypeVisitor14<String, Element> {
 		default:
 			return defaultAction(t, p);
 		}
+	}
+
+	@Override
+	public String visitArray(ArrayType t, Element p) {
+		return t.getComponentType().accept(this, p) + "[]";
 	}
 
 	@Override
