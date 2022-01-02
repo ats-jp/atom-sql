@@ -2,6 +2,10 @@ package jp.ats.atomsql;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 内部使用ユーティリティクラスです。
@@ -27,6 +31,21 @@ public class Utils {
 			concat = concatByteArray(concat, concat.length, b, readed);
 		}
 		return concat;
+	}
+
+	public static List<Class<?>> loadProxyClasses() throws IOException {
+		try (var proxyList = Utils.class.getClassLoader().getResourceAsStream(Constants.PROXY_LIST)) {
+			if (proxyList == null) return Collections.emptyList();
+
+			return Arrays.stream(new String(Utils.readBytes(proxyList), Constants.CHARSET).split("\\s+")).map(l -> {
+				try {
+					return Class.forName(l, false, Thread.currentThread().getContextClassLoader());
+				} catch (ClassNotFoundException e) {
+					//コンパイラの動作によっては削除されたクラスがまだ残っているかもしれないのでスキップ
+					return null;
+				}
+			}).filter(c -> c != null).collect(Collectors.toList());
+		}
 	}
 
 	private static byte[] concatByteArray(byte[] array1, int lengthof1, byte[] array2, int lengthof2) {
