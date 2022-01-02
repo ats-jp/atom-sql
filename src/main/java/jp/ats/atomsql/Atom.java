@@ -1,11 +1,16 @@
 package jp.ats.atomsql;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import org.apache.commons.logging.Log;
 
 import jp.ats.atomsql.AtomSql.SqlProxyHelper;
 import jp.ats.atomsql.annotation.DataObject;
@@ -135,6 +140,51 @@ public class Atom<T> {
 	private static Atom<?> newInstance(String sql) {
 		var atomSql = new AtomSql();
 		return new Atom<>(atomSql, atomSql.helper(sql), true);
+	}
+
+	/**
+	 * Atom結合用のインスタンスを生成します。<br>
+	 * 生成されたインスタンスはスレッドセーフであり、static変数に保存し使用することが可能です。<br>
+	 * このメソッドで生成されたインスタンスでは、検索等のデータベース操作を行うことはできません。<br>
+	 * 通常生成されたAtomインスタンスに結合するためだけに使用してください。
+	 * @see IllegalAtomException
+	 * @param creator
+	 * @return creator内で生成されたインスタンス
+	 */
+	public static Atom<?> newStaticInstance(Function<AtomSql, Atom<?>> creator) {
+		return creator.apply(new AtomSql(new Configure() {
+
+			@Override
+			public boolean enableLog() {
+				throw new IllegalAtomException();
+			}
+
+			@Override
+			public Pattern logStackTracePattern() {
+				throw new IllegalAtomException();
+			}
+		}, new Executors(new Executor() {
+
+			@Override
+			public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
+				throw new IllegalAtomException();
+			}
+
+			@Override
+			public <T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+				throw new IllegalAtomException();
+			}
+
+			@Override
+			public int update(String sql, PreparedStatementSetter pss) {
+				throw new IllegalAtomException();
+			}
+
+			@Override
+			public void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps) {
+				throw new IllegalAtomException();
+			}
+		})));
 	}
 
 	/**
