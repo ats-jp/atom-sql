@@ -110,8 +110,6 @@ public class Atom<T> {
 
 	private final boolean andType;
 
-	private final RowMapper<T> dataObjectCreator;
-
 	Atom(AtomSql atomsql, SqlProxyHelper helper, boolean andType) {
 		this.atomSql = atomsql;
 
@@ -123,12 +121,11 @@ public class Atom<T> {
 		}
 
 		this.andType = andType;
+	}
 
-		dataObjectCreator = (r, n) -> {
-			@SuppressWarnings("unchecked")
-			var object = (T) helper.createDataObject(r);
-			return object;
-		};
+	@SuppressWarnings("unchecked")
+	private RowMapper<T> dataObjectCreator() {
+		return (r, n) -> (T) helper().createDataObject(r);
 	}
 
 	private SqlProxyHelper helper() {
@@ -148,7 +145,7 @@ public class Atom<T> {
 	 * @return {@DataObject}付与結果オブジェクトの{@link Stream}
 	 */
 	public Stream<T> stream() {
-		return stream(dataObjectCreator);
+		return stream(dataObjectCreator());
 	}
 
 	/**
@@ -157,7 +154,7 @@ public class Atom<T> {
 	 * @return {@DataObject}付与結果オブジェクトの{@link List}
 	 */
 	public List<T> list() {
-		return listAndClose(streamInternal(dataObjectCreator));
+		return listAndClose(streamInternal(dataObjectCreator()));
 	}
 
 	/**
