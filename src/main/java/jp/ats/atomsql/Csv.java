@@ -24,7 +24,7 @@ public class Csv<T> {
 	 * @param list インスタンスが保持する値のリスト
 	 */
 	public Csv(List<T> list) {
-		this.values.forEach(this::checkAndAdd);
+		list.forEach(this::checkAndAdd);
 	}
 
 	/**
