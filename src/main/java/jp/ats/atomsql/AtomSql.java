@@ -58,8 +58,6 @@ public class AtomSql {
 
 	private final Executors executors;
 
-	private final SqlProxyInvocationHandler handler = new SqlProxyInvocationHandler();
-
 	static class BatchResources {
 
 		Map<String, Map<String, List<SqlProxyHelper>>> resources = new HashMap<>();
@@ -186,9 +184,97 @@ public class AtomSql {
 		T instance = (T) Proxy.newProxyInstance(
 			Thread.currentThread().getContextClassLoader(),
 			new Class<?>[] { proxyInterface },
-			handler);
+			(proxy, method, args) -> {
+				if (method.isDefault()) return InvocationHandler.invokeDefault(proxy, method, args);
+
+				var proxyClass = proxy.getClass().getInterfaces()[0];
+
+				//メソッドに付与されたアノテーション > クラスに付与されたアノテーション
+				var nameAnnotation = method.getAnnotation(Qualifier.class);
+				if (nameAnnotation == null) nameAnnotation = proxyClass.getAnnotation(Qualifier.class);
+
+				var proxyClassName = proxyClass.getName();
+
+				var sql = loadSql(proxyClass, method).trim();
+
+				var methods = Class.forName(
+					proxyClassName + Constants.METADATA_CLASS_SUFFIX,
+					true,
+					Thread.currentThread().getContextClassLoader()).getAnnotation(Methods.class);
+
+				var find = Arrays.asList(methods.value())
+					.stream()
+					.filter(
+						m -> m.name().equals(method.getName()) && Arrays.equals(method.getParameterTypes(), m.parameterTypes()))
+					.findFirst()
+					.get();
+
+				var parameterTypes = find.parameterTypes();
+
+				var confidential = method.getAnnotation(ConfidentialSql.class) != null;
+
+				SqlProxyHelper helper;
+				var entry = nameAnnotation == null ? executors.get() : executors.get(nameAnnotation.value());
+				if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
+					var sqlParametersClass = find.sqlParametersClass();
+					var sqlParameters = sqlParametersClass.getConstructor().newInstance();
+
+					Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameters });
+
+					var names = new LinkedList<String>();
+					var values = new LinkedList<Object>();
+					Arrays.stream(sqlParametersClass.getFields()).forEach(f -> {
+						names.add(f.getName());
+						try {
+							values.add(f.get(sqlParameters));
+						} catch (IllegalAccessException e) {
+							throw new IllegalStateException(e);
+						}
+					});
+
+					helper = new SqlProxyHelper(
+						sql,
+						entry,
+						confidential,
+						names.toArray(String[]::new),
+						find.dataObjectClass(),
+						values.toArray(Object[]::new),
+						config,
+						sqlLogger);
+				} else {
+					helper = new SqlProxyHelper(
+						sql,
+						entry,
+						confidential,
+						find.parameters(),
+						find.dataObjectClass(),
+						args,
+						config,
+						sqlLogger);
+				}
+
+				var atom = new Atom<Object>(AtomSql.this, helper, true);
+
+				var returnType = method.getReturnType();
+
+				if (returnType.equals(Atom.class)) {
+					return atom;
+				} else if (returnType.equals(Stream.class)) {
+					return atom.stream();
+				} else if (returnType.equals(List.class)) {
+					return atom.list();
+				} else if (returnType.equals(Optional.class)) {
+					return atom.get();
+				} else if (returnType.equals(int.class)) {
+					return atom.update();
+				} else {
+					//不正な戻り値の型
+					throw new IllegalStateException("Incorrect return type: " + returnType);
+				}
+			});
 
 		return instance;
+
 	}
 
 	/**
@@ -397,97 +483,6 @@ public class AtomSql {
 			new Object[0],
 			config,
 			sqlLogger);
-	}
-
-	private class SqlProxyInvocationHandler implements InvocationHandler {
-
-		@Override
-		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-			var proxyClass = proxy.getClass().getInterfaces()[0];
-
-			//メソッドに付与されたアノテーション > クラスに付与されたアノテーション
-			var nameAnnotation = method.getAnnotation(Qualifier.class);
-			if (nameAnnotation == null) nameAnnotation = proxyClass.getAnnotation(Qualifier.class);
-
-			var proxyClassName = proxyClass.getName();
-
-			var sql = loadSql(proxyClass, method).trim();
-
-			var methods = Class.forName(
-				proxyClassName + Constants.METADATA_CLASS_SUFFIX,
-				true,
-				Thread.currentThread().getContextClassLoader()).getAnnotation(Methods.class);
-
-			var find = Arrays.asList(methods.value())
-				.stream()
-				.filter(
-					m -> m.name().equals(method.getName()) && Arrays.equals(method.getParameterTypes(), m.parameterTypes()))
-				.findFirst()
-				.get();
-
-			var parameterTypes = find.parameterTypes();
-
-			var confidential = method.getAnnotation(ConfidentialSql.class) != null;
-
-			SqlProxyHelper helper;
-			var entry = nameAnnotation == null ? executors.get() : executors.get(nameAnnotation.value());
-			if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
-				var sqlParametersClass = find.sqlParametersClass();
-				var sqlParameters = sqlParametersClass.getConstructor().newInstance();
-
-				Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameters });
-
-				var names = new LinkedList<String>();
-				var values = new LinkedList<Object>();
-				Arrays.stream(sqlParametersClass.getFields()).forEach(f -> {
-					names.add(f.getName());
-					try {
-						values.add(f.get(sqlParameters));
-					} catch (IllegalAccessException e) {
-						throw new IllegalStateException(e);
-					}
-				});
-
-				helper = new SqlProxyHelper(
-					sql,
-					entry,
-					confidential,
-					names.toArray(String[]::new),
-					find.dataObjectClass(),
-					values.toArray(Object[]::new),
-					config,
-					sqlLogger);
-			} else {
-				helper = new SqlProxyHelper(
-					sql,
-					entry,
-					confidential,
-					find.parameters(),
-					find.dataObjectClass(),
-					args,
-					config,
-					sqlLogger);
-			}
-
-			var atom = new Atom<Object>(AtomSql.this, helper, true);
-
-			var returnType = method.getReturnType();
-
-			if (returnType.equals(Atom.class)) {
-				return atom;
-			} else if (returnType.equals(Stream.class)) {
-				return atom.stream();
-			} else if (returnType.equals(List.class)) {
-				return atom.list();
-			} else if (returnType.equals(Optional.class)) {
-				return atom.get();
-			} else if (returnType.equals(int.class)) {
-				return atom.update();
-			} else {
-				//不正な戻り値の型
-				throw new IllegalStateException("Incorrect return type: " + returnType);
-			}
-		}
 	}
 
 	private static void logElapsed(SqlLogger sqlLogger, long startNanos) {
