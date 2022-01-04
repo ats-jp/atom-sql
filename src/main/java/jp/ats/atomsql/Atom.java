@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -119,8 +120,8 @@ public class Atom<T> {
 		this.atomSql = atomsql;
 
 		if (helper.containsNonThreadSaleValues) {
-			atomSql.registerHelper(nonThreadSafeHelperKey, helper);
-			this.helperSupplier = () -> atomSql.getHelper(nonThreadSafeHelperKey);
+			atomSql.registerHelperForNonThreadSafe(nonThreadSafeHelperKey, helper);
+			this.helperSupplier = () -> atomSql.getHelperForNonThreadSafe(nonThreadSafeHelperKey);
 		} else {
 			this.helperSupplier = () -> helper;
 		}
@@ -182,6 +183,11 @@ public class Atom<T> {
 
 			@Override
 			public void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps) {
+				throw new IllegalAtomException();
+			}
+
+			@Override
+			public void bollowConnection(Consumer<ConnectionProxy> consumer) {
 				throw new IllegalAtomException();
 			}
 		})));

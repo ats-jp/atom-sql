@@ -150,6 +150,11 @@ public class Sandbox {
 				log.info(a.method.getName() + "(" + String.join(", ", args) + ")");
 			});
 		}
+
+		@Override
+		public void bollowConnection(Consumer<ConnectionProxy> consumer) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	/**

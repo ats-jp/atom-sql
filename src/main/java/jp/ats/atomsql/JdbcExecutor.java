@@ -1,5 +1,7 @@
 package jp.ats.atomsql;
 
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,6 +9,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -93,6 +96,31 @@ public class JdbcExecutor implements Executor {
 		} else {
 			log.info(ps.toString());
 		}
+	}
+
+	@Override
+	public void bollowConnection(Consumer<ConnectionProxy> consumer) {
+		var con = supplier.get();
+		consumer.accept(new ConnectionProxy() {
+
+			@Override
+			public Blob createBlob() {
+				try {
+					return con.createBlob();
+				} catch (SQLException e) {
+					throw new AtomSqlException(e);
+				}
+			}
+
+			@Override
+			public Clob createClob() {
+				try {
+					return con.createClob();
+				} catch (SQLException e) {
+					throw new AtomSqlException(e);
+				}
+			}
+		});
 	}
 
 	private static class ResultSetIterator<T> implements Iterator<T> {

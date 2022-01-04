@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -154,6 +155,11 @@ public class AtomSql {
 			public void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps) {
 				throw new UnsupportedOperationException();
 			}
+
+			@Override
+			public void bollowConnection(Consumer<ConnectionProxy> consumer) {
+				throw new UnsupportedOperationException();
+			}
 		});
 	}
 
@@ -286,6 +292,16 @@ public class AtomSql {
 		}
 	}
 
+	private void closeStreams() {
+		streams.get().forEach(s -> {
+			try {
+				s.close();
+			} catch (Throwable t) {
+				log.warn("Error occured while Stream closing", t);
+			}
+		});
+	}
+
 	void registerStream(Stream<?> stream) {
 		var list = streams.get();
 		if (list == null) return;
@@ -330,11 +346,11 @@ public class AtomSql {
 		}
 	}
 
-	void registerHelper(Object key, SqlProxyHelper helper) {
+	void registerHelperForNonThreadSafe(Object key, SqlProxyHelper helper) {
 		helperMap().put(key, helper);
 	}
 
-	SqlProxyHelper getHelper(Object key) {
+	SqlProxyHelper getHelperForNonThreadSafe(Object key) {
 		var result = helperMap().get(key);
 		if (result == null) throw new NonThreadSafeException();
 
@@ -348,6 +364,29 @@ public class AtomSql {
 		return map;
 	}
 
+	/**
+	 * {@link ConnectionProxy}を使用して行う処理を実施します。<br>
+	 * 実装によっては、処理終了時に内部で使用する{@link Connection}がクローズされる可能性があります。<br>
+	 * デフォルトであるプライマリ{@link Executor}が使用されます。<br>
+	 * 処理内では、スレッドセーフではない値を使用することが可能です。
+	 * @param consumer
+	 */
+	public void bollowConnection(Consumer<ConnectionProxy> consumer) {
+		bollowConnection(null, consumer);
+	}
+
+	/**
+	 * {@link ConnectionProxy}を使用して行う処理を実施します。<br>
+	 * 実装によっては、処理終了時に内部で使用する{@link Connection}がクローズされる可能性があります。<br>
+	 * qualifierによって使用する{@link Executor}を選択可能です。<br>
+	 * 処理内では、スレッドセーフではない値を使用することが可能です。
+	 * @param qualifier {@link Qualifier}に使用する値
+	 * @param consumer
+	 */
+	public void bollowConnection(String qualifier, Consumer<ConnectionProxy> consumer) {
+		tryNonThreadSafe(() -> executors.get(qualifier).executor().bollowConnection(consumer));
+	}
+
 	SqlProxyHelper helper(String sql) {
 		return new SqlProxyHelper(
 			sql,
@@ -358,16 +397,6 @@ public class AtomSql {
 			new Object[0],
 			config,
 			sqlLogger);
-	}
-
-	private void closeStreams() {
-		streams.get().forEach(s -> {
-			try {
-				s.close();
-			} catch (Throwable t) {
-				log.warn("Error occured while Stream closing", t);
-			}
-		});
 	}
 
 	private class SqlProxyInvocationHandler implements InvocationHandler {

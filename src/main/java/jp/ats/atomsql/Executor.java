@@ -1,6 +1,7 @@
 package jp.ats.atomsql;
 
 import java.sql.PreparedStatement;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
@@ -51,4 +52,10 @@ public interface Executor {
 	 * @param ps プレースホルダ返還後SQLセット済みの{@link PreparedStatement}
 	 */
 	void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps);
+
+	/**
+	 * {@link ConnectionProxy}を使用して行う処理を実施します。
+	 * @param consumer
+	 */
+	void bollowConnection(Consumer<ConnectionProxy> consumer);
 }
