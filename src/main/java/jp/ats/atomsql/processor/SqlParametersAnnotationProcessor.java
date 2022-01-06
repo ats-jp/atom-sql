@@ -162,8 +162,14 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("CLASS", generateClassName);
 
+		var dubplicateChecker = new HashSet<String>();
 		var fields = new LinkedList<String>();
 		PlaceholderFinder.execute(sql, f -> {
+			//重複は除外
+			if (dubplicateChecker.contains(f.placeholder)) return;
+
+			dubplicateChecker.add(f.placeholder);
+
 			var typeArgument = f.typeArgumentHint.map(t -> "<" + AtomSqlType.safeTypeArgumentValueOf(t).type().getName() + ">").orElse("");
 
 			var method = "public "
