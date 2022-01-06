@@ -48,6 +48,18 @@ public class Utils {
 		}
 	}
 
+	static String toStringForBindingValue(Object v) {
+		if (v == null) {
+			return "null";
+		} else if (v instanceof Number) {
+			return v.toString();
+		} else if (v instanceof byte[]) {
+			return "byte array(" + ((byte[]) v).length + ")";
+		}
+
+		return "[" + v.toString() + "]";
+	}
+
 	private static byte[] concatByteArray(byte[] array1, int lengthof1, byte[] array2, int lengthof2) {
 		byte[] concat = new byte[lengthof1 + lengthof2];
 		System.arraycopy(array1, 0, concat, 0, lengthof1);

@@ -14,12 +14,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -150,7 +154,7 @@ public class AtomSql {
 			}
 
 			@Override
-			public void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps) {
+			public void logSql(Log log, String originalSql, String sql, PreparedStatement ps) {
 				throw new UnsupportedOperationException();
 			}
 
@@ -211,7 +215,8 @@ public class AtomSql {
 
 				var parameterTypes = find.parameterTypes();
 
-				var confidential = method.getAnnotation(ConfidentialSql.class) != null;
+				var confidentialSql = method.getAnnotation(ConfidentialSql.class);
+				var confidentials = confidentialSql == null ? null : confidentialSql.value();
 
 				SqlProxyHelper helper;
 				var entry = nameAnnotation == null ? executors.get() : executors.get(nameAnnotation.value());
@@ -235,7 +240,7 @@ public class AtomSql {
 					helper = new SqlProxyHelper(
 						sql,
 						entry,
-						confidential,
+						confidentials,
 						names.toArray(String[]::new),
 						find.dataObjectClass(),
 						values.toArray(Object[]::new),
@@ -245,7 +250,7 @@ public class AtomSql {
 					helper = new SqlProxyHelper(
 						sql,
 						entry,
-						confidential,
+						confidentials,
 						find.parameters(),
 						find.dataObjectClass(),
 						args,
@@ -477,7 +482,7 @@ public class AtomSql {
 		return new SqlProxyHelper(
 			sql,
 			executors.get(),
-			false,
+			null,
 			new String[0],
 			Object.class,
 			new Object[0],
@@ -524,7 +529,7 @@ public class AtomSql {
 		//スレッドセーフではない型の値を含んでいる場合true
 		final boolean containsNonThreadSaleValues;
 
-		private final boolean confidential;
+		private final Set<String> confidentials;
 
 		private final List<AtomSqlType> argumentTypes = new ArrayList<>();
 
@@ -536,10 +541,23 @@ public class AtomSql {
 
 		private final SqlLogger sqlLogger;
 
+		private final LinkedHashMap<String, Object> argMap;
+
+		private Set<String> confidentials(String[] confidentials, String[] parameterNames) {
+			if (confidentials == null) return Collections.emptySet();
+
+			//ConfidentialSqlが付与されているが、valueが指定されていない場合、すべて機密扱い
+			if (confidentials.length == 0) {
+				return new HashSet<>(Arrays.asList(parameterNames));
+			}
+
+			return new HashSet<>(Arrays.asList(confidentials));
+		}
+
 		private SqlProxyHelper(
 			String sql,
 			Executors.Entry entry,
-			boolean confidential,
+			String[] confidentials,
 			String[] parameterNames,
 			Class<?> dataObjectClass,
 			Object[] args,
@@ -547,12 +565,12 @@ public class AtomSql {
 			SqlLogger sqlLogger) {
 			originalSql = sql;
 			this.entry = entry;
-			this.confidential = confidential;
+			this.confidentials = confidentials(confidentials, parameterNames);
 			this.dataObjectClass = dataObjectClass;
 			this.config = config;
 			this.sqlLogger = sqlLogger;
 
-			var argMap = new HashMap<String, Object>();
+			argMap = new LinkedHashMap<>();
 			for (int i = 0; i < parameterNames.length; i++) {
 				argMap.put(parameterNames[i], args[i]);
 			}
@@ -565,8 +583,7 @@ public class AtomSql {
 				converted.append(f.gap);
 
 				if (!argMap.containsKey(f.placeholder))
-					//プレースホルダplaceholderは見つかりませんでした
-					throw new IllegalStateException("Place holder [" + f.placeholder + "] was not found");
+					throw new PlaceholderNotFoundException(f.placeholder);
 
 				var value = argMap.get(f.placeholder);
 
@@ -599,14 +616,17 @@ public class AtomSql {
 			this.config = main.config;
 			this.sqlLogger = main.sqlLogger;
 
-			// confidentialではない場合伝染する
-			this.confidential = main.confidential || sub.confidential;
+			confidentials = new HashSet<>(main.confidentials);
+			confidentials.addAll(sub.confidentials);
 
 			argumentTypes.addAll(main.argumentTypes);
 			argumentTypes.addAll(sub.argumentTypes);
 
 			values.addAll(main.values);
 			values.addAll(sub.values);
+
+			argMap = new LinkedHashMap<>(main.argMap);
+			argMap.putAll(sub.argMap);
 
 			containsNonThreadSaleValues = main.containsNonThreadSaleValues | sub.containsNonThreadSaleValues;
 		}
@@ -695,9 +715,8 @@ public class AtomSql {
 
 		@Override
 		public void setValues(PreparedStatement ps) throws SQLException {
-			var i = 0;
 			var size = argumentTypes.size();
-			for (; i < size; i++) {
+			for (var i = 0; i < size; i++) {
 				argumentTypes.get(i).bind(i + 1, ps, values.get(i));
 			}
 
@@ -720,9 +739,23 @@ public class AtomSql {
 						log.info(" " + elementString);
 				}
 
-				log.info("sql:");
+				if (confidentials.size() > 0) {
+					log.info("confidential sql:" + Constants.NEW_LINE + originalSql);
+					log.info("binding values:");
 
-				entry.executor().logSql(log, originalSql, sql, confidential, ps);
+					argMap.forEach((k, v) -> {
+						String value;
+						if (confidentials.contains(k)) {
+							value = Constants.CONFIDENTIAL;
+						} else {
+							value = Utils.toStringForBindingValue(v);
+						}
+
+						log.info(k + ": " + value);
+					});
+				} else {
+					entry.executor().logSql(log, originalSql, sql, ps);
+				}
 
 				log.info("------  SQL END  ------");
 			});

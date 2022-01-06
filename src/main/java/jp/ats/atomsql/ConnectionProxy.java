@@ -22,4 +22,14 @@ public interface ConnectionProxy {
 	 * @return {@link Clob}
 	 */
 	Clob createClob();
+
+	/**
+	 * @see Connection#commit()
+	 */
+	void commit();
+
+	/**
+	 * @see Connection#rollback()
+	 */
+	void rollback();
 }

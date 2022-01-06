@@ -128,24 +128,18 @@ public class Sandbox {
 		}
 
 		@Override
-		public void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps) {
+		public void logSql(Log log, String originalSql, String sql, PreparedStatement ps) {
 			var handler = pairs.get().stream().filter(p -> p.statement == ps).findFirst().get().handler;
 
-			log.info(originalSql);
+			log.info("sql:" + Constants.NEW_LINE + originalSql);
 
-			log.info("processed sql:");
-			log.info(sql);
-
-			if (confidential) {
-				log.info(Executor.CONFIDENTIAL);
-				return;
-			}
+			log.info("processed sql:" + Constants.NEW_LINE + sql);
 
 			log.info("binding values:");
 
 			handler.allArgs.forEach(a -> {
 				var args = Arrays.stream(a.args)
-					.map(v -> v == null ? "null" : (v instanceof Number ? v.toString() : (v instanceof byte[] ? "byte array" : ("[" + v.toString() + "]"))))
+					.map(v -> Utils.toStringForBindingValue(v))
 					.toList();
 				log.info(a.method.getName() + "(" + String.join(", ", args) + ")");
 			});
@@ -194,11 +188,9 @@ public class Sandbox {
 		}
 	}
 
-	private static class Pair {
-
-		private PreparedStatement statement;
-
-		private PreparedStatementInvocationHandler handler;
+	private static record Pair(
+		PreparedStatement statement,
+		PreparedStatementInvocationHandler handler) {
 	}
 
 	private static PreparedStatement preparedStatement() {
@@ -208,9 +200,7 @@ public class Sandbox {
 			new Class<?>[] { PreparedStatement.class },
 			handler);
 
-		var pair = new Pair();
-		pair.statement = statement;
-		pair.handler = handler;
+		var pair = new Pair(statement, handler);
 
 		pairs.get().add(pair);
 
@@ -223,9 +213,7 @@ public class Sandbox {
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-			var arg = new Argument();
-			arg.method = method;
-			arg.args = args;
+			var arg = new Argument(method, args);
 
 			allArgs.add(arg);
 
@@ -247,10 +235,6 @@ public class Sandbox {
 		}
 	}
 
-	private static class Argument {
-
-		private Method method;
-
-		private Object[] args;
+	private static record Argument(Method method, Object[] args) {
 	}
 }

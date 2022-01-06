@@ -36,4 +36,9 @@ public interface Constants {
 	 * {@link SqlParameters}自動生成クラスの一覧ファイル名
 	 */
 	public static final String PARAMETERS_LIST = "jp.ats.atom-sql.parameters-list";
+
+	/**
+	 * @{link ConfidentialSql}が付与されたSQL文のログ上の目印
+	 */
+	public static final String CONFIDENTIAL = "<<CONFIDENTIAL>>";
 }

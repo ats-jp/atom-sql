@@ -182,7 +182,7 @@ public class Atom<T> {
 			}
 
 			@Override
-			public void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps) {
+			public void logSql(Log log, String originalSql, String sql, PreparedStatement ps) {
 				throw new IllegalAtomException();
 			}
 

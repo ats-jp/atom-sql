@@ -1,7 +1,5 @@
 package jp.ats.atomsql;
 
-import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,6 +22,8 @@ public class JdbcExecutor implements Executor {
 
 	private final Supplier<Connection> supplier;
 
+	private final ThreadLocal<Connection> connection = new ThreadLocal<>();
+
 	/**
 	 * 単一のコンストラクタです。
 	 * @param supplier {@link Connection}の供給元
@@ -34,7 +34,7 @@ public class JdbcExecutor implements Executor {
 
 	@Override
 	public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
-		try (var ps = supplier.get().prepareStatement(Constants.NEW_LINE + sql)) {
+		try (var ps = connection().prepareStatement(Constants.NEW_LINE + sql)) {
 			var size = bpss.getBatchSize();
 			for (var i = 0; i < size; i++) {
 				bpss.setValues(ps, i);
@@ -50,7 +50,7 @@ public class JdbcExecutor implements Executor {
 	@Override
 	public <T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
 		try {
-			var ps = supplier.get().prepareStatement(Constants.NEW_LINE + sql);
+			var ps = connection().prepareStatement(Constants.NEW_LINE + sql);
 			ps.closeOnCompletion();
 
 			pss.setValues(ps);
@@ -80,7 +80,7 @@ public class JdbcExecutor implements Executor {
 
 	@Override
 	public int update(String sql, PreparedStatementSetter pss) {
-		try (var ps = supplier.get().prepareStatement(Constants.NEW_LINE + sql)) {
+		try (var ps = connection().prepareStatement(Constants.NEW_LINE + sql)) {
 			pss.setValues(ps);
 
 			return ps.executeUpdate();
@@ -90,37 +90,28 @@ public class JdbcExecutor implements Executor {
 	}
 
 	@Override
-	public void logSql(Log log, String originalSql, String sql, boolean confidential, PreparedStatement ps) {
-		if (confidential) {
-			log.info(CONFIDENTIAL + " " + originalSql);
-		} else {
-			log.info(ps.toString());
-		}
+	public void logSql(Log log, String originalSql, String sql, PreparedStatement ps) {
+		log.info("sql:" + Constants.NEW_LINE + ps.toString());
 	}
 
 	@Override
 	public void bollowConnection(Consumer<ConnectionProxy> consumer) {
-		var con = supplier.get();
-		consumer.accept(new ConnectionProxy() {
+		try {
+			var con = supplier.get();
+			connection.set(con);
 
-			@Override
-			public Blob createBlob() {
-				try {
-					return con.createBlob();
-				} catch (SQLException e) {
-					throw new AtomSqlException(e);
-				}
-			}
+			consumer.accept(new SimpleConnectionProxy(con));
+		} finally {
+			connection.remove();
+		}
+	}
 
-			@Override
-			public Clob createClob() {
-				try {
-					return con.createClob();
-				} catch (SQLException e) {
-					throw new AtomSqlException(e);
-				}
-			}
-		});
+	/**
+	 * bollowConnection中は同一のConnectionの使用を強制する
+	 */
+	private Connection connection() {
+		var con = connection.get();
+		return con == null ? supplier.get() : con;
 	}
 
 	private static class ResultSetIterator<T> implements Iterator<T> {
