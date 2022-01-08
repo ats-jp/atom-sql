@@ -2,6 +2,8 @@ package jp.ats.atomsql;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -401,6 +403,7 @@ public class Atom<T> {
 
 	/**
 	 * 複数の{@link Atom}を、delimiterをはさんで文字列結合します。<br>
+	 * 結合された{@link Atom}は、他の検索可能な{@link Atom}への結合に使用してください。
 	 * @param delimiter 区切り文字
 	 * @param members 結合対象
 	 * @return 結合された{@link Atom}
@@ -409,6 +412,37 @@ public class Atom<T> {
 		return members.size() == 0
 			? BLANK
 			: members.get(0).joinAndConcat(delimiter, members.subList(1, members.size()).toArray(Atom<?>[]::new));
+	}
+
+	/**
+	 * この{@link Atom}の持つSQL文内のキーワードを、パラメータで渡される{@link Atom}で置き換えます。<br>
+	 * キーワードの形式は /*[<i>配列atomsのインデックス番号</i>]*&#47; です。<br>
+	 * 例えば、置換対象の1番目のためのキーワードは /*[0]*&#47; となります。
+	 * @param atoms 置換する{@link Atom}の配列
+	 * @return 置換された新しい{@link Atom}
+	 */
+	public Atom<T> replace(Atom<?>... atoms) {
+		var helper = helper();
+		var sql = helper.originalSql;
+
+		var confidentials = new HashSet<String>(helper.confidentials);
+		var argMap = new LinkedHashMap<String, Object>(helper.argMap);
+		for (int i = 0; i < atoms.length; i++) {
+			var atom = atoms[i];
+
+			var pattern = Pattern.compile("/\\*\\[" + i + "\\]\\*/");
+			sql = pattern.matcher(sql).replaceAll(atom.helper().originalSql);
+
+			var atomHelper = atom.helper();
+
+			confidentials.addAll(atomHelper.confidentials);
+			argMap.putAll(atomHelper.argMap);
+		}
+
+		return new Atom<T>(
+			atomSql,
+			new SqlProxyHelper(sql, confidentials, argMap, helper),
+			true);
 	}
 
 	/**

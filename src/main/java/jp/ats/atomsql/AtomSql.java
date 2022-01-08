@@ -529,19 +529,19 @@ public class AtomSql {
 		//スレッドセーフではない型の値を含んでいる場合true
 		final boolean containsNonThreadSaleValues;
 
-		private final Set<String> confidentials;
+		final Set<String> confidentials;
+
+		final LinkedHashMap<String, Object> argMap;
+
+		private final Class<?> dataObjectClass;
 
 		private final List<AtomSqlType> argumentTypes = new ArrayList<>();
 
 		private final List<Object> values = new ArrayList<>();
 
-		private final Class<?> dataObjectClass;
-
 		private final Configure config;
 
 		private final SqlLogger sqlLogger;
-
-		private final LinkedHashMap<String, Object> argMap;
 
 		private Set<String> confidentials(String[] confidentials, String[] parameterNames) {
 			if (confidentials == null) return Collections.emptySet();
@@ -574,6 +574,48 @@ public class AtomSql {
 			for (int i = 0; i < parameterNames.length; i++) {
 				argMap.put(parameterNames[i], args[i]);
 			}
+
+			var converted = new StringBuilder();
+
+			boolean[] nonThreadSale = { false };
+
+			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
+				converted.append(f.gap);
+
+				if (!argMap.containsKey(f.placeholder))
+					throw new PlaceholderNotFoundException(f.placeholder);
+
+				var value = argMap.get(f.placeholder);
+
+				var type = AtomSqlType.selectForPreparedStatement(value);
+
+				nonThreadSale[0] = nonThreadSale[0] | type.nonThreadSafe();
+
+				converted.append(type.placeholderExpression(value));
+
+				argumentTypes.add(type);
+				values.add(value);
+			});
+
+			converted.append(sqlRemain);
+
+			this.sql = converted.toString();
+
+			containsNonThreadSaleValues = nonThreadSale[0];
+		}
+
+		SqlProxyHelper(
+			String sql,
+			Set<String> confidentials,
+			LinkedHashMap<String, Object> argMap,
+			SqlProxyHelper main) {
+			originalSql = sql;
+			this.entry = main.entry;
+			this.confidentials = confidentials;
+			this.dataObjectClass = main.dataObjectClass;
+			this.argMap = argMap;
+			this.config = main.config;
+			this.sqlLogger = main.sqlLogger;
 
 			var converted = new StringBuilder();
 
