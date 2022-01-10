@@ -415,13 +415,13 @@ public class Atom<T> {
 	}
 
 	/**
-	 * この{@link Atom}の持つSQL文内のキーワードを、パラメータで渡される{@link Atom}で置き換えます。<br>
-	 * キーワードの形式は /*[<i>配列atomsのインデックス番号</i>]*&#47; です。<br>
-	 * 例えば、置換対象の1番目のためのキーワードは /*[0]*&#47; となります。
-	 * @param atoms 置換する{@link Atom}の配列
-	 * @return 置換された新しい{@link Atom}
+	 * この{@link Atom}の持つSQL文内のこのメソッド専用変数に、パラメータで渡される{@link Atom}のもつSQL文を展開します。<br>
+	 * 変数の書式は /*[<i>配列atomsのインデックス番号</i>]*&#47; です。<br>
+	 * 例えば、展開対象1番目のための変数は /*[0]*&#47; と記述します。
+	 * @param atoms 展開する{@link Atom}の配列
+	 * @return 展開された新しい{@link Atom}
 	 */
-	public Atom<T> replace(Atom<?>... atoms) {
+	public Atom<T> format(Atom<?>... atoms) {
 		var helper = helper();
 		var sql = helper.originalSql;
 
