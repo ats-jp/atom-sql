@@ -36,7 +36,7 @@ public class Sandbox {
 	public static void execute(Consumer<AtomSql> process) {
 		pairs.set(new LinkedList<Pair>());
 		try {
-			process.accept(new AtomSql(new Executors(new SandboxExecutor())));
+			process.accept(new AtomSql(new Endpoints(new SandboxEndpoint())));
 		} finally {
 			pairs.remove();
 			resultHolder.remove();
@@ -52,7 +52,7 @@ public class Sandbox {
 	public static void execute(Configure config, Consumer<AtomSql> process) {
 		pairs.set(new LinkedList<Pair>());
 		try {
-			process.accept(new AtomSql(config, new Executors(new SandboxExecutor())));
+			process.accept(new AtomSql(config, new Endpoints(new SandboxEndpoint())));
 		} finally {
 			pairs.remove();
 			resultHolder.remove();
@@ -70,7 +70,7 @@ public class Sandbox {
 		resultHolder.set(result);
 	}
 
-	private static class SandboxExecutor implements Executor {
+	private static class SandboxEndpoint implements Endpoint {
 
 		@Override
 		public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {

@@ -60,7 +60,7 @@ public class AtomSql {
 
 	private final ThreadLocal<Map<Object, SqlProxyHelper>> nonThreadSafeHelpers = new ThreadLocal<>();
 
-	private final Executors executors;
+	private final Endpoints endpoints;
 
 	static class BatchResources {
 
@@ -87,25 +87,25 @@ public class AtomSql {
 
 	/**
 	 * 通常のコンストラクタです。<br>
-	 * {@link Executors}の持つ{@link Executor}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
-	 * @param executors {@link Executors}
+	 * {@link Endpoints}の持つ{@link Endpoint}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
+	 * @param endpoints {@link Endpoints}
 	 */
-	public AtomSql(Executors executors) {
+	public AtomSql(Endpoints endpoints) {
 		config = new PropertiesConfigure();
 		sqlLogger = new SqlLogger(config);
-		this.executors = Objects.requireNonNull(executors);
+		this.endpoints = Objects.requireNonNull(endpoints);
 	}
 
 	/**
 	 * 通常のコンストラクタです。<br>
-	 * {@link Executors}の持つ{@link Executor}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
+	 * {@link Endpoints}の持つ{@link Endpoint}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
 	 * @param config {@link Configure}
-	 * @param executors {@link Executors}
+	 * @param endpoints {@link Endpoints}
 	 */
-	public AtomSql(Configure config, Executors executors) {
+	public AtomSql(Configure config, Endpoints endpoints) {
 		this.config = Objects.requireNonNull(config);
 		sqlLogger = new SqlLogger(config);
-		this.executors = Objects.requireNonNull(executors);
+		this.endpoints = Objects.requireNonNull(endpoints);
 	}
 
 	/**
@@ -117,7 +117,7 @@ public class AtomSql {
 	public AtomSql(AtomSql base) {
 		config = base.config;
 		sqlLogger = base.sqlLogger;
-		this.executors = base.executors;
+		this.endpoints = base.endpoints;
 	}
 
 	AtomSql() {
@@ -136,7 +136,7 @@ public class AtomSql {
 
 		sqlLogger = new SqlLogger(config);
 
-		executors = new Executors(new Executor() {
+		endpoints = new Endpoints(new Endpoint() {
 
 			@Override
 			public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
@@ -219,7 +219,7 @@ public class AtomSql {
 				var confidentials = confidentialSql == null ? null : confidentialSql.value();
 
 				SqlProxyHelper helper;
-				var entry = nameAnnotation == null ? executors.get() : executors.get(nameAnnotation.value());
+				var entry = nameAnnotation == null ? endpoints.get() : endpoints.get(nameAnnotation.value());
 				if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
 					var sqlParametersClass = find.sqlParametersClass();
 					var sqlParameters = sqlParametersClass.getConstructor().newInstance();
@@ -324,7 +324,7 @@ public class AtomSql {
 		batchResources.get().forEach((name, sql, helpers) -> {
 			var startNanos = System.nanoTime();
 			try {
-				executors.get(name).executor().batchUpdate(sql, new BatchPreparedStatementSetter() {
+				endpoints.get(name).endpoint().batchUpdate(sql, new BatchPreparedStatementSetter() {
 
 					@Override
 					public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -458,7 +458,7 @@ public class AtomSql {
 	/**
 	 * {@link ConnectionProxy}を使用して行う処理を実施します。<br>
 	 * 実装によっては、処理終了時に内部で使用する{@link Connection}がクローズされる可能性があります。<br>
-	 * デフォルトであるプライマリ{@link Executor}が使用されます。<br>
+	 * デフォルトであるプライマリ{@link Endpoint}が使用されます。<br>
 	 * 処理内では、スレッドセーフではない値を使用することが可能です。
 	 * @param consumer
 	 */
@@ -469,19 +469,19 @@ public class AtomSql {
 	/**
 	 * {@link ConnectionProxy}を使用して行う処理を実施します。<br>
 	 * 実装によっては、処理終了時に内部で使用する{@link Connection}がクローズされる可能性があります。<br>
-	 * qualifierによって使用する{@link Executor}を選択可能です。<br>
+	 * qualifierによって使用する{@link Endpoint}を選択可能です。<br>
 	 * 処理内では、スレッドセーフではない値を使用することが可能です。
 	 * @param qualifier {@link Qualifier}に使用する値
 	 * @param consumer
 	 */
 	public void bollowConnection(String qualifier, Consumer<ConnectionProxy> consumer) {
-		tryNonThreadSafe(() -> executors.get(qualifier).executor().bollowConnection(consumer));
+		tryNonThreadSafe(() -> endpoints.get(qualifier).endpoint().bollowConnection(consumer));
 	}
 
 	SqlProxyHelper helper(String sql) {
 		return new SqlProxyHelper(
 			sql,
-			executors.get(),
+			endpoints.get(),
 			null,
 			new String[0],
 			Object.class,
@@ -524,7 +524,7 @@ public class AtomSql {
 
 		final String originalSql;
 
-		final Executors.Entry entry;
+		final Endpoints.Entry entry;
 
 		//スレッドセーフではない型の値を含んでいる場合true
 		final boolean containsNonThreadSaleValues;
@@ -556,7 +556,7 @@ public class AtomSql {
 
 		private SqlProxyHelper(
 			String sql,
-			Executors.Entry entry,
+			Endpoints.Entry entry,
 			String[] confidentials,
 			String[] parameterNames,
 			Class<?> dataObjectClass,
@@ -796,7 +796,7 @@ public class AtomSql {
 						log.info(k + ": " + value);
 					});
 				} else {
-					entry.executor().logSql(log, originalSql, sql, ps);
+					entry.endpoint().logSql(log, originalSql, sql, ps);
 				}
 
 				log.info("------  SQL END  ------");

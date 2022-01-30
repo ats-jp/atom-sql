@@ -166,7 +166,7 @@ public class Atom<T> {
 			public Pattern logStackTracePattern() {
 				throw new IllegalAtomException();
 			}
-		}, new Executors(new Executor() {
+		}, new Endpoints(new Endpoint() {
 
 			@Override
 			public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
@@ -258,7 +258,7 @@ public class Atom<T> {
 
 		var startNanos = System.nanoTime();
 		try {
-			return helper.entry.executor().queryForStream(helper.sql, helper, mapper);
+			return helper.entry.endpoint().queryForStream(helper.sql, helper, mapper);
 		} finally {
 			helper.logElapsed(startNanos);
 		}
@@ -343,7 +343,7 @@ public class Atom<T> {
 		if (resources == null) {//バッチ実行中ではない
 			var startNanos = System.nanoTime();
 			try {
-				return helper.entry.executor().update(helper.sql, helper);
+				return helper.entry.endpoint().update(helper.sql, helper);
 			} finally {
 				helper.logElapsed(startNanos);
 			}

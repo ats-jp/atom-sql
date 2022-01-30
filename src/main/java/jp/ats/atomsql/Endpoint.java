@@ -10,7 +10,7 @@ import org.apache.commons.logging.Log;
  * JdbcTemplateのもつ豊富な機能のうち、Atom SQLで使用する機能のみを操作可能にするためのインターフェイスです。
  * @author 千葉 哲嗣
  */
-public interface Executor {
+public interface Endpoint {
 
 	/**
 	 * JdbcTemplate#batchUpdate(String, BatchPreparedStatementSetter)を参考にしたメソッドです。

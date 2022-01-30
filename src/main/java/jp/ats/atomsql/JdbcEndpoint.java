@@ -15,10 +15,10 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.logging.Log;
 
 /**
- * JDBCを使用した{@link Executor}の簡易実装クラスです。
+ * JDBCを使用した{@link Endpoint}の簡易実装クラスです。
  * @author 千葉 哲嗣
  */
-public class JdbcExecutor implements Executor {
+public class JdbcEndpoint implements Endpoint {
 
 	private final Supplier<Connection> supplier;
 
@@ -28,7 +28,7 @@ public class JdbcExecutor implements Executor {
 	 * 単一のコンストラクタです。
 	 * @param supplier {@link Connection}の供給元
 	 */
-	public JdbcExecutor(Supplier<Connection> supplier) {
+	public JdbcEndpoint(Supplier<Connection> supplier) {
 		this.supplier = supplier;
 	}
 

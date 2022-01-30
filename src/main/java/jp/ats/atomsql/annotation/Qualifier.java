@@ -7,10 +7,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import jp.ats.atomsql.Executor;
+import jp.ats.atomsql.Endpoint;
 
 /**
- * {@link Executor}を登録する対象となる識別子を表します。
+ * {@link Endpoint}を登録する対象となる識別子を表します。
  * @author 千葉 哲嗣
  */
 @Retention(RUNTIME)

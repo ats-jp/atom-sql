@@ -6,20 +6,20 @@ import java.util.Map;
 import jp.ats.atomsql.annotation.Qualifier;
 
 /**
- * {@link Executor}を複数管理するためのマップクラスです。
+ * {@link Endpoint}を複数管理するためのマップクラスです。
  * @author 千葉 哲嗣
  */
-public class Executors {
+public class Endpoints {
 
 	private final Entry primary;
 
 	private final Map<String, Entry> map;
 
 	/**
-	 * 複数の{@link Executor}を設定してインスタンスを生成します。
+	 * 複数の{@link Endpoint}を設定してインスタンスを生成します。
 	 * @param entries
 	 */
-	public Executors(Entry... entries) {
+	public Endpoints(Entry... entries) {
 		if (entries.length == 0) throw new IllegalArgumentException("Empty entries");
 
 		map = new LinkedHashMap<>();
@@ -39,16 +39,16 @@ public class Executors {
 	}
 
 	/**
-	 * 単体の{@link Executor}を設定してインスタンスを生成します。
-	 * @param primaryExecutor
+	 * 単体の{@link Endpoint}を設定してインスタンスを生成します。
+	 * @param primaryEndpoint
 	 */
-	public Executors(Executor primaryExecutor) {
-		this(new Entry(null, primaryExecutor, true));
+	public Endpoints(Endpoint primaryEndpoint) {
+		this(new Entry(null, primaryEndpoint, true));
 	}
 
 	/**
 	 * {@link Qualifier}の値をもとに対応する{@link Entry}を返します。
-	 * @param name Bean名 nullの場合プライマリ{@link Executor}が返却される
+	 * @param name Bean名 nullの場合プライマリ{@link Endpoint}が返却される
 	 * @return {@link Entry}
 	 */
 	public Entry get(String name) {
@@ -56,7 +56,7 @@ public class Executors {
 	}
 
 	/**
-	 * プライマリ{@link Executor}を返します。
+	 * プライマリ{@link Endpoint}を返します。
 	 * @return {@link Entry}
 	 */
 	public Entry get() {
@@ -64,11 +64,11 @@ public class Executors {
 	}
 
 	/**
-	 * {@link Executors}用要素
+	 * {@link Endpoints}用要素
 	 * @param name {@link Qualifier}名
-	 * @param executor {@link Executor}
+	 * @param endpoint {@link Endpoint}
 	 * @param primary プライマリBeanかどうか
 	 */
-	public static record Entry(String name, Executor executor, boolean primary) {
+	public static record Entry(String name, Endpoint endpoint, boolean primary) {
 	}
 }
