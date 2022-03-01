@@ -2,7 +2,6 @@ package jp.ats.atomsql.processor;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -186,8 +185,8 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		template = Formatter.format(template, param);
 
 		try {
-			try (Writer writer = super.processingEnv.getFiler().createSourceFile(newClassName, e).openWriter()) {
-				writer.write(template);
+			try (var output = new BufferedOutputStream(super.processingEnv.getFiler().createSourceFile(newClassName, e).openOutputStream())) {
+				output.write(template.getBytes(Constants.CHARSET));
 			}
 		} catch (IOException ioe) {
 			error(ioe.getMessage(), e);

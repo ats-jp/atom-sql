@@ -4,15 +4,18 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+import javax.lang.model.SourceVersion;
+
 /**
  * 内部使用クラスです。<br>
- * SQL文から、プレースホルダを探します。
+ * SQL文から、プレースホルダを探します。<br>
+ * プレースホルダは、Javaの識別子の規則に沿っている必要があります。
  * @author 千葉 哲嗣
  */
 @SuppressWarnings("javadoc")
 public class PlaceholderFinder {
 
-	private static final Pattern pattern = Pattern.compile(":([a-zA-Z_$][a-zA-Z\\d_$]*)(?:/\\*([A-Z_]+)(?:<([A-Z_]+)>|)\\*/|)");
+	private static final Pattern pattern = Pattern.compile(":([^\\s[\\p{Punct}&&[^_$]]]+)(?:/\\*([A-Z_]+)(?:<([A-Z_]+)>|)\\*/|)");
 
 	public static String execute(String sql, Consumer<Found> placeholderConsumer) {
 		int position = 0;
@@ -30,7 +33,12 @@ public class PlaceholderFinder {
 
 			sql = sql.substring(position);
 
-			found.placeholder = matcher.group(1);
+			var matched = matcher.group(1);
+
+			if (!SourceVersion.isIdentifier(matched) || SourceVersion.isKeyword(matched)) continue;
+
+			found.placeholder = matched;
+
 			found.typeHint = Optional.ofNullable(matcher.group(2));
 
 			found.typeArgumentHint = Optional.ofNullable(matcher.group(3));

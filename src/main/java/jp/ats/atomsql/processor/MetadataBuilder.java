@@ -1,7 +1,7 @@
 package jp.ats.atomsql.processor;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -89,8 +89,8 @@ class MetadataBuilder {
 		template = Formatter.format(template, param);
 
 		try {
-			try (Writer writer = envSupplier.get().getFiler().createSourceFile(fileName, e).openWriter()) {
-				writer.write(template);
+			try (var output = new BufferedOutputStream(envSupplier.get().getFiler().createSourceFile(fileName, e).openOutputStream())) {
+				output.write(template.getBytes(Constants.CHARSET));
 			}
 		} catch (IOException ioe) {
 			error(ioe.getMessage(), e);
