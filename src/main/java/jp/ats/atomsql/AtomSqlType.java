@@ -778,41 +778,41 @@ public enum AtomSqlType {
 	 * 渡されたクラスから対応する{@link AtomSqlType}を返します。
 	 * @param c 対象となるクラス
 	 * @return {@link AtomSqlType}
-	 * @throws UnknownTypeException {@link AtomSqlType}に定義されていない型を使用した場合
+	 * @throws UnknownSqlTypeException {@link AtomSqlType}に定義されていない型を使用した場合
 	 */
 	public static AtomSqlType selectForResultSet(Class<?> c) {
 		var type = types.get(Objects.requireNonNull(c));
 
-		if (type == null) throw new UnknownTypeException(c);
+		if (type == null) throw new UnknownSqlTypeException(c);
 
 		return type;
 	}
 
 	/**
-	 * enum名をもとに{@link AtomSqlType}のインスタンスを返します。<br>
-	 * 対応する型が存在しない場合はOBJECTを返します。
+	 * enum名をもとに{@link AtomSqlType}のインスタンスを返します。
 	 * @param name {@link AtomSqlType}enum名
 	 * @return {@link AtomSqlType}
+	 * @throws UnknownSqlTypeNameException 対応する型名が存在しない場合
 	 */
-	public static AtomSqlType safeValueOf(String name) {
+	public static AtomSqlType typeOf(String name) {
 		try {
 			return valueOf(name);
 		} catch (IllegalArgumentException e) {
-			return OBJECT;
+			throw new UnknownSqlTypeNameException(name);
 		}
 	}
 
 	/**
 	 * 型パラメータとしてこのenumが使用される場合のインスタンスを返します。
-	 * 対応する型が存在しない場合はOBJECTを返します。
 	 * @param name {@link AtomSqlType}enum名
 	 * @return {@link AtomSqlType}
+	 * @throws UnknownSqlTypeNameException 対応する型名が存在しない場合
 	 */
-	public static AtomSqlType safeTypeArgumentValueOf(String name) {
+	public static AtomSqlType typeArgumentOf(String name) {
 		try {
 			return valueOf(name).toTypeArgument();
 		} catch (IllegalArgumentException e) {
-			return OBJECT;
+			throw new UnknownSqlTypeNameException(name);
 		}
 	}
 }

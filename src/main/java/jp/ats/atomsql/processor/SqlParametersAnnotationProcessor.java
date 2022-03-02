@@ -24,6 +24,7 @@ import javax.tools.StandardLocation;
 import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.PlaceholderFinder;
+import jp.ats.atomsql.UnknownSqlTypeNameException;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.TypeHint;
@@ -95,6 +96,8 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 			roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
 				try {
 					execute(e);
+				} catch (UnknownSqlTypeNameException ustne) {
+					error("Invalid type hint name [" + ustne.unknownTypeName() + "]", e);
 				} catch (ProcessException pe) {
 					//スキップして次の対象へ
 				}
@@ -192,12 +195,12 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 			}
 
 			var typeArgument = annotatedTypeArgument.or(
-				() -> f.typeArgumentHint.map(a -> AtomSqlType.safeTypeArgumentValueOf(a)))
+				() -> f.typeArgumentHint.map(a -> AtomSqlType.typeArgumentOf(a)))
 				.map(t -> "<" + t.type().getName() + ">")
 				.orElse("");
 
 			var method = "public "
-				+ annotatedHintType.orElseGet(() -> f.typeHint.map(t -> AtomSqlType.safeValueOf(t)).orElse(AtomSqlType.OBJECT)).type().getName()
+				+ annotatedHintType.orElseGet(() -> f.typeHint.map(t -> AtomSqlType.typeOf(t)).orElse(AtomSqlType.OBJECT)).type().getName()
 				+ typeArgument
 				+ " "
 				+ f.placeholder
