@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -25,6 +26,7 @@ import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.SqlParameters;
+import jp.ats.atomsql.annotation.TypeHint;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 
@@ -115,7 +117,9 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private void execute(Element e) {
-		var generateClassName = e.getAnnotation(SqlParameters.class).value();
+		var sqlParameters = e.getAnnotation(SqlParameters.class);
+
+		var generateClassName = sqlParameters.value();
 
 		if (generateClassName.isBlank()) {
 			//SqlParametersの値は空白です
@@ -161,6 +165,11 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("CLASS", generateClassName);
 
+		Map<String, TypeHint> annotatedHints = new HashMap<>();
+		Arrays.stream(sqlParameters.typeHints()).forEach(h -> {
+			annotatedHints.put(h.name(), h);
+		});
+
 		var dubplicateChecker = new HashSet<String>();
 		var fields = new LinkedList<String>();
 		PlaceholderFinder.execute(sql, f -> {
@@ -169,10 +178,26 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 			dubplicateChecker.add(f.placeholder);
 
-			var typeArgument = f.typeArgumentHint.map(t -> "<" + AtomSqlType.safeTypeArgumentValueOf(t).type().getName() + ">").orElse("");
+			var annotatedHint = annotatedHints.get(f.placeholder);
+
+			Optional<AtomSqlType> annotatedHintType;
+			Optional<AtomSqlType> annotatedTypeArgument;
+			if (annotatedHint != null) {
+				annotatedHintType = Optional.of(annotatedHint.type());
+				var arg = annotatedHint.typeArgument();
+				annotatedTypeArgument = arg == AtomSqlType.NULL ? Optional.empty() : Optional.of(arg);
+			} else {
+				annotatedHintType = Optional.empty();
+				annotatedTypeArgument = Optional.empty();
+			}
+
+			var typeArgument = annotatedTypeArgument.or(
+				() -> f.typeArgumentHint.map(a -> AtomSqlType.safeTypeArgumentValueOf(a)))
+				.map(t -> "<" + t.type().getName() + ">")
+				.orElse("");
 
 			var method = "public "
-				+ f.typeHint.map(t -> AtomSqlType.safeValueOf(t)).orElse(AtomSqlType.OBJECT).type().getName()
+				+ annotatedHintType.orElseGet(() -> f.typeHint.map(t -> AtomSqlType.safeValueOf(t)).orElse(AtomSqlType.OBJECT)).type().getName()
 				+ typeArgument
 				+ " "
 				+ f.placeholder

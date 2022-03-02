@@ -244,7 +244,11 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.STRING.type()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.TIMESTAMP.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.DATE.type()))
+				return DEFAULT_VALUE;
+			if (ProcessorUtils.sameClass(type, AtomSqlType.TIME.type()))
+				return DEFAULT_VALUE;
+			if (ProcessorUtils.sameClass(type, AtomSqlType.DATETIME.type()))
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.CSV.type())) {
 				var argumentType = t.getTypeArguments().get(0);

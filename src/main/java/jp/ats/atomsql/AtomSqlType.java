@@ -3,10 +3,15 @@ package jp.ats.atomsql;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -594,27 +599,90 @@ public enum AtomSqlType {
 	},
 
 	/**
-	 * {@link Timestamp}
+	 * {@link LocalDate}
 	 */
-	TIMESTAMP {
+	DATE {
 
 		@Override
 		public Class<?> type() {
-			return Timestamp.class;
+			return LocalDate.class;
 		}
 
 		@Override
 		void bind(int index, PreparedStatement statement, Object value) {
 			try {
-				statement.setTimestamp(index, (Timestamp) value);
+				statement.setDate(index, Date.valueOf((LocalDate) value));
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
 		}
 
 		@Override
-		Object get(ResultSet rs, String columnLabel) throws SQLException {
-			return rs.getTimestamp(columnLabel);
+		LocalDate get(ResultSet rs, String columnLabel) throws SQLException {
+			var value = rs.getDate(columnLabel);
+			return value == null ? null : value.toLocalDate();
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
+	},
+
+	/**
+	 * {@link LocalTime}
+	 */
+	TIME {
+
+		@Override
+		public Class<?> type() {
+			return LocalTime.class;
+		}
+
+		@Override
+		void bind(int index, PreparedStatement statement, Object value) {
+			try {
+				statement.setTime(index, Time.valueOf((LocalTime) value));
+			} catch (SQLException e) {
+				throw new AtomSqlException(e);
+			}
+		}
+
+		@Override
+		LocalTime get(ResultSet rs, String columnLabel) throws SQLException {
+			var value = rs.getTime(columnLabel);
+			return value == null ? null : value.toLocalTime();
+		}
+
+		@Override
+		AtomSqlType toTypeArgument() {
+			return this;
+		}
+	},
+
+	/**
+	 * {@link LocalDateTime}
+	 */
+	DATETIME {
+
+		@Override
+		public Class<?> type() {
+			return LocalDateTime.class;
+		}
+
+		@Override
+		void bind(int index, PreparedStatement statement, Object value) {
+			try {
+				statement.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
+			} catch (SQLException e) {
+				throw new AtomSqlException(e);
+			}
+		}
+
+		@Override
+		LocalDateTime get(ResultSet rs, String columnLabel) throws SQLException {
+			var value = rs.getTimestamp(columnLabel);
+			return value == null ? null : value.toLocalDateTime();
 		}
 
 		@Override

@@ -26,4 +26,10 @@ public @interface SqlParameters {
 	 * @return パッケージを除いたクラス名
 	 */
 	String value();
+
+	/**
+	 * SQL内に同じプレースホルダが複数回記述しなければならない等、型ヒントを記述するのが煩雑な場合に型ヒントを直接与えます。
+	 * @return　{@link TypeHint}配列
+	 */
+	TypeHint[] typeHints() default {};
 }

@@ -172,7 +172,11 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 				return true;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.STRING.type()))
 				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.TIMESTAMP.type()))
+			if (ProcessorUtils.sameClass(type, AtomSqlType.DATE.type()))
+				return true;
+			if (ProcessorUtils.sameClass(type, AtomSqlType.TIME.type()))
+				return true;
+			if (ProcessorUtils.sameClass(type, AtomSqlType.DATETIME.type()))
 				return true;
 
 			return defaultAction(t, p);
