@@ -1,6 +1,7 @@
 package jp.ats.atomsql;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
@@ -38,7 +39,7 @@ public class PropertiesConfigure implements Configure {
 			if (input != null)
 				config.load(input);
 		} catch (IOException e) {
-			throw new IllegalStateException(e);
+			throw new UncheckedIOException(e);
 		}
 
 		enableLog = Boolean.valueOf(config.getProperty("enable-log", "false"));

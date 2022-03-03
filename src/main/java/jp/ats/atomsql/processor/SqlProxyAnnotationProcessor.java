@@ -34,11 +34,13 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
 import jp.ats.atomsql.Atom;
+import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.Csv;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.Utils;
+import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlParameters;
@@ -329,6 +331,32 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		public Void visitExecutable(ExecutableElement e, List<MethodInfo> p) {
 			if (e.getModifiers().contains(Modifier.DEFAULT)) {
 				//デフォルトメソッドは対象外
+				return DEFAULT_VALUE;
+			}
+
+			if (e.getAnnotation(AtomSqlSupplier.class) != null) {
+				var returnType = e.getReturnType().accept(ElementConverter.instance, null).accept(TypeConverter.instance, null);
+				if (!ProcessorUtils.sameClass(returnType, AtomSql.class)) {
+					error(
+						"Annotation "
+							+ AtomSqlSupplier.class.getSimpleName()
+							+ " requires returning "
+							+ AtomSql.class.getSimpleName(),
+						e);
+
+					builder.setError();
+				}
+
+				if (e.getParameters().size() != 0) {
+					error(
+						"Annotation "
+							+ AtomSqlSupplier.class.getSimpleName()
+							+ " requires 0 parameters",
+						e);
+
+					builder.setError();
+				}
+
 				return DEFAULT_VALUE;
 			}
 

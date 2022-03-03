@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.ConfidentialSql;
 import jp.ats.atomsql.annotation.NonThreadSafe;
 import jp.ats.atomsql.annotation.Qualifier;
@@ -191,6 +192,8 @@ public class AtomSql {
 			(proxy, method, args) -> {
 				if (method.isDefault()) return InvocationHandler.invokeDefault(proxy, method, args);
 
+				if (method.getAnnotation(AtomSqlSupplier.class) != null) return AtomSql.this;
+
 				var proxyClass = proxy.getClass().getInterfaces()[0];
 
 				//メソッドに付与されたアノテーション > クラスに付与されたアノテーション
@@ -206,10 +209,12 @@ public class AtomSql {
 					true,
 					Thread.currentThread().getContextClassLoader()).getAnnotation(Methods.class);
 
+				var methodName = method.getName();
+
 				var find = Arrays.asList(methods.value())
 					.stream()
 					.filter(
-						m -> m.name().equals(method.getName()) && Arrays.equals(method.getParameterTypes(), m.parameterTypes()))
+						m -> m.name().equals(methodName) && Arrays.equals(method.getParameterTypes(), m.parameterTypes()))
 					.findFirst()
 					.get();
 

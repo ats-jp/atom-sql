@@ -195,12 +195,12 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 			}
 
 			var typeArgument = annotatedTypeArgument.or(
-				() -> f.typeArgumentHint.map(a -> AtomSqlType.typeArgumentOf(a)))
+				() -> f.typeArgumentHint.map(AtomSqlType::typeArgumentOf))
 				.map(t -> "<" + t.type().getName() + ">")
 				.orElse("");
 
 			var method = "public "
-				+ annotatedHintType.orElseGet(() -> f.typeHint.map(t -> AtomSqlType.typeOf(t)).orElse(AtomSqlType.OBJECT)).type().getName()
+				+ annotatedHintType.orElseGet(() -> f.typeHint.map(AtomSqlType::typeOf).orElse(AtomSqlType.OBJECT)).type().getName()
 				+ typeArgument
 				+ " "
 				+ f.placeholder
