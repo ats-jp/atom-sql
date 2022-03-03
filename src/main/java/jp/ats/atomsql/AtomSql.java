@@ -536,13 +536,13 @@ public class AtomSql {
 
 		final Set<String> confidentials;
 
-		final LinkedHashMap<String, Object> argMap;
+		final Map<String, Object> argMap;
 
 		private final Class<?> dataObjectClass;
 
-		private final List<AtomSqlType> argumentTypes = new ArrayList<>();
+		private final List<AtomSqlType> argumentTypes;
 
-		private final List<Object> values = new ArrayList<>();
+		private final List<Object> values;
 
 		private final Configure config;
 
@@ -575,14 +575,19 @@ public class AtomSql {
 			this.config = config;
 			this.sqlLogger = sqlLogger;
 
-			argMap = new LinkedHashMap<>();
+			Map<String, Object> argMap = new LinkedHashMap<>();
 			for (int i = 0; i < parameterNames.length; i++) {
 				argMap.put(parameterNames[i], args[i]);
 			}
 
+			this.argMap = Collections.unmodifiableMap(argMap);
+
 			var converted = new StringBuilder();
 
 			boolean[] nonThreadSale = { false };
+
+			List<AtomSqlType> argumentTypes = new ArrayList<>();
+			List<Object> values = new ArrayList<>();
 
 			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
 				converted.append(f.gap);
@@ -602,11 +607,28 @@ public class AtomSql {
 				values.add(value);
 			});
 
+			this.argumentTypes = Collections.unmodifiableList(argumentTypes);
+			this.values = Collections.unmodifiableList(values);
+
 			converted.append(sqlRemain);
 
 			this.sql = converted.toString();
 
 			containsNonThreadSaleValues = nonThreadSale[0];
+		}
+
+		SqlProxyHelper(SqlProxyHelper base, Class<?> newDataObjectClass) {
+			this.sql = base.sql;
+			this.originalSql = base.originalSql;
+			this.entry = base.entry;
+			this.containsNonThreadSaleValues = base.containsNonThreadSaleValues;
+			this.confidentials = base.confidentials;
+			this.argMap = base.argMap;
+			this.dataObjectClass = newDataObjectClass;
+			this.argumentTypes = base.argumentTypes;
+			this.values = base.values;
+			this.config = base.config;
+			this.sqlLogger = base.sqlLogger;
 		}
 
 		SqlProxyHelper(
@@ -626,6 +648,9 @@ public class AtomSql {
 
 			boolean[] nonThreadSale = { false };
 
+			List<AtomSqlType> argumentTypes = new ArrayList<>();
+			List<Object> values = new ArrayList<>();
+
 			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
 				converted.append(f.gap);
 
@@ -643,6 +668,9 @@ public class AtomSql {
 				argumentTypes.add(type);
 				values.add(value);
 			});
+
+			this.argumentTypes = Collections.unmodifiableList(argumentTypes);
+			this.values = Collections.unmodifiableList(values);
 
 			converted.append(sqlRemain);
 
@@ -666,14 +694,24 @@ public class AtomSql {
 			confidentials = new HashSet<>(main.confidentials);
 			confidentials.addAll(sub.confidentials);
 
+			List<AtomSqlType> argumentTypes = new ArrayList<>();
+
 			argumentTypes.addAll(main.argumentTypes);
 			argumentTypes.addAll(sub.argumentTypes);
+
+			this.argumentTypes = Collections.unmodifiableList(argumentTypes);
+
+			List<Object> values = new ArrayList<>();
 
 			values.addAll(main.values);
 			values.addAll(sub.values);
 
-			argMap = new LinkedHashMap<>(main.argMap);
+			this.values = Collections.unmodifiableList(values);
+
+			Map<String, Object> argMap = new LinkedHashMap<>(main.argMap);
 			argMap.putAll(sub.argMap);
+
+			this.argMap = Collections.unmodifiableMap(argMap);
 
 			containsNonThreadSaleValues = main.containsNonThreadSaleValues | sub.containsNonThreadSaleValues;
 		}

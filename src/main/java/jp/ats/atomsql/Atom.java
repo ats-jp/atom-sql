@@ -227,6 +227,21 @@ public class Atom<T> {
 	}
 
 	/**
+	 * データオブジェクトの型を持たない{@link Atom}から、データオブジェクトの型を与えたインスタンスを新たに生成します。
+	 * @param <R> {@link DataObject}が付与された型
+	 * @param dataObjectClass {@link DataObject}が付与されたクラスオブジェクト
+	 * @return データオブジェクトの型が与えられた新インスタンス
+	 */
+	public <R> Atom<R> apply(Class<R> dataObjectClass) {
+		return new Atom<R>(
+			atomSql,
+			new SqlProxyHelper(
+				helper(),
+				Objects.requireNonNull(dataObjectClass)),
+			andType);
+	}
+
+	/**
 	 * {@link RowMapper}により生成された結果オブジェクトを{@link Stream}として返します。
 	 * @see #stream
 	 * @see AtomSql#tryStream(Runnable)
@@ -421,7 +436,7 @@ public class Atom<T> {
 	 * @param atoms 展開する{@link Atom}の配列
 	 * @return 展開された新しい{@link Atom}
 	 */
-	public Atom<T> format(Atom<?>... atoms) {
+	public Atom<T> inject(Atom<?>... atoms) {
 		var helper = helper();
 		var sql = helper.originalSql;
 
