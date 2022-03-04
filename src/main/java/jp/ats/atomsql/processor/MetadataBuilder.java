@@ -113,11 +113,14 @@ class MetadataBuilder {
 		methodContents.add("parameters = {" + parameters + "}");
 		methodContents.add("parameterTypes = {" + types + "}");
 
-		if (info.sqlParametersClassName != null)
-			methodContents.add("sqlParametersClass = " + info.sqlParametersClassName + ".class");
+		if (info.sqlParameters != null)
+			methodContents.add("sqlParameters = " + info.sqlParameters + ".class");
 
-		if (info.dataObjectClassName != null)
-			methodContents.add("dataObjectClass = " + info.dataObjectClassName + ".class");
+		if (info.dataObject != null)
+			methodContents.add("dataObject = " + info.dataObject + ".class");
+
+		if (info.sqlProxy != null)
+			methodContents.add("sqlProxy = " + info.sqlProxy + ".class");
 
 		return "@Method(" + String.join(", ", methodContents) + ")";
 	}
@@ -149,8 +152,10 @@ class MetadataBuilder {
 
 		final List<String> parameterTypes = new LinkedList<>();
 
-		String sqlParametersClassName;
+		String sqlParameters;
 
-		String dataObjectClassName;
+		String dataObject;
+
+		String sqlProxy;
 	}
 }

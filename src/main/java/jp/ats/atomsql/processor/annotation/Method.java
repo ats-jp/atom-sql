@@ -2,6 +2,7 @@ package jp.ats.atomsql.processor.annotation;
 
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlParameters;
+import jp.ats.atomsql.annotation.SqlProxySupplier;
 
 /**
  * @author 千葉 哲嗣
@@ -27,14 +28,20 @@ public @interface Method {
 	Class<?>[] parameterTypes();
 
 	/**
-	 * {@link SqlParameters} に指定されたクラス
+	 * {@link SqlParameters}に指定されたクラス
 	 * @return {@link SqlParameters} に指定されたクラス
 	 */
-	Class<?> sqlParametersClass() default Object.class;
+	Class<?> sqlParameters() default Object.class;
 
 	/**
-	 * 戻り値の型パラメータで示される {@link DataObject} クラス
+	 * 戻り値の型パラメータで示される{@link DataObject}クラス
 	 * @return 戻り値の型パラメータで示される {@link DataObject} クラス
 	 */
-	Class<?> dataObjectClass() default Object.class;
+	Class<?> dataObject() default Object.class;
+
+	/**
+	 * {@link SqlProxySupplier}が付与されたメソッドの戻り値のクラス
+	 * @return {@link SqlProxySupplier}が付与されたメソッドの戻り値のクラス
+	 */
+	Class<?> sqlProxy() default Object.class;
 }

@@ -38,6 +38,7 @@ import jp.ats.atomsql.annotation.NonThreadSafe;
 import jp.ats.atomsql.annotation.Qualifier;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlProxy;
+import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.processor.annotation.Methods;
 
 /**
@@ -202,8 +203,6 @@ public class AtomSql {
 
 				var proxyClassName = proxyClass.getName();
 
-				var sql = loadSql(proxyClass, method).trim();
-
 				var methods = Class.forName(
 					proxyClassName + Constants.METADATA_CLASS_SUFFIX,
 					true,
@@ -211,22 +210,26 @@ public class AtomSql {
 
 				var methodName = method.getName();
 
-				var find = Arrays.asList(methods.value())
-					.stream()
+				var find = Arrays.stream(methods.value())
 					.filter(
 						m -> m.name().equals(methodName) && Arrays.equals(method.getParameterTypes(), m.parameterTypes()))
 					.findFirst()
 					.get();
+
+				var sqlProxySupplierAnnotation = method.getAnnotation(SqlProxySupplier.class);
+				if (sqlProxySupplierAnnotation != null) return of(find.sqlProxy());
 
 				var parameterTypes = find.parameterTypes();
 
 				var confidentialSql = method.getAnnotation(ConfidentialSql.class);
 				var confidentials = confidentialSql == null ? null : confidentialSql.value();
 
+				var sql = loadSql(proxyClass, method).trim();
+
 				SqlProxyHelper helper;
 				var entry = nameAnnotation == null ? endpoints.get() : endpoints.get(nameAnnotation.value());
 				if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
-					var sqlParametersClass = find.sqlParametersClass();
+					var sqlParametersClass = find.sqlParameters();
 					var sqlParameters = sqlParametersClass.getConstructor().newInstance();
 
 					Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameters });
@@ -247,7 +250,7 @@ public class AtomSql {
 						entry,
 						confidentials,
 						names.toArray(String[]::new),
-						find.dataObjectClass(),
+						find.dataObject(),
 						values.toArray(Object[]::new),
 						config,
 						sqlLogger);
@@ -257,7 +260,7 @@ public class AtomSql {
 						entry,
 						confidentials,
 						find.parameters(),
-						find.dataObjectClass(),
+						find.dataObject(),
 						args,
 						config,
 						sqlLogger);

@@ -45,6 +45,7 @@ import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
+import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
@@ -325,6 +326,10 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		return e.asType().accept(ElementConverter.instance, null).accept(TypeConverter.instance, null);
 	}
 
+	private static TypeElement returnTypeOf(ExecutableElement e) {
+		return e.getReturnType().accept(ElementConverter.instance, null).accept(TypeConverter.instance, null);
+	}
+
 	private class SqlProxyAnnotationProcessorMethodVisitor extends MethodVisitor {
 
 		@Override
@@ -335,8 +340,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			}
 
 			if (e.getAnnotation(AtomSqlSupplier.class) != null) {
-				var returnType = e.getReturnType().accept(ElementConverter.instance, null).accept(TypeConverter.instance, null);
-				if (!ProcessorUtils.sameClass(returnType, AtomSql.class)) {
+				if (!ProcessorUtils.sameClass(returnTypeOf(e), AtomSql.class)) {
 					error(
 						"Annotation "
 							+ AtomSqlSupplier.class.getSimpleName()
@@ -364,6 +368,41 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			info.name = e.getSimpleName().toString();
 
+			if (e.getAnnotation(SqlProxySupplier.class) != null) {
+				var returnType = returnTypeOf(e);
+
+				if (returnType.getAnnotation(SqlProxy.class) == null) {
+					error(
+						"Annotation "
+							+ SqlProxySupplier.class.getSimpleName()
+							+ " requires returning "
+							+ SqlProxy.class.getSimpleName()
+							+ " annotated class",
+						e);
+
+					builder.setError();
+
+					return DEFAULT_VALUE;
+				}
+
+				if (e.getParameters().size() != 0) {
+					error(
+						"Annotation "
+							+ SqlProxySupplier.class.getSimpleName()
+							+ " requires 0 parameters",
+						e);
+
+					builder.setError();
+
+					return DEFAULT_VALUE;
+				}
+
+				info.sqlProxy = returnType.getQualifiedName().toString();
+				p.add(info);
+
+				return DEFAULT_VALUE;
+			}
+
 			var parameters = e.getParameters();
 			var annotation = e.getAnnotation(SqlParameters.class);
 			if (annotation != null) {
@@ -390,7 +429,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 				var typeArg = parameter.asType().accept(checker, parameter);
 				if (typeArg != null) {
-					info.sqlParametersClassName = typeArg.accept(typeNameExtractor, e);
+					info.sqlParameters = typeArg.accept(typeNameExtractor, e);
 				}
 			});
 
@@ -407,7 +446,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return DEFAULT_VALUE;
 			}
 
-			if (info.sqlParametersClassName == null) {
+			if (info.sqlParameters == null) {
 				//通常のメソッド引数が存在するので検査対象
 				Set<String> placeholders = new TreeSet<>();
 				PlaceholderFinder.execute(result.sql, f -> {
@@ -436,7 +475,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 						"[" + dataObjectClassName + "] requires to be annotated with " + DataObject.class.getSimpleName(),
 						e);
 				} else {
-					info.dataObjectClassName = dataObjectClassName;
+					info.dataObject = dataObjectClassName;
 				}
 			}
 
