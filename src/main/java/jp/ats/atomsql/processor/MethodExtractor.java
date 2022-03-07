@@ -42,7 +42,9 @@ class MethodExtractor {
 
 		PackageElement packageElement = ProcessorUtils.getPackageElement(clazz);
 
-		var className = clazz.getQualifiedName().toString();
+		var env = envSupplier.get();
+
+		var className = env.getElementUtils().getBinaryName(clazz).toString();
 		var packageName = packageElement.getQualifiedName().toString();
 
 		String sql;
@@ -52,10 +54,9 @@ class MethodExtractor {
 			sql = sqlAnnotation.value();
 		} else {
 			//SQLファイルはクラスのバイナリ名と一致していないといけない
-			var classBinaryName = Utils.extractSimpleClassName(className, packageName).replace('.', '$');
+			var classBinaryName = Utils.extractSimpleClassName(className, packageName);
 			var sqlFileName = classBinaryName + "." + method.getSimpleName() + ".sql";
 
-			var env = envSupplier.get();
 			try {
 				sql = new String(
 					resolver(method).resolve(

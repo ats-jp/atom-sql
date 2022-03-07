@@ -66,9 +66,13 @@ class MetadataBuilder {
 
 		var packageName = packageName(e);
 
-		var className = className(packageName, e) + Constants.METADATA_CLASS_SUFFIX;
+		var binaryName = envSupplier.get().getElementUtils().getBinaryName(e.accept(TypeConverter.instance, null)).toString();
 
-		var fileName = packageName.isEmpty() ? className : packageName + "." + className;
+		var packageNameLength = packageName.length();
+		var isPackageNameLengthZero = packageNameLength == 0;
+		var className = binaryName.substring(isPackageNameLengthZero ? 0 : packageNameLength + 1) + Constants.METADATA_CLASS_SUFFIX;
+
+		var fileName = isPackageNameLengthZero ? className : packageName + "." + className;
 
 		if (alreadyCreatedFiles.contains(fileName))
 			return;
@@ -127,17 +131,6 @@ class MetadataBuilder {
 
 	private String packageName(Element e) {
 		return envSupplier.get().getElementUtils().getPackageOf(e).getQualifiedName().toString();
-	}
-
-	private String className(String packageName, Element element) {
-		var type = element.accept(TypeConverter.instance, null);
-		var name = type.getQualifiedName().toString();
-
-		name = name.substring(packageName.length());
-
-		name = name.replaceFirst("^\\.", "");
-
-		return name.replace('.', '$');
 	}
 
 	private void error(String message, Element e) {

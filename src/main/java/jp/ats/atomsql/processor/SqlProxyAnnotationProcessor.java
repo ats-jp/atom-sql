@@ -122,7 +122,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		builder.build(e);
 
 		if (!builder.hasError())
-			sqlProxyList.add(e.accept(TypeConverter.instance, null).getQualifiedName().toString());
+			sqlProxyList.add(super.processingEnv.getElementUtils().getBinaryName(e.accept(TypeConverter.instance, null)).toString());
 	}
 
 	private void error(String message, Element e) {
