@@ -29,26 +29,17 @@ class TypeNameExtractor extends SimpleTypeVisitor14<String, Element> {
 
 	@Override
 	public String visitPrimitive(PrimitiveType t, Element p) {
-		switch (t.getKind()) {
-		case BOOLEAN:
-			return boolean.class.getName();
-		case BYTE:
-			return byte.class.getName();
-		case SHORT:
-			return short.class.getName();
-		case INT:
-			return int.class.getName();
-		case LONG:
-			return long.class.getName();
-		case CHAR:
-			return char.class.getName();
-		case FLOAT:
-			return float.class.getName();
-		case DOUBLE:
-			return double.class.getName();
-		default:
-			return defaultAction(t, p);
-		}
+		return switch (t.getKind()) {
+		case BOOLEAN -> boolean.class.getName();
+		case BYTE -> byte.class.getName();
+		case SHORT -> short.class.getName();
+		case INT -> int.class.getName();
+		case LONG -> long.class.getName();
+		case CHAR -> char.class.getName();
+		case FLOAT -> float.class.getName();
+		case DOUBLE -> double.class.getName();
+		default -> defaultAction(t, p);
+		};
 	}
 
 	@Override

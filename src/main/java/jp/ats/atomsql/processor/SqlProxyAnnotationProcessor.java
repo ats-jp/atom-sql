@@ -141,12 +141,10 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public TypeMirror visitPrimitive(PrimitiveType t, ExecutableElement p) {
-			switch (t.getKind()) {
-			case INT:
-				return DEFAULT_VALUE;
-			default:
-				return defaultAction(t, p);
-			}
+			return switch (t.getKind()) {
+			case INT -> DEFAULT_VALUE;
+			default -> defaultAction(t, p);
+			};
 		}
 
 		@Override
@@ -195,17 +193,10 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public TypeMirror visitPrimitive(PrimitiveType t, VariableElement p) {
-			switch (t.getKind()) {
-			case BOOLEAN:
-			case BYTE:
-			case DOUBLE:
-			case FLOAT:
-			case INT:
-			case LONG:
-				return DEFAULT_VALUE;
-			default:
-				return defaultAction(t, p);
-			}
+			return switch (t.getKind()) {
+			case BOOLEAN, BYTE, DOUBLE, FLOAT, INT, LONG -> DEFAULT_VALUE;
+			default -> defaultAction(t, p);
+			};
 		}
 
 		@Override

@@ -33,9 +33,7 @@ public class PropertiesConfigure implements Configure {
 	public PropertiesConfigure() {
 		var config = new Properties();
 
-		try {
-			var input = PropertiesConfigure.class.getClassLoader().getResourceAsStream(configFileName);
-
+		try (var input = PropertiesConfigure.class.getClassLoader().getResourceAsStream(configFileName)) {
 			if (input != null)
 				config.load(input);
 		} catch (IOException e) {

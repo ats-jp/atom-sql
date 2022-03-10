@@ -131,17 +131,10 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public Boolean visitPrimitive(PrimitiveType t, Element p) {
-			switch (t.getKind()) {
-			case BOOLEAN:
-			case BYTE:
-			case DOUBLE:
-			case FLOAT:
-			case INT:
-			case LONG:
-				return true;
-			default:
-				return defaultAction(t, p);
-			}
+			return switch (t.getKind()) {
+			case BOOLEAN, BYTE, DOUBLE, FLOAT, INT, LONG -> true;
+			default -> defaultAction(t, p);
+			};
 		}
 
 		@Override
