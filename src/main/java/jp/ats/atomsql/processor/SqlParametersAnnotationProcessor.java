@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -18,6 +19,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
@@ -124,7 +126,54 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		return (className.substring(packageName.length()).replaceAll("^\\.", "") + "_" + methodName).replace("$", "_");
 	}
 
+	private static TypeElement toTypeElement(VariableElement e) {
+		return ProcessorUtils.toElement(e.asType()).accept(TypeConverter.instance, null);
+	}
+
 	private void execute(Element e) {
+		var executable = ProcessorUtils.toExecutableElement(e);
+		var parameters = executable.getParameters();
+
+		if (parameters.size() != 1 || !ProcessorUtils.sameClass(toTypeElement(parameters.get(0)), Consumer.class)) {
+			//メソッドeは、Consumerの1つのパラメータを必要とします
+			error(
+				"Method ["
+					+ e.getSimpleName()
+					+ "] requires one parameter of Consumer",
+				e);
+
+			return;
+		}
+
+		String generatePackageName;
+		String generateClassName;
+		{
+			var p = parameters.get(0);
+
+			var typeArg = ProcessorUtils.getTypeArgument(p);
+			if (typeArg == null) {
+				//Consumerと書かれた場合
+				//Consumerは、型の引数を必要とします
+				error("Consumer requires a type argument", p);
+				return;
+			}
+
+			var element = ProcessorUtils.toElement(typeArg);
+			if (element == null) {
+				//Consumer<?>と書かれた場合
+				//Consumerは、型の引数を必要とします
+				error("Consumer requires a type argument", p);
+				return;
+			}
+
+			var clazz = element.accept(TypeConverter.instance, null);
+			var className = clazz.getQualifiedName().toString();
+
+			generatePackageName = ProcessorUtils.getPackageElement(clazz).getQualifiedName().toString();
+
+			generateClassName = Utils.extractSimpleClassName(className, generatePackageName);
+		}
+
 		var sqlParameters = e.getAnnotation(SqlParameters.class);
 
 		Result result;
@@ -137,21 +186,11 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		}
 
 		var className = result.className;
+
+		//パッケージはSqlProxyのあるパッケージ固定
 		var packageName = result.packageName;
 
-		var generateClassName = sqlParameters.value();
-
 		var methodName = e.getSimpleName().toString();
-
-		if (generateClassName.isEmpty()) {
-			generateClassName = defaultSqlParametersClassName(packageName, className, methodName);
-		} else {
-			if (!SourceVersion.isIdentifier(generateClassName) || SourceVersion.isKeyword(generateClassName)) {
-				//SqlParametersの値はJavaの識別子ではありません
-				error("The value of " + SqlParameters.class.getSimpleName() + " is not Java identifier", e);
-				return;
-			}
-		}
 
 		var newClassName = packageName.isEmpty() ? generateClassName : packageName + "." + generateClassName;
 

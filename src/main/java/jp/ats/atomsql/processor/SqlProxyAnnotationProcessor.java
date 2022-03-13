@@ -43,7 +43,6 @@ import jp.ats.atomsql.Utils;
 import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.Sql;
-import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
@@ -246,7 +245,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.CSV.type())) {
 				var argumentType = t.getTypeArguments().get(0);
-				var element = argumentType.accept(ElementConverter.instance, null);
+				var element = ProcessorUtils.toElement(argumentType);
 				var typeElement = element.accept(TypeConverter.instance, null);
 
 				// この先再帰するので同タイプは先にはじく
@@ -275,59 +274,19 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 
 		private TypeMirror processConsumerType(VariableElement p) {
-			var typeArg = p.asType().accept(TypeArgumentsExtractor.instance, null).get(0);
-
-			var element = typeArg.accept(ElementConverter.instance, null);
-			if (element == null) {
-				//Consumerは、型の引数としてSqlParametersの値の型を必要とします
-				error("Consumer requires the type " + SqlParameters.class.getSimpleName() + " value as a type argument", p);
+			var arg = ProcessorUtils.getTypeArgument(p);
+			if (arg == null) {
+				error("Consumer requires a type argument", p);
 				builder.setError();
 				return DEFAULT_VALUE;
 			}
 
-			var clazz = element.accept(TypeConverter.instance, null);
-			var className = clazz.getQualifiedName().toString();
-
-			var packageName = ProcessorUtils.getPackageElement(clazz).getQualifiedName().toString();
-
-			var typeName = Utils.extractSimpleClassName(className, packageName);
-
-			var annotation = method.getAnnotation(SqlParameters.class);
-			if (annotation == null) {
-				//Consumerは、メソッドにSqlParametersのアノテーションが必要です
-				error("Consumer requires the method annotated with " + SqlParameters.class.getSimpleName(), p);
-				builder.setError();
-				return DEFAULT_VALUE;
-			}
-
-			var annotationValue = annotation.value();
-
-			if (annotationValue.isEmpty()) {//アノテーションでクラス名未指定の場合デフォルトのクラス名を生成
-				var result = ProcessorUtils.getPackageNameAndBinaryClassName(method, processingEnv);
-				annotationValue = SqlParametersAnnotationProcessor.defaultSqlParametersClassName(
-					result.packageName(),
-					result.binaryClassName(),
-					method.getSimpleName().toString());
-			}
-
-			//自動生成名ではなく一致しない場合
-			if (!typeName.equals(annotationValue)) {
-				//annotationValueとtypeNameが一致しません
-				error("[" + annotationValue + "] and [" + typeName + "] do not match", p);
-				builder.setError();
-				return DEFAULT_VALUE;
-			}
-
-			return typeArg;
+			return arg;
 		}
 	}
 
-	private static TypeElement toTypeElement(VariableElement e) {
-		return e.asType().accept(ElementConverter.instance, null).accept(TypeConverter.instance, null);
-	}
-
 	private static TypeElement returnTypeOf(ExecutableElement e) {
-		return e.getReturnType().accept(ElementConverter.instance, null).accept(TypeConverter.instance, null);
+		return ProcessorUtils.toElement(e.getReturnType()).accept(TypeConverter.instance, null);
 	}
 
 	private class SqlProxyAnnotationProcessorMethodVisitor extends MethodVisitor {
@@ -404,29 +363,6 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			}
 
 			var parameters = e.getParameters();
-			var annotation = e.getAnnotation(SqlParameters.class);
-
-			if (annotation != null) {
-				if (parameters.size() != 1 || !ProcessorUtils.sameClass(toTypeElement(parameters.get(0)), Consumer.class)) {
-					var annotationValue = annotation.value();
-
-					if (annotationValue.isEmpty()) {
-						var result = ProcessorUtils.getPackageNameAndBinaryClassName(e, processingEnv);
-						annotationValue = SqlParametersAnnotationProcessor.defaultSqlParametersClassName(result.packageName(), result.binaryClassName(), e.getSimpleName().toString());
-					}
-
-					//メソッドeは、Consumer<annotation>の1つのパラメータを必要とします
-					error(
-						"Method ["
-							+ e.getSimpleName()
-							+ "] requires one parameter of Consumer<"
-							+ annotationValue
-							+ ">",
-						e);
-
-					builder.setError();
-				}
-			}
 
 			var checker = new ParameterTypeChecker(e);
 
@@ -479,7 +415,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			if (dataObjectType != null) {
 				var dataObjectClassName = dataObjectType.accept(typeNameExtractor, e);
 
-				var dataObjectElement = dataObjectType.accept(ElementConverter.instance, null);
+				var dataObjectElement = ProcessorUtils.toElement(dataObjectType);
 				if (dataObjectElement.getAnnotation(DataObject.class) == null) {
 					//dataObjectClassNameにはDataObjectのアノテーションが必要です
 					error(
@@ -496,26 +432,6 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		}
 	}
 
-	private static class ElementConverter extends SimpleTypeVisitor14<Element, Void> {
-
-		private static ElementConverter instance = new ElementConverter();
-
-		@Override
-		protected Element defaultAction(TypeMirror e, Void p) {
-			return DEFAULT_VALUE;
-		}
-
-		@Override
-		public Element visitDeclared(DeclaredType t, Void p) {
-			return t.asElement();
-		}
-
-		@Override
-		public Element visitError(ErrorType t, Void p) {
-			return t.asElement();
-		}
-	}
-
 	private static class AnnotationExtractor extends SimpleTypeVisitor14<Boolean, ExecutableElement> {
 
 		private static final AnnotationExtractor instance = new AnnotationExtractor();
@@ -528,26 +444,6 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		@Override
 		public Boolean visitDeclared(DeclaredType t, ExecutableElement p) {
 			return t.asElement().getAnnotation(DataObject.class) != null;
-		}
-	}
-
-	private static class TypeArgumentsExtractor extends SimpleTypeVisitor14<List<? extends TypeMirror>, Void> {
-
-		private static final TypeArgumentsExtractor instance = new TypeArgumentsExtractor();
-
-		@Override
-		protected List<? extends TypeMirror> defaultAction(TypeMirror e, Void p) {
-			return null;
-		}
-
-		@Override
-		public List<? extends TypeMirror> visitDeclared(DeclaredType t, Void p) {
-			return t.getTypeArguments();
-		}
-
-		@Override
-		public List<? extends TypeMirror> visitError(ErrorType t, Void p) {
-			return t.getTypeArguments();
 		}
 	}
 }
