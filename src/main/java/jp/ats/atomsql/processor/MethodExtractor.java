@@ -7,7 +7,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.PackageElement;
 import javax.tools.Diagnostic.Kind;
 
 import jp.ats.atomsql.Constants;
@@ -38,14 +37,12 @@ class MethodExtractor {
 	}
 
 	Result execute(Element method) throws SqlFileNotFoundException {
-		var clazz = method.getEnclosingElement().accept(TypeConverter.instance, null);
-
-		PackageElement packageElement = ProcessorUtils.getPackageElement(clazz);
-
 		var env = envSupplier.get();
 
-		var className = env.getElementUtils().getBinaryName(clazz).toString();
-		var packageName = packageElement.getQualifiedName().toString();
+		var packageNameAndBinaryClassName = ProcessorUtils.getPackageNameAndBinaryClassName(method, env);
+
+		var packageName = packageNameAndBinaryClassName.packageName();
+		var className = packageNameAndBinaryClassName.binaryClassName();
 
 		String sql;
 

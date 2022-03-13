@@ -119,16 +119,13 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		return true;
 	}
 
+	static String defaultSqlParametersClassName(String packageName, String className, String methodName) {
+		//未指定の場合、クラス名_メソッド名とする
+		return (className.substring(packageName.length()).replaceAll("^\\.", "") + "_" + methodName).replace("$", "_");
+	}
+
 	private void execute(Element e) {
 		var sqlParameters = e.getAnnotation(SqlParameters.class);
-
-		var generateClassName = sqlParameters.value();
-
-		if (generateClassName.isBlank()) {
-			//SqlParametersの値は空白です
-			error("The value of " + SqlParameters.class.getSimpleName() + " is blank", e);
-			return;
-		}
 
 		Result result;
 		try {
@@ -142,10 +139,23 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		var className = result.className;
 		var packageName = result.packageName;
 
+		var generateClassName = sqlParameters.value();
+
+		var methodName = e.getSimpleName().toString();
+
+		if (generateClassName.isEmpty()) {
+			generateClassName = defaultSqlParametersClassName(packageName, className, methodName);
+		} else {
+			if (!SourceVersion.isIdentifier(generateClassName) || SourceVersion.isKeyword(generateClassName)) {
+				//SqlParametersの値はJavaの識別子ではありません
+				error("The value of " + SqlParameters.class.getSimpleName() + " is not Java identifier", e);
+				return;
+			}
+		}
+
 		var newClassName = packageName.isEmpty() ? generateClassName : packageName + "." + generateClassName;
 
 		var info = allParameters.get(newClassName);
-		var methodName = e.getSimpleName().toString();
 		if (info != null && (!info.clazz.equals(className) || !info.method.equals(methodName))) {
 			//generateClassNameという名前は既に他で使われています
 			error("The name [" + generateClassName + "] has already been used elsewhere", e);

@@ -431,8 +431,8 @@ public class Atom<T> {
 
 	/**
 	 * この{@link Atom}の持つSQL文内のこのメソッド専用変数に、パラメータで渡される{@link Atom}のもつSQL文を展開します。<br>
-	 * 変数の書式は /*[<i>配列atomsのインデックス番号</i>]*&#47; です。<br>
-	 * 例えば、展開対象1番目のための変数は /*[0]*&#47; と記述します。
+	 * 変数の書式は /*${<i>配列atomsのインデックス番号</i>}*&#47; です。<br>
+	 * 例えば、展開対象1番目のための変数は /*${0}*&#47; と記述します。
 	 * @param atoms 展開する{@link Atom}の配列
 	 * @return 展開された新しい{@link Atom}
 	 */
@@ -445,7 +445,7 @@ public class Atom<T> {
 		for (int i = 0; i < atoms.length; i++) {
 			var atom = atoms[i];
 
-			var pattern = Pattern.compile("/\\*\\[" + i + "\\]\\*/");
+			var pattern = Pattern.compile("/\\*\\$\\{" + i + "\\}\\*/");
 			sql = pattern.matcher(sql).replaceAll(atom.helper().originalSql);
 
 			var atomHelper = atom.helper();
@@ -457,6 +457,40 @@ public class Atom<T> {
 		return new Atom<T>(
 			atomSql,
 			new SqlProxyHelper(sql, confidentials, argMap, helper),
+			true);
+	}
+
+	/**
+	 * この{@link Atom}の持つSQL文内のこのメソッド専用変数に、パラメータで回収する{@link Atom}のもつSQL文を展開します。<br>
+	 * 変数の書式は /*${<i>キーワード</i>}*&#47; です。<br>
+	 * キーワードにはJavaの識別子と同じ規則が適用され、規則に反する場合には例外がスローされます。
+	 * @param consumer {@link Atoms} を受け取る{@link Consumer}
+	 * @return 展開された新しい{@link Atom}
+	 */
+	public Atom<T> inject(Consumer<Atoms> consumer) {
+		var helper = helper();
+		var sql = new String[] { helper.originalSql };
+
+		var confidentials = new HashSet<String>(helper.confidentials);
+		var argMap = new LinkedHashMap<String, Object>(helper.argMap);
+
+		var atoms = new Atoms();
+		consumer.accept(atoms);
+		atoms.map.entrySet().stream().forEach(e -> {
+			var atom = e.getValue();
+
+			var pattern = Pattern.compile("/\\*\\$\\{" + e.getKey() + "\\}\\*/");
+			sql[0] = pattern.matcher(sql[0]).replaceAll(atom.helper().originalSql);
+
+			var atomHelper = atom.helper();
+
+			confidentials.addAll(atomHelper.confidentials);
+			argMap.putAll(atomHelper.argMap);
+		});
+
+		return new Atom<T>(
+			atomSql,
+			new SqlProxyHelper(sql[0], confidentials, argMap, helper),
 			true);
 	}
 

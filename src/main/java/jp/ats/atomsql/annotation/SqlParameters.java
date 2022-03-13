@@ -5,6 +5,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.util.function.Consumer;
 
 import jp.ats.atomsql.AtomSqlType;
 
@@ -14,7 +15,11 @@ import jp.ats.atomsql.AtomSqlType;
  * 生成されたクラスには{@link SqlProxy}で指定されたSQL文から抽出されたプレースホルダが、publicなフィールドとして作成されます。<br>
  * フィールドの型は、SQL内のプレースホルダ部分に型ヒントを記述することで設定することが可能です。<br>
  * 型ヒントの記述方法は":placeholder/*TYPE_HINT*&#047;"となり、TYPE_HINTには{@link AtomSqlType}で定義された列挙の名称のみが使用可能です。（フィールドをStringとしたい場合、型ヒントにSTRINGを記述）<br>
- * このアノテーションで指定するクラス名を（そのパッケージ内で）重複して指定してしまった場合、同じものを使用するのではなくコンパイルエラーとなります。
+ * このアノテーションで指定するクラス名を（そのパッケージ内で）重複して指定してしまった場合、同じものを使用するのではなくコンパイルエラーとなります。<br>
+ * valueを指定しなかった場合、デフォルトとして<br>
+ * クラス名_メソッド名<br>
+ * （クラスがインナークラスであった場合、クラスバイナリ名に含まれる $ は _ に置き換えられる）<br>
+ * という名前のクラスが自動生成されるので、その名前を{@link Consumer}の型パラメータに指定するようにしてください。
  * @author 千葉 哲嗣
  */
 @Target({ METHOD })
@@ -25,7 +30,7 @@ public @interface SqlParameters {
 	 * 自動生成されるクラス名
 	 * @return パッケージを除いたクラス名
 	 */
-	String value();
+	String value() default "";
 
 	/**
 	 * SQL内に同じプレースホルダが複数回記述しなければならない等、型ヒントを記述するのが煩雑な場合に型ヒントを直接与えます。

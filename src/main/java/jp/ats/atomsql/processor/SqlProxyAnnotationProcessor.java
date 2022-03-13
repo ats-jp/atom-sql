@@ -279,8 +279,8 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			var element = typeArg.accept(ElementConverter.instance, null);
 			if (element == null) {
-				//Consumerは、型の引数としてSqlParametersでアノテーションされた型を必要とします
-				error("Consumer requires the type annotated with " + SqlParameters.class.getSimpleName() + " as a type argument", p);
+				//Consumerは、型の引数としてSqlParametersの値の型を必要とします
+				error("Consumer requires the type " + SqlParameters.class.getSimpleName() + " value as a type argument", p);
 				builder.setError();
 				return DEFAULT_VALUE;
 			}
@@ -294,14 +294,23 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			var annotation = method.getAnnotation(SqlParameters.class);
 			if (annotation == null) {
-				//Consumerは、型の引数としてSqlParametersでアノテーションされた型を必要とします
-				error("Consumer requires the type annotated with " + SqlParameters.class.getSimpleName() + " as a type argument", p);
+				//Consumerは、メソッドにSqlParametersのアノテーションが必要です
+				error("Consumer requires the method annotated with " + SqlParameters.class.getSimpleName(), p);
 				builder.setError();
 				return DEFAULT_VALUE;
 			}
 
 			var annotationValue = annotation.value();
 
+			if (annotationValue.isEmpty()) {//アノテーションでクラス名未指定の場合デフォルトのクラス名を生成
+				var result = ProcessorUtils.getPackageNameAndBinaryClassName(method, processingEnv);
+				annotationValue = SqlParametersAnnotationProcessor.defaultSqlParametersClassName(
+					result.packageName(),
+					result.binaryClassName(),
+					method.getSimpleName().toString());
+			}
+
+			//自動生成名ではなく一致しない場合
 			if (!typeName.equals(annotationValue)) {
 				//annotationValueとtypeNameが一致しません
 				error("[" + annotationValue + "] and [" + typeName + "] do not match", p);
@@ -396,14 +405,22 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 			var parameters = e.getParameters();
 			var annotation = e.getAnnotation(SqlParameters.class);
+
 			if (annotation != null) {
 				if (parameters.size() != 1 || !ProcessorUtils.sameClass(toTypeElement(parameters.get(0)), Consumer.class)) {
+					var annotationValue = annotation.value();
+
+					if (annotationValue.isEmpty()) {
+						var result = ProcessorUtils.getPackageNameAndBinaryClassName(e, processingEnv);
+						annotationValue = SqlParametersAnnotationProcessor.defaultSqlParametersClassName(result.packageName(), result.binaryClassName(), e.getSimpleName().toString());
+					}
+
 					//メソッドeは、Consumer<annotation>の1つのパラメータを必要とします
 					error(
 						"Method ["
 							+ e.getSimpleName()
 							+ "] requires one parameter of Consumer<"
-							+ annotation.value()
+							+ annotationValue
 							+ ">",
 						e);
 
@@ -423,6 +440,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 					info.sqlParameters = typeArg.accept(typeNameExtractor, e);
 				}
 			});
+
+			//チェッカーでチェックした中でエラーがあった場合
+			if (builder.hasError()) return DEFAULT_VALUE;
 
 			Result result;
 			try {

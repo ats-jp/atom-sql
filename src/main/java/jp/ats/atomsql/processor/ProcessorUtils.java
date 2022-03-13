@@ -38,6 +38,19 @@ class ProcessorUtils {
 		return Paths.get(classOutput.toUri().toURL().toString().substring("file:/".length()));
 	}
 
+	static record PackageNameAndBinaryClassName(String packageName, String binaryClassName) {
+	}
+
+	static PackageNameAndBinaryClassName getPackageNameAndBinaryClassName(Element method, ProcessingEnvironment env) {
+		var clazz = method.getEnclosingElement().accept(TypeConverter.instance, null);
+
+		PackageElement packageElement = getPackageElement(clazz);
+
+		return new PackageNameAndBinaryClassName(
+			packageElement.getQualifiedName().toString(),
+			env.getElementUtils().getBinaryName(clazz).toString());
+	}
+
 	private static class PackageExtractor extends SimpleElementVisitor14<PackageElement, Void> {
 
 		@Override
