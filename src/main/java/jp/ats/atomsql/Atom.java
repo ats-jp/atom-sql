@@ -437,7 +437,7 @@ public class Atom<T> {
 	 * @param atoms 展開する{@link Atom}の配列
 	 * @return 展開された新しい{@link Atom}
 	 */
-	public Atom<T> interpolate(Atom<?>... atoms) {
+	public Atom<T> put(Atom<?>... atoms) {
 		var helper = helper();
 		var sql = helper.originalSql;
 
@@ -468,7 +468,7 @@ public class Atom<T> {
 	 * @param atoms プレースホルダをキー、{@link Atom}を値として格納したマップ
 	 * @return 展開された新しい{@link Atom}
 	 */
-	public Atom<T> interpolate(Map<String, Atom<?>> atoms) {
+	public Atom<T> put(Map<String, Atom<?>> atoms) {
 		var helper = helper();
 		var sql = new String[] { helper.originalSql };
 

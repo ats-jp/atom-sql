@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import jp.ats.atomsql.annotation.DataObject;
+import jp.ats.atomsql.annotation.SqlInterpolation;
 
 /**
  * {@link Atom}の持つSQL文に変数展開を行うための中間状態クラスです。
@@ -27,12 +28,13 @@ public class HalfAtom<T, I> {
 
 	/**
 	 * 自動生成された変数展開用クラス I をもとにSQL文の変数展開を行います。<br>
-	 * 変数展開の詳しい内容は{@link Atom#interpolate(Map)}を参照してください。
-	 * @see Atom#interpolate(Map)
+	 * 変数展開の詳しい内容は{@link SqlInterpolation}を参照してください。
+	 * @see SqlInterpolation
+	 * @see Atom#put(Map)
 	 * @param consumer 変数展開用クラスのインスタンスを受け取る{@link Consumer}
 	 * @return 展開された新しい{@link Atom}
 	 */
-	public Atom<T> interpolate(Consumer<I> consumer) {
+	public Atom<T> put(Consumer<I> consumer) {
 		Object instance;
 		try {
 			instance = sqlInterpolationClass.getConstructor().newInstance();
@@ -60,6 +62,6 @@ public class HalfAtom<T, I> {
 			}
 		});
 
-		return atom.interpolate(map);
+		return atom.put(map);
 	}
 }
