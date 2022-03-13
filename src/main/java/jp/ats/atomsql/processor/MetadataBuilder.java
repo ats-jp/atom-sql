@@ -66,7 +66,7 @@ class MetadataBuilder {
 
 		var packageName = packageName(e);
 
-		var binaryName = envSupplier.get().getElementUtils().getBinaryName(e.accept(TypeConverter.instance, null)).toString();
+		var binaryName = envSupplier.get().getElementUtils().getBinaryName(ProcessorUtils.toTypeElement(e)).toString();
 
 		var packageNameLength = packageName.length();
 		var isPackageNameLengthZero = packageNameLength == 0;
@@ -123,6 +123,9 @@ class MetadataBuilder {
 		if (info.dataObject != null)
 			methodContents.add("dataObject = " + info.dataObject + ".class");
 
+		if (info.sqlInterpolation != null)
+			methodContents.add("sqlInterpolation = " + info.sqlInterpolation + ".class");
+
 		if (info.sqlProxy != null)
 			methodContents.add("sqlProxy = " + info.sqlProxy + ".class");
 
@@ -148,6 +151,8 @@ class MetadataBuilder {
 		String sqlParameters;
 
 		String dataObject;
+
+		String sqlInterpolation;
 
 		String sqlProxy;
 	}

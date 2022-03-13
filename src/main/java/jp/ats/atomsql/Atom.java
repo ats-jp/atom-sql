@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -436,7 +437,7 @@ public class Atom<T> {
 	 * @param atoms 展開する{@link Atom}の配列
 	 * @return 展開された新しい{@link Atom}
 	 */
-	public Atom<T> inject(Atom<?>... atoms) {
+	public Atom<T> interpolate(Atom<?>... atoms) {
 		var helper = helper();
 		var sql = helper.originalSql;
 
@@ -464,22 +465,20 @@ public class Atom<T> {
 	 * この{@link Atom}の持つSQL文内のこのメソッド専用変数に、パラメータで回収する{@link Atom}のもつSQL文を展開します。<br>
 	 * 変数の書式は /*${<i>キーワード</i>}*&#47; です。<br>
 	 * キーワードにはJavaの識別子と同じ規則が適用され、規則に反する場合には例外がスローされます。
-	 * @param consumer {@link Atoms} を受け取る{@link Consumer}
+	 * @param atoms プレースホルダをキー、{@link Atom}を値として格納したマップ
 	 * @return 展開された新しい{@link Atom}
 	 */
-	public Atom<T> inject(Consumer<Atoms> consumer) {
+	public Atom<T> interpolate(Map<String, Atom<?>> atoms) {
 		var helper = helper();
 		var sql = new String[] { helper.originalSql };
 
 		var confidentials = new HashSet<String>(helper.confidentials);
 		var argMap = new LinkedHashMap<String, Object>(helper.argMap);
 
-		var atoms = new Atoms();
-		consumer.accept(atoms);
-		atoms.map.entrySet().stream().forEach(e -> {
+		atoms.entrySet().stream().forEach(e -> {
 			var atom = e.getValue();
 
-			var pattern = Pattern.compile("/\\*\\$\\{" + e.getKey() + "\\}\\*/");
+			var pattern = Pattern.compile("/\\*\\$\\{" + Objects.requireNonNull(e.getKey()) + "\\}\\*/");
 			sql[0] = pattern.matcher(sql[0]).replaceAll(atom.helper().originalSql);
 
 			var atomHelper = atom.helper();

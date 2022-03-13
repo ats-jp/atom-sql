@@ -3,6 +3,7 @@ package jp.ats.atomsql;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import jp.ats.atomsql.annotation.SqlInterpolation;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
 
@@ -36,6 +37,11 @@ public interface Constants {
 	 * {@link SqlParameters}自動生成クラスの一覧ファイル名
 	 */
 	public static final String PARAMETERS_LIST = "jp.ats.atom-sql.parameters-list";
+
+	/**
+	 * {@link SqlInterpolation}自動生成クラスの一覧ファイル名
+	 */
+	public static final String INTERPOLATION_LIST = "jp.ats.atom-sql.interpolation-list";
 
 	/**
 	 * @{link ConfidentialSql}が付与されたSQL文のログ上の目印

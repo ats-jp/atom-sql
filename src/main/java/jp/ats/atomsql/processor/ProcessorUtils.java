@@ -10,7 +10,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
@@ -60,14 +59,38 @@ class ProcessorUtils {
 		return e.accept(MethodExtractor.instance, null);
 	}
 
-	static TypeMirror getTypeArgument(VariableElement p) {
-		var types = p.asType().accept(TypeArgumentsExtractor.instance, null);
-		if (types.size() == 0) return null;
-		return types.get(0);
+	static List<? extends TypeMirror> getTypeArgument(Element p) {
+		return p.asType().accept(TypeArgumentsExtractor.instance, null);
+	}
+
+	static List<? extends TypeMirror> getTypeArgument(TypeMirror p) {
+		return p.accept(TypeArgumentsExtractor.instance, null);
 	}
 
 	static Element toElement(TypeMirror type) {
 		return type.accept(ElementConverter.instance, null);
+	}
+
+	static TypeElement toTypeElement(Element e) {
+		return e.accept(TypeConverter.instance, null);
+	}
+
+	private static class TypeConverter extends SimpleElementVisitor14<TypeElement, Void> {
+
+		static final TypeConverter instance = new TypeConverter();
+
+		private TypeConverter() {
+		}
+
+		@Override
+		protected TypeElement defaultAction(Element e, Void p) {
+			throw new ProcessException();
+		}
+
+		@Override
+		public TypeElement visitType(TypeElement e, Void p) {
+			return e;
+		}
 	}
 
 	private static class MethodExtractor extends SimpleElementVisitor14<ExecutableElement, Void> {

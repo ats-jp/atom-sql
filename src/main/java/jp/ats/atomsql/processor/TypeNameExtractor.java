@@ -49,13 +49,13 @@ class TypeNameExtractor extends SimpleTypeVisitor14<String, Element> {
 
 	@Override
 	public String visitDeclared(DeclaredType t, Element p) {
-		return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();
+		return ProcessorUtils.toTypeElement(t.asElement()).getQualifiedName().toString();
 	}
 
 	// Consumer<SqlParameter>等型パラメータのあるものがここに来る
 	@Override
 	public String visitError(ErrorType t, Element p) {
-		return t.asElement().accept(TypeConverter.instance, null).getQualifiedName().toString();
+		return ProcessorUtils.toTypeElement(t.asElement()).getQualifiedName().toString();
 	}
 
 	private void error(String message, Element e) {

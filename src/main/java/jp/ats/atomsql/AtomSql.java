@@ -280,6 +280,8 @@ public class AtomSql {
 					return atom.get();
 				} else if (returnType.equals(int.class)) {
 					return atom.update();
+				} else if (returnType.equals(HalfAtom.class)) {
+					return new HalfAtom<>(atom, find.sqlInterpolation());
 				} else {
 					//不正な戻り値の型
 					throw new IllegalStateException("Incorrect return type: " + returnType);

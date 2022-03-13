@@ -1,3 +1,4 @@
 jp.ats.atomsql.processor.SqlProxyAnnotationProcessor
 jp.ats.atomsql.processor.DataObjectAnnotationProcessor
 jp.ats.atomsql.processor.SqlParametersAnnotationProcessor
+jp.ats.atomsql.processor.SqlInterpolationAnnotationProcessor

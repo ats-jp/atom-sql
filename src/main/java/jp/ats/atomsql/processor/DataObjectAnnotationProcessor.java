@@ -139,7 +139,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public Boolean visitDeclared(DeclaredType t, Element p) {
-			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
+			TypeElement type = ProcessorUtils.toTypeElement(t.asElement());
 
 			if (ProcessorUtils.sameClass(type, AtomSqlType.BIG_DECIMAL.type()))
 				return true;
@@ -187,7 +187,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public Boolean visitDeclared(DeclaredType t, Void p) {
-			TypeElement type = t.asElement().accept(TypeConverter.instance, null);
+			TypeElement type = ProcessorUtils.toTypeElement(t.asElement());
 
 			if (ProcessorUtils.sameClass(type, ResultSet.class)) {
 				return true;
