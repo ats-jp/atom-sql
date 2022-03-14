@@ -12,7 +12,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +31,9 @@ import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import jp.ats.atomsql.InnerSql.Element;
+import jp.ats.atomsql.InnerSql.Placeholder;
+import jp.ats.atomsql.InnerSql.Text;
 import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.ConfidentialSql;
 import jp.ats.atomsql.annotation.NonThreadSafe;
@@ -69,7 +71,7 @@ public class AtomSql {
 		Map<String, Map<String, List<SqlProxyHelper>>> resources = new HashMap<>();
 
 		void put(String name, SqlProxyHelper helper) {
-			resources.computeIfAbsent(name, n -> new HashMap<>()).computeIfAbsent(helper.sql, s -> new LinkedList<>()).add(helper);
+			resources.computeIfAbsent(name, n -> new HashMap<>()).computeIfAbsent(helper.sql.string(), s -> new LinkedList<>()).add(helper);
 		}
 
 		private void forEach(BatchResourceConsumer consumer) {
@@ -530,24 +532,11 @@ public class AtomSql {
 
 	static class SqlProxyHelper implements PreparedStatementSetter {
 
-		final String sql;
-
-		final String originalSql;
+		final InnerSql sql;
 
 		final Endpoints.Entry entry;
 
-		//スレッドセーフではない型の値を含んでいる場合true
-		final boolean containsNonThreadSaleValues;
-
-		final Set<String> confidentials;
-
-		final Map<String, Object> argMap;
-
 		private final Class<?> dataObjectClass;
-
-		private final List<AtomSqlType> argumentTypes;
-
-		private final List<Object> values;
 
 		private final Configure config;
 
@@ -573,9 +562,7 @@ public class AtomSql {
 			Object[] args,
 			Configure config,
 			SqlLogger sqlLogger) {
-			originalSql = sql;
 			this.entry = entry;
-			this.confidentials = confidentials(confidentials, parameterNames);
 			this.dataObjectClass = dataObjectClass;
 			this.config = config;
 			this.sqlLogger = sqlLogger;
@@ -585,17 +572,12 @@ public class AtomSql {
 				argMap.put(parameterNames[i], args[i]);
 			}
 
-			this.argMap = Collections.unmodifiableMap(argMap);
+			List<Element> elements = new LinkedList<>();
 
-			var converted = new StringBuilder();
-
-			boolean[] nonThreadSale = { false };
-
-			List<AtomSqlType> argumentTypes = new ArrayList<>();
-			List<Object> values = new ArrayList<>();
+			var confidentialSet = confidentials(confidentials, parameterNames);
 
 			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
-				converted.append(f.gap);
+				elements.add(new Text(f.gap));
 
 				if (!argMap.containsKey(f.placeholder))
 					throw new PlaceholderNotFoundException(f.placeholder);
@@ -604,121 +586,37 @@ public class AtomSql {
 
 				var type = AtomSqlType.selectForPreparedStatement(value);
 
-				nonThreadSale[0] = nonThreadSale[0] | type.nonThreadSafe();
-
-				converted.append(type.placeholderExpression(value));
-
-				argumentTypes.add(type);
-				values.add(value);
+				elements.add(
+					new Placeholder(
+						f.placeholder,
+						confidentialSet.contains(f.placeholder),
+						type.placeholderExpression(value),
+						f.all,
+						type,
+						value));
 			});
 
-			this.argumentTypes = Collections.unmodifiableList(argumentTypes);
-			this.values = Collections.unmodifiableList(values);
+			elements.add(new Text(sqlRemain));
 
-			converted.append(sqlRemain);
-
-			this.sql = converted.toString();
-
-			containsNonThreadSaleValues = nonThreadSale[0];
+			this.sql = new InnerSql(elements);
 		}
 
 		SqlProxyHelper(SqlProxyHelper base, Class<?> newDataObjectClass) {
 			this.sql = base.sql;
-			this.originalSql = base.originalSql;
 			this.entry = base.entry;
-			this.containsNonThreadSaleValues = base.containsNonThreadSaleValues;
-			this.confidentials = base.confidentials;
-			this.argMap = base.argMap;
 			this.dataObjectClass = newDataObjectClass;
-			this.argumentTypes = base.argumentTypes;
-			this.values = base.values;
 			this.config = base.config;
 			this.sqlLogger = base.sqlLogger;
 		}
 
 		SqlProxyHelper(
-			String sql,
-			Set<String> confidentials,
-			LinkedHashMap<String, Object> argMap,
+			InnerSql sql,
 			SqlProxyHelper main) {
-			originalSql = sql;
-			this.entry = main.entry;
-			this.confidentials = confidentials;
-			this.dataObjectClass = main.dataObjectClass;
-			this.argMap = argMap;
-			this.config = main.config;
-			this.sqlLogger = main.sqlLogger;
-
-			var converted = new StringBuilder();
-
-			boolean[] nonThreadSale = { false };
-
-			List<AtomSqlType> argumentTypes = new ArrayList<>();
-			List<Object> values = new ArrayList<>();
-
-			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
-				converted.append(f.gap);
-
-				if (!argMap.containsKey(f.placeholder))
-					throw new PlaceholderNotFoundException(f.placeholder);
-
-				var value = argMap.get(f.placeholder);
-
-				var type = AtomSqlType.selectForPreparedStatement(value);
-
-				nonThreadSale[0] = nonThreadSale[0] | type.nonThreadSafe();
-
-				converted.append(type.placeholderExpression(value));
-
-				argumentTypes.add(type);
-				values.add(value);
-			});
-
-			this.argumentTypes = Collections.unmodifiableList(argumentTypes);
-			this.values = Collections.unmodifiableList(values);
-
-			converted.append(sqlRemain);
-
-			this.sql = converted.toString();
-
-			containsNonThreadSaleValues = nonThreadSale[0];
-		}
-
-		SqlProxyHelper(
-			String sql,
-			String originalSql,
-			SqlProxyHelper main,
-			SqlProxyHelper sub) {
 			this.sql = sql;
-			this.originalSql = originalSql;
 			this.entry = main.entry;
 			this.dataObjectClass = main.dataObjectClass;
 			this.config = main.config;
 			this.sqlLogger = main.sqlLogger;
-
-			confidentials = new HashSet<>(main.confidentials);
-			confidentials.addAll(sub.confidentials);
-
-			List<AtomSqlType> argumentTypes = new ArrayList<>();
-
-			argumentTypes.addAll(main.argumentTypes);
-			argumentTypes.addAll(sub.argumentTypes);
-
-			this.argumentTypes = Collections.unmodifiableList(argumentTypes);
-
-			List<Object> values = new ArrayList<>();
-
-			values.addAll(main.values);
-			values.addAll(sub.values);
-
-			this.values = Collections.unmodifiableList(values);
-
-			Map<String, Object> argMap = new LinkedHashMap<>(main.argMap);
-			argMap.putAll(sub.argMap);
-
-			this.argMap = Collections.unmodifiableMap(argMap);
-
-			containsNonThreadSaleValues = main.containsNonThreadSaleValues | sub.containsNonThreadSaleValues;
 		}
 
 		Object createDataObject(ResultSet rs) {
@@ -805,6 +703,9 @@ public class AtomSql {
 
 		@Override
 		public void setValues(PreparedStatement ps) throws SQLException {
+			var argumentTypes = sql.types();
+			var values = sql.values();
+
 			var size = argumentTypes.size();
 			for (var i = 0; i < size; i++) {
 				argumentTypes.get(i).bind(i + 1, ps, values.get(i));
@@ -829,22 +730,25 @@ public class AtomSql {
 						log.info(" " + elementString);
 				}
 
-				if (confidentials.size() > 0) {
-					log.info("confidential sql:" + Constants.NEW_LINE + originalSql);
+				var placeholders = sql.placeholders();
+
+				if (placeholders.stream().filter(p -> p.confidential()).findFirst().isPresent()) {
+					log.info("confidential sql:" + Constants.NEW_LINE + sql.originalString());
 					log.info("binding values:");
 
-					argMap.forEach((k, v) -> {
+					placeholders.forEach(p -> {
+						String name = p.name();
 						String value;
-						if (confidentials.contains(k)) {
+						if (p.confidential()) {
 							value = Constants.CONFIDENTIAL;
 						} else {
-							value = Utils.toStringForBindingValue(v);
+							value = Utils.toStringForBindingValue(p.value());
 						}
 
-						log.info(k + ": " + value);
+						log.info(name + ": " + value);
 					});
 				} else {
-					entry.endpoint().logSql(log, originalSql, sql, ps);
+					entry.endpoint().logSql(log, sql.originalString(), sql.string(), ps);
 				}
 
 				log.info("------  SQL END  ------");

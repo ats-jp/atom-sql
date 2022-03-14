@@ -9,7 +9,7 @@ import jp.ats.atomsql.annotation.SqlInterpolation;
 
 /**
  * 内部使用クラスです。<br>
- * SQL文から、{@link SqlInterpolation}用プレースホルダを探します。<br>
+ * SQL文から、{@link SqlInterpolation}用変数を探します。<br>
  * プレースホルダは、Javaの識別子の規則に沿っている必要があります。
  * @author 千葉 哲嗣
  */
@@ -18,23 +18,20 @@ public class InterpolationPlaceholderFinder {
 
 	private static final Pattern pattern = Pattern.compile("\\$\\{([^\\s[\\p{Punct}&&[^_$]]]+)\\}");
 
-	public static String execute(String sql, Consumer<String> placeholderConsumer) {
-		int position = 0;
+	public static String execute(String sql, Consumer<String> variableConsumer) {
 		while (true) {
 			var matcher = pattern.matcher(sql);
 
 			if (!matcher.find())
 				break;
 
-			position = matcher.end();
-
-			sql = sql.substring(position);
+			sql = sql.substring(matcher.end());
 
 			var matched = matcher.group(1);
 
 			if (!SourceVersion.isIdentifier(matched) || SourceVersion.isKeyword(matched)) continue;
 
-			placeholderConsumer.accept(matched);
+			variableConsumer.accept(matched);
 		}
 
 		return sql;

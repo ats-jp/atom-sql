@@ -2,8 +2,6 @@ package jp.ats.atomsql;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -122,7 +120,7 @@ public class Atom<T> {
 	Atom(AtomSql atomsql, SqlProxyHelper helper, boolean andType) {
 		this.atomSql = atomsql;
 
-		if (helper.containsNonThreadSaleValues) {
+		if (helper.sql.containsNonThreadSafeValue()) {
 			atomSql.registerHelperForNonThreadSafe(nonThreadSafeHelperKey, helper);
 			this.helperSupplier = () -> atomSql.getHelperForNonThreadSafe(nonThreadSafeHelperKey);
 		} else {
@@ -274,7 +272,7 @@ public class Atom<T> {
 
 		var startNanos = System.nanoTime();
 		try {
-			return helper.entry.endpoint().queryForStream(helper.sql, helper, mapper);
+			return helper.entry.endpoint().queryForStream(helper.sql.string(), helper, mapper);
 		} finally {
 			helper.logElapsed(startNanos);
 		}
@@ -319,7 +317,7 @@ public class Atom<T> {
 	 * @return SQL文もしくはその一部
 	 */
 	public String sql() {
-		return helper().originalSql;
+		return helper().sql.string();
 	}
 
 	/**
@@ -328,7 +326,7 @@ public class Atom<T> {
 	 */
 	@Override
 	public String toString() {
-		return helper().originalSql;
+		return helper().sql.originalString();
 	}
 
 	/**
@@ -336,7 +334,7 @@ public class Atom<T> {
 	 * @return 内部に持つSQLが空文字列である場合、true
 	 */
 	public boolean isEmpty() {
-		return helper().originalSql.isEmpty();
+		return helper().sql.isEmpty();
 	}
 
 	private <E> Optional<E> get(List<E> list) {
@@ -359,7 +357,7 @@ public class Atom<T> {
 		if (resources == null) {//バッチ実行中ではない
 			var startNanos = System.nanoTime();
 			try {
-				return helper.entry.endpoint().update(helper.sql, helper);
+				return helper.entry.endpoint().update(helper.sql.string(), helper);
 			} finally {
 				helper.logElapsed(startNanos);
 			}
@@ -380,7 +378,7 @@ public class Atom<T> {
 	public Atom<T> concat(Atom<?>... others) {
 		var result = this;
 		for (var another : others) {
-			result = result.joinInternal(" ", another);
+			result = result.joinInternal(InnerSql.BLANK, another);
 		}
 
 		return result;
@@ -395,25 +393,24 @@ public class Atom<T> {
 	 */
 	public Atom<T> joinAndConcat(Atom<?> delimiter, Atom<?>... others) {
 		var result = this;
-		var delimiterString = delimiter.helper().sql;
+		var delimiterPart = delimiter.helper().sql;
 		for (var another : others) {
-			result = result.joinInternal(delimiterString, another);
+			result = result.joinInternal(delimiterPart, another);
 		}
 
 		return result;
 	}
 
-	private Atom<T> joinInternal(String delimiter, Atom<?> another) {
+	private Atom<T> joinInternal(InnerSql delimiter, Atom<?> another) {
 		Objects.requireNonNull(another);
 
 		var helper = helper();
 		var anotherHelper = another.helper();
 
 		var sql = concat(delimiter, helper.sql, anotherHelper.sql);
-		var originalSql = concat(delimiter, helper.originalSql, anotherHelper.originalSql);
 		return new Atom<T>(
 			atomSql,
-			new SqlProxyHelper(sql, originalSql, helper, anotherHelper),
+			new SqlProxyHelper(sql, helper),
 			true);
 	}
 
@@ -439,25 +436,18 @@ public class Atom<T> {
 	 */
 	public Atom<T> put(Atom<?>... atoms) {
 		var helper = helper();
-		var sql = helper.originalSql;
 
-		var confidentials = new HashSet<String>(helper.confidentials);
-		var argMap = new LinkedHashMap<String, Object>(helper.argMap);
+		var sql = helper.sql;
 		for (int i = 0; i < atoms.length; i++) {
 			var atom = atoms[i];
 
 			var pattern = Pattern.compile("/\\*\\$\\{" + i + "\\}\\*/");
-			sql = pattern.matcher(sql).replaceAll(atom.helper().originalSql);
-
-			var atomHelper = atom.helper();
-
-			confidentials.addAll(atomHelper.confidentials);
-			argMap.putAll(atomHelper.argMap);
+			sql = sql.put(pattern, atom.helper().sql);
 		}
 
 		return new Atom<T>(
 			atomSql,
-			new SqlProxyHelper(sql, confidentials, argMap, helper),
+			new SqlProxyHelper(sql, helper),
 			true);
 	}
 
@@ -470,26 +460,18 @@ public class Atom<T> {
 	 */
 	public Atom<T> put(Map<String, Atom<?>> atoms) {
 		var helper = helper();
-		var sql = new String[] { helper.originalSql };
-
-		var confidentials = new HashSet<String>(helper.confidentials);
-		var argMap = new LinkedHashMap<String, Object>(helper.argMap);
+		var sql = new InnerSql[] { helper.sql };
 
 		atoms.entrySet().stream().forEach(e -> {
 			var atom = e.getValue();
 
 			var pattern = Pattern.compile("/\\*\\$\\{" + Objects.requireNonNull(e.getKey()) + "\\}\\*/");
-			sql[0] = pattern.matcher(sql[0]).replaceAll(atom.helper().originalSql);
-
-			var atomHelper = atom.helper();
-
-			confidentials.addAll(atomHelper.confidentials);
-			argMap.putAll(atomHelper.argMap);
+			sql[0] = sql[0].put(pattern, atom.helper().sql);
 		});
 
 		return new Atom<T>(
 			atomSql,
-			new SqlProxyHelper(sql[0], confidentials, argMap, helper),
+			new SqlProxyHelper(sql[0], helper),
 			true);
 	}
 
@@ -502,7 +484,7 @@ public class Atom<T> {
 	 * @return 結合された新しい{@link Atom}
 	 */
 	public Atom<T> and(Atom<?> another) {
-		return andOr(" AND ", another, true);
+		return andOr(InnerSql.AND, another, true);
 	}
 
 	/**
@@ -516,52 +498,37 @@ public class Atom<T> {
 	public Atom<T> or(Atom<?> another) {
 		//どちらか一方でも空の場合OR結合が発生しないのでAND状態のままとする
 		var andType = isEmpty() || another.isEmpty();
-		return andOr(" OR ", another, andType);
+		return andOr(InnerSql.OR, another, andType);
 	}
 
-	private Atom<T> andOr(String delimiter, Atom<?> another, boolean andTypeCurrent) {
+	private Atom<T> andOr(InnerSql delimiter, Atom<?> another, boolean andTypeCurrent) {
 		Objects.requireNonNull(another);
 
 		var helper = helper();
 		var anotherHelper = another.helper();
 
-		var sqls = guardSql(andType, andTypeCurrent, helper);
-		var anotherSqls = guardSql(another.andType, andTypeCurrent, anotherHelper);
-
-		var sql = concat(delimiter, sqls.sql, anotherSqls.sql);
-		var originalSql = concat(delimiter, sqls.originalSql, anotherSqls.originalSql);
+		var sql = guardSql(andType, andTypeCurrent, helper);
+		var anotherSql = guardSql(another.andType, andTypeCurrent, anotherHelper);
 
 		return new Atom<T>(
 			atomSql,
-			new SqlProxyHelper(sql, originalSql, helper, anotherHelper),
+			new SqlProxyHelper(concat(delimiter, sql, anotherSql), helper),
 			andTypeCurrent);
 	}
 
-	private static String concat(String delimiter, String sql1, String sql2) {
+	private static InnerSql concat(InnerSql delimiter, InnerSql sql1, InnerSql sql2) {
 		if (sql1.isBlank()) return sql2;
 		if (sql2.isBlank()) return sql1;
 
-		return sql1 + delimiter + sql2;
+		return sql1.concat(delimiter).concat(sql2);
 	}
 
-	private static Sqls guardSql(boolean andType, boolean andTypeCurrent, SqlProxyHelper helper) {
-		var sqls = new Sqls();
+	private static InnerSql guardSql(boolean andType, boolean andTypeCurrent, SqlProxyHelper helper) {
 		if (!andType && andTypeCurrent) {//現在ORでAND追加された場合
-			sqls.sql = helper.sql.isBlank() ? "" : ("(" + helper.sql + ")");
-			sqls.originalSql = helper.originalSql.isBlank() ? "" : ("(" + helper.originalSql + ")");
-		} else {
-			sqls.sql = helper.sql;
-			sqls.originalSql = helper.originalSql;
+			return helper.sql.isBlank() ? InnerSql.EMPTY : helper.sql.join("(", ")");
 		}
 
-		return sqls;
-	}
-
-	private static class Sqls {
-
-		private String sql;
-
-		private String originalSql;
+		return helper.sql;
 	}
 
 	private static <T> List<T> listAndClose(Stream<T> stream) {

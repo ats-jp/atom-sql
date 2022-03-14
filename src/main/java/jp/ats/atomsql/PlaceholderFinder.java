@@ -18,7 +18,6 @@ public class PlaceholderFinder {
 	private static final Pattern pattern = Pattern.compile(":([^\\s[\\p{Punct}&&[^_$]]]+)(?:/\\*([A-Z_]+)(?:<([A-Z_]+)>|)\\*/|)");
 
 	public static String execute(String sql, Consumer<Found> placeholderConsumer) {
-		int position = 0;
 		while (true) {
 			var matcher = pattern.matcher(sql);
 
@@ -29,13 +28,13 @@ public class PlaceholderFinder {
 
 			found.gap = sql.substring(0, matcher.start());
 
-			position = matcher.end();
-
-			sql = sql.substring(position);
+			sql = sql.substring(matcher.end());
 
 			var matched = matcher.group(1);
 
 			if (!SourceVersion.isIdentifier(matched) || SourceVersion.isKeyword(matched)) continue;
+
+			found.all = matcher.group();
 
 			found.placeholder = matched;
 
@@ -52,6 +51,8 @@ public class PlaceholderFinder {
 	public static class Found {
 
 		public String gap;
+
+		public String all;
 
 		public String placeholder;
 

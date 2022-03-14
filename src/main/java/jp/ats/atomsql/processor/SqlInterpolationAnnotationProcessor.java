@@ -203,16 +203,16 @@ public class SqlInterpolationAnnotationProcessor extends AbstractProcessor {
 
 		var dubplicateChecker = new HashSet<String>();
 		var fields = new LinkedList<String>();
-		InterpolationPlaceholderFinder.execute(sql, placeholder -> {
+		InterpolationPlaceholderFinder.execute(sql, variable -> {
 			//重複は除外
-			if (dubplicateChecker.contains(placeholder)) return;
+			if (dubplicateChecker.contains(variable)) return;
 
-			dubplicateChecker.add(placeholder);
+			dubplicateChecker.add(variable);
 
 			var method = "public "
 				+ Atom.class.getName()
 				+ "<?> "
-				+ placeholder
+				+ variable
 				+ ";";
 			fields.add(method);
 		});
