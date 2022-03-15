@@ -703,13 +703,11 @@ public class AtomSql {
 
 		@Override
 		public void setValues(PreparedStatement ps) throws SQLException {
-			var argumentTypes = sql.types();
-			var values = sql.values();
+			int[] i = { 1 };
+			sql.placeholders(p -> {
+				p.type().bind(i[0]++, ps, p.value());
 
-			var size = argumentTypes.size();
-			for (var i = 0; i < size; i++) {
-				argumentTypes.get(i).bind(i + 1, ps, values.get(i));
-			}
+			});
 
 			sqlLogger.perform(log -> {
 				log.info("------ SQL START ------");

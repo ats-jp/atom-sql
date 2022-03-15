@@ -16,6 +16,7 @@ import org.apache.commons.logging.Log;
 
 import jp.ats.atomsql.AtomSql.SqlProxyHelper;
 import jp.ats.atomsql.annotation.DataObject;
+import jp.ats.atomsql.annotation.SqlInterpolation;
 import jp.ats.atomsql.annotation.SqlProxy;
 
 /**
@@ -454,7 +455,8 @@ public class Atom<T> {
 	/**
 	 * この{@link Atom}の持つSQL文内のこのメソッド専用変数に、パラメータで回収する{@link Atom}のもつSQL文を展開します。<br>
 	 * 変数の書式は /*${<i>キーワード</i>}*&#47; です。<br>
-	 * キーワードにはJavaの識別子と同じ規則が適用され、規則に反する場合には例外がスローされます。
+	 * キーワードにはJavaの識別子と同じ規則が適用され、規則に反する場合には例外がスローされます。<br>
+	 * キーワードのスペルミスを防ぎたい場合は、{@link SqlInterpolation}機能の使用を検討してください。
 	 * @param atoms プレースホルダをキー、{@link Atom}を値として格納したマップ
 	 * @return 展開された新しい{@link Atom}
 	 */

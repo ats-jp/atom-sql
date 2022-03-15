@@ -3,6 +3,7 @@ package jp.ats.atomsql;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 class InnerSql {
@@ -19,7 +20,7 @@ class InnerSql {
 
 		void put(Pattern pattern, InnerSql another, List<Element> elements);
 
-		void addPlaceholderTo(List<Placeholder> placeholders);
+		void placeholder(Consumer<Placeholder> consumer);
 
 		boolean hasNonThreadSafeValue();
 
@@ -59,7 +60,7 @@ class InnerSql {
 		}
 
 		@Override
-		public void addPlaceholderTo(List<Placeholder> placeholders) {
+		public void placeholder(Consumer<Placeholder> consumer) {
 		}
 
 		@Override
@@ -103,8 +104,8 @@ class InnerSql {
 		}
 
 		@Override
-		public void addPlaceholderTo(List<Placeholder> placeholders) {
-			placeholders.add(this);
+		public void placeholder(Consumer<Placeholder> consumer) {
+			consumer.accept(this);
 		}
 
 		@Override
@@ -138,17 +139,13 @@ class InnerSql {
 		this.elements = Collections.singletonList(new Text(text));
 	}
 
-	List<AtomSqlType> types() {
-		return placeholders().stream().map(p -> p.type).toList();
-	}
-
-	List<Object> values() {
-		return placeholders().stream().map(p -> p.value).toList();
+	void placeholders(Consumer<Placeholder> consumer) {
+		elements.forEach(e -> e.placeholder(consumer));
 	}
 
 	List<Placeholder> placeholders() {
 		List<Placeholder> placeholders = new LinkedList<>();
-		elements.forEach(e -> e.addPlaceholderTo(placeholders));
+		elements.forEach(e -> e.placeholder(placeholders::add));
 
 		return placeholders;
 	}
