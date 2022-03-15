@@ -17,6 +17,8 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor14;
 import javax.tools.StandardLocation;
 
+import jp.ats.atomsql.AtomSql;
+
 /**
  * @author 千葉 哲嗣
  */
@@ -37,9 +39,23 @@ class ProcessorUtils {
 		return packageElement;
 	}
 
-	static Path getClassOutputPath(ProcessingEnvironment env) throws IOException {
-		var classOutput = env.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", "");
-		return Paths.get(classOutput.toUri().toURL().toString().substring("file:/".length()));
+	/**
+	 * クラス出力場所特定のための目印となるフラグファイル名
+	 */
+	private static final String flagFileName = AtomSql.class.getName() + ".flag";
+
+	private static Path classOutputPath;
+
+	static synchronized Path getClassOutputPath(ProcessingEnvironment env) throws IOException {
+		//複数回getResource, createResourceするとエラーとなるので一度取得したパスを（コンパイル時なので）雑にキャッシュし利用する
+		if (classOutputPath != null) return classOutputPath;
+
+		//何かファイルを指定しないとエラーとなる（EclipseではOKだがMavenでのビルド時NG）ため、
+		//しかたなくそれ専用のダミーファイルを指定（生成するわけではない）して取得する
+		var flagFile = env.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", flagFileName);
+		classOutputPath = Paths.get(flagFile.toUri().toURL().toString().substring("file:/".length())).getParent();
+
+		return classOutputPath;
 	}
 
 	static record PackageNameAndBinaryClassName(String packageName, String binaryClassName) {
