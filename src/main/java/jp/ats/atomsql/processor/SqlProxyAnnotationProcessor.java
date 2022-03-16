@@ -146,6 +146,13 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			return ReturnTypeCheckerResult.defaultValue;
 		}
 
+		private ReturnTypeCheckerResult errorDataObjectAnnotation(TypeMirror e, ExecutableElement p) {
+			//リターンタイプeは使用できません
+			error("Data object class [" + e + "] must be annotated @" + DataObject.class.getSimpleName(), p);
+			builder.setError();
+			return ReturnTypeCheckerResult.defaultValue;
+		}
+
 		@Override
 		public ReturnTypeCheckerResult visitPrimitive(PrimitiveType t, ExecutableElement p) {
 			return switch (t.getKind()) {
@@ -169,7 +176,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 					return ReturnTypeCheckerResult.defaultValue;
 				}
 
-				return defaultAction(t, p);
+				return errorDataObjectAnnotation(dataObjectType, p);
 			} else if (ProcessorUtils.sameClass(type, HalfAtom.class)) {
 				return processHalfAtomType(t, p);
 			} else if (ProcessorUtils.sameClass(type, Stream.class)
@@ -179,9 +186,13 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 					if (dataObjectType.accept(AnnotationExtractor.instance, null))
 						return new ReturnTypeCheckerResult(dataObjectType, null);
 
-					// <?>
-					// Stream, List, Optionalの場合は、型パラメータを指定しなければならない
-					return defaultAction(t, p);
+					if (ProcessorUtils.toElement(dataObjectType) == null) {
+						// <?>
+						// Stream, List, Optionalの場合は、型パラメータを指定しなければならない
+						return defaultAction(t, p);
+					}
+
+					return errorDataObjectAnnotation(dataObjectType, p);
 				}
 
 			return defaultAction(t, p);
@@ -211,10 +222,10 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			if (!dataObjectType.accept(AnnotationExtractor.instance, null)) {
 				if (ProcessorUtils.toElement(dataObjectType) == null) {
 					// <?>
-					// Atomの場合は、型パラメータを指定しなくてOK
+					// HalfAtomの場合は、結果型パラメータを指定しなくてOK
 					dataObjectType = null;
 				} else {
-					return defaultAction(t, p);
+					return errorDataObjectAnnotation(dataObjectType, p);
 				}
 			}
 

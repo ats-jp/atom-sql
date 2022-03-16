@@ -1,5 +1,7 @@
 package jp.ats.atomsql;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -17,14 +19,17 @@ import jp.ats.atomsql.annotation.NonThreadSafe;
  */
 public class Csv<T> {
 
-	private final List<T> values = new LinkedList<>();
+	private final List<T> values;
 
 	/**
 	 * listの内容を持つインスタンスを生成するコンストラクタです。
 	 * @param list インスタンスが保持する値のリスト
 	 */
 	public Csv(List<T> list) {
-		list.forEach(this::checkAndAdd);
+		List<T> values = new LinkedList<>();
+		list.forEach(e -> checkAndAdd(e, values));
+
+		this.values = Collections.unmodifiableList(values);
 	}
 
 	/**
@@ -32,14 +37,26 @@ public class Csv<T> {
 	 * @param stream インスタンスが保持する値のストリーム
 	 */
 	public Csv(Stream<T> stream) {
-		stream.forEach(this::checkAndAdd);
+		List<T> values = new LinkedList<>();
+		stream.forEach(e -> checkAndAdd(e, values));
+
+		this.values = Collections.unmodifiableList(values);
+	}
+
+	/**
+	 * valuesの内容を持つインスタンスを生成するコンストラクタです。
+	 * @param values インスタンスが保持する値の配列
+	 */
+	@SafeVarargs
+	public Csv(T... values) {
+		this(Arrays.stream(values));
 	}
 
 	List<T> values() {
 		return values;
 	}
 
-	private void checkAndAdd(T value) {
+	private static <T> void checkAndAdd(T value, List<T> values) {
 		//Csvの中にCsvは不可
 		if (value instanceof Csv) throw new IllegalArgumentException("Csv cannot be used for Csv elements");
 
