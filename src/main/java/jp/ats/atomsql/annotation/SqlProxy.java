@@ -26,7 +26,8 @@ import jp.ats.atomsql.AtomSql;
  * <br>
  * プレースホルダへバインドする値は、メソッドのパラメータとして設定することが可能です。<br>
  * そのため、SQL内で使用しているプレースホルダ名と、メソッドのパラメータ名は一致している必要があります。<br>
- * また、SQL文内に多くのプレースホルダを使用する場合（INSERTのVALUES等）は{@link SqlParameters}の使用を検討してください。
+ * また、SQL文内に多くのプレースホルダを使用する場合（INSERTのVALUES等）は{@link SqlParameters}の使用を検討してください。<br>
+ * Proxyインターフェイスではdefaultメソッドを定義し使用することが可能ですが、注意点としてその場合Proxyインターフェイスをpublicにする必要があります。
  * @author 千葉 哲嗣
  */
 @Target({ TYPE })
