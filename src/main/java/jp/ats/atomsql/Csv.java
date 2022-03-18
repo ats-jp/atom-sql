@@ -19,37 +19,41 @@ import jp.ats.atomsql.annotation.NonThreadSafe;
  */
 public class Csv<T> {
 
-	private final List<T> values;
-
 	/**
-	 * listの内容を持つインスタンスを生成するコンストラクタです。
+	 * listの内容を持つインスタンスを生成するメソッドです。
 	 * @param list インスタンスが保持する値のリスト
+	 * @return {@link Csv}
 	 */
-	public Csv(List<T> list) {
-		List<T> values = new LinkedList<>();
-		list.forEach(e -> checkAndAdd(e, values));
-
-		this.values = Collections.unmodifiableList(values);
+	public static <T> Csv<T> of(List<T> list) {
+		return new Csv<>(list.stream());
 	}
 
 	/**
-	 * streamの内容を持つインスタンスを生成するコンストラクタです。
+	 * streamの内容を持つインスタンスを生成するメソッドです。
 	 * @param stream インスタンスが保持する値のストリーム
+	 * @return {@link Csv}
 	 */
-	public Csv(Stream<T> stream) {
+	public static <T> Csv<T> of(Stream<T> stream) {
+		return new Csv<>(stream);
+	}
+
+	/**
+	 * valuesの内容を持つインスタンスを生成するメソッドです。
+	 * @param values インスタンスが保持する値の配列
+	 * @return {@link Csv}
+	 */
+	@SafeVarargs
+	public static <T> Csv<T> of(T... values) {
+		return new Csv<>(Arrays.stream(values));
+	}
+
+	private final List<T> values;
+
+	private Csv(Stream<T> stream) {
 		List<T> values = new LinkedList<>();
 		stream.forEach(e -> checkAndAdd(e, values));
 
 		this.values = Collections.unmodifiableList(values);
-	}
-
-	/**
-	 * valuesの内容を持つインスタンスを生成するコンストラクタです。
-	 * @param values インスタンスが保持する値の配列
-	 */
-	@SafeVarargs
-	public Csv(T... values) {
-		this(Arrays.stream(values));
 	}
 
 	List<T> values() {
