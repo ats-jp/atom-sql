@@ -213,7 +213,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		private ReturnTypeCheckerResult processHalfAtomType(DeclaredType t, ExecutableElement p) {
 			var annotation = p.getAnnotation(SqlInterpolation.class);
 			if (annotation == null) {
-				error("Annotation " + SqlInterpolation.class.getSimpleName() + " required", p);
+				error("Annotation @" + SqlInterpolation.class.getSimpleName() + " required", p);
 				builder.setError();
 				return ReturnTypeCheckerResult.defaultValue;
 			}
@@ -341,7 +341,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		private TypeMirror processConsumerType(VariableElement p) {
 			var annotation = method.getAnnotation(SqlParameters.class);
 			if (annotation == null) {
-				error("Annotation " + SqlParameters.class.getSimpleName() + " required", p);
+				error("Annotation @" + SqlParameters.class.getSimpleName() + " required", p);
 				builder.setError();
 				return DEFAULT_VALUE;
 			}

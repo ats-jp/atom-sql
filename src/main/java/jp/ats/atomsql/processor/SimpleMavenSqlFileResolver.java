@@ -3,7 +3,6 @@ package jp.ats.atomsql.processor;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 
 /**
@@ -16,7 +15,7 @@ public class SimpleMavenSqlFileResolver implements SqlFileResolver {
 		throws IOException, SqlFileNotFoundException {
 		var projectRoot = classOutput.getParent().getParent();
 
-		var packagePath = Paths.get(packageName.replace('.', '/'));
+		var packagePath = Path.of(packageName.replace('.', '/'));
 
 		var resources = projectRoot.resolve("src/main/java").resolve(packagePath).resolve(sqlFileName);
 

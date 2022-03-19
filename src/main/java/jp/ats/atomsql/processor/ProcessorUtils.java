@@ -2,7 +2,6 @@ package jp.ats.atomsql.processor;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -53,7 +52,7 @@ class ProcessorUtils {
 		//何かファイルを指定しないとエラーとなる（EclipseではOKだがMavenでのビルド時NG）ため、
 		//しかたなくそれ専用のダミーファイルを指定（生成するわけではない）して取得する
 		var flagFile = env.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", flagFileName);
-		classOutputPath = Paths.get(flagFile.toUri().toURL().toString().substring("file:/".length())).getParent();
+		classOutputPath = Path.of(flagFile.toUri().toURL().toString().substring("file:/".length())).getParent();
 
 		return classOutputPath;
 	}
