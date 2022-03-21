@@ -705,8 +705,7 @@ public class AtomSql {
 		public void setValues(PreparedStatement ps) throws SQLException {
 			int[] i = { 1 };
 			sql.placeholders(p -> {
-				p.type().bind(i[0]++, ps, p.value());
-
+				i[0] = p.type().bind(i[0], ps, p.value());
 			});
 
 			sqlLogger.perform(log -> {

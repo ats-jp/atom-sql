@@ -39,9 +39,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setBigDecimal(index, (BigDecimal) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -70,10 +71,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			var stream = (BinaryStream) value;
 			try {
 				statement.setBinaryStream(index, stream.input, stream.length);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -102,9 +104,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setBlob(index, (Blob) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -132,9 +135,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setBoolean(index, (boolean) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -163,7 +167,7 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
 		}
@@ -191,9 +195,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setBytes(index, (byte[]) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -222,10 +227,11 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			var stream = (CharacterStream) value;
 			try {
 				statement.setCharacterStream(index, stream.input, stream.length);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -254,9 +260,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setClob(index, (Clob) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -284,9 +291,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setDouble(index, (double) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -315,7 +323,7 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
 		}
@@ -342,9 +350,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setFloat(index, (float) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -373,7 +382,7 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
 		}
@@ -400,9 +409,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setInt(index, (int) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -431,7 +441,7 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
 		}
@@ -458,9 +468,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setLong(index, (long) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -489,7 +500,7 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			//ラッパー型が使用される
 			throw new UnsupportedOperationException();
 		}
@@ -517,9 +528,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setObject(index, value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -547,11 +559,12 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				// nullの場合はsetObject(i, null)
 				// DBによってはエラーとなる可能性があるため、その場合はsetNull(int, int)の使用を検討する
 				statement.setObject(index, null);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -579,9 +592,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setString(index, (String) value);
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -609,9 +623,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setDate(index, Date.valueOf((LocalDate) value));
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -640,9 +655,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setTime(index, Time.valueOf((LocalTime) value));
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -671,9 +687,10 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			try {
 				statement.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
+				return index + 1;
 			} catch (SQLException e) {
 				throw new AtomSqlException(e);
 			}
@@ -704,12 +721,15 @@ public enum AtomSqlType {
 		}
 
 		@Override
-		void bind(int index, PreparedStatement statement, Object value) {
+		int bind(int index, PreparedStatement statement, Object value) {
 			var values = ((Csv<?>) value).values();
-			IntStream.range(0, values.size()).forEach(i -> {
+			var size = values.size();
+			IntStream.range(0, size).forEach(i -> {
 				var v = values.get(i);
 				selectForPreparedStatement(v).bind(index + i, statement, v);
 			});
+
+			return index + size;
 		}
 
 		@Override
@@ -741,7 +761,7 @@ public enum AtomSqlType {
 	 */
 	public abstract Class<?> type();
 
-	abstract void bind(int index, PreparedStatement statement, Object value);
+	abstract int bind(int index, PreparedStatement statement, Object value);
 
 	abstract Object get(ResultSet rs, String columnLabel) throws SQLException;
 
