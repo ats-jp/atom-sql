@@ -233,11 +233,14 @@ public class Atom<T> {
 	 * @return データオブジェクトの型が与えられた新インスタンス
 	 */
 	public <R> Atom<R> apply(Class<R> dataObjectClass) {
+		if (dataObjectClass.getAnnotation(DataObject.class) == null)
+			throw new IllegalStateException("dataObjectClass required annotation @" + DataObject.class.getSimpleName());
+
 		return new Atom<R>(
 			atomSql,
 			new SqlProxyHelper(
 				helper(),
-				Objects.requireNonNull(dataObjectClass)),
+				dataObjectClass),
 			andType);
 	}
 
