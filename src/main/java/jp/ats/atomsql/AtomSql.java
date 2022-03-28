@@ -517,7 +517,7 @@ public class AtomSql {
 			return sqlContainer.value();
 		}
 
-		var sqlFileName = Utils.extractSimpleClassName(proxyClassName, decreredClass.getPackage().getName())
+		var sqlFileName = AtomSqlUtils.extractSimpleClassName(proxyClassName, decreredClass.getPackage().getName())
 			+ "."
 			+ method.getName()
 			+ ".sql";
@@ -527,7 +527,7 @@ public class AtomSql {
 			//sqlFileNameが見つかりませんでした
 			throw new IllegalStateException(sqlFileName + " was not found");
 
-		return new String(Utils.readBytes(url.openStream()), Constants.CHARSET);
+		return new String(AtomSqlUtils.readBytes(url.openStream()), Constants.CHARSET);
 	}
 
 	static class SqlProxyHelper implements PreparedStatementSetter {
@@ -739,7 +739,7 @@ public class AtomSql {
 						if (p.confidential()) {
 							value = Constants.CONFIDENTIAL;
 						} else {
-							value = Utils.toStringForBindingValue(p.value());
+							value = AtomSqlUtils.toStringForBindingValue(p.value());
 						}
 
 						log.info(name + ": " + value);

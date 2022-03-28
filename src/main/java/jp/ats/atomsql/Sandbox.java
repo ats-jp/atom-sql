@@ -138,7 +138,7 @@ public class Sandbox {
 
 			handler.allArgs.forEach(a -> {
 				var args = Arrays.stream(a.args)
-					.map(v -> Utils.toStringForBindingValue(v))
+					.map(v -> AtomSqlUtils.toStringForBindingValue(v))
 					.toList();
 				log.info(a.method.getName() + "(" + String.join(", ", args) + ")");
 			});

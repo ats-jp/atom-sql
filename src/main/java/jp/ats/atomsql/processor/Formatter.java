@@ -5,7 +5,7 @@ import java.io.UncheckedIOException;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import jp.ats.atomsql.Utils;
+import jp.ats.atomsql.AtomSqlUtils;
 
 /**
  * @author 千葉 哲嗣
@@ -39,7 +39,7 @@ public class Formatter {
 
 	public static String readTemplate(Class<?> target, String charset) {
 		try (var input = target.getResourceAsStream(target.getSimpleName() + ".java")) {
-			return new String(Utils.readBytes(input), charset);
+			return new String(AtomSqlUtils.readBytes(input), charset);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}

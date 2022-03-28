@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  * @author 千葉 哲嗣
  */
 @SuppressWarnings("javadoc")
-public class Utils {
+public class AtomSqlUtils {
 
 	private static final byte[] BYTE_EMPTY_ARRAY = {};
 
@@ -34,10 +34,10 @@ public class Utils {
 	}
 
 	public static List<Class<?>> loadProxyClasses() throws IOException {
-		try (var proxyList = Utils.class.getClassLoader().getResourceAsStream(Constants.PROXY_LIST)) {
+		try (var proxyList = AtomSqlUtils.class.getClassLoader().getResourceAsStream(Constants.PROXY_LIST)) {
 			if (proxyList == null) return Collections.emptyList();
 
-			return Arrays.stream(new String(Utils.readBytes(proxyList), Constants.CHARSET).split("\\s+")).map(l -> {
+			return Arrays.stream(new String(AtomSqlUtils.readBytes(proxyList), Constants.CHARSET).split("\\s+")).map(l -> {
 				try {
 					return Class.forName(l, false, Thread.currentThread().getContextClassLoader());
 				} catch (ClassNotFoundException e) {

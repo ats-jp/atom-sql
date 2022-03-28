@@ -27,7 +27,7 @@ import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.UnknownSqlTypeNameException;
-import jp.ats.atomsql.Utils;
+import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.TypeHint;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
@@ -84,7 +84,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 			if (Files.exists(ProcessorUtils.getClassOutputPath(super.processingEnv).resolve(Constants.PARAMETERS_LIST))) {
 				var listFile = super.processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", Constants.PARAMETERS_LIST);
 				try (var input = listFile.openInputStream()) {
-					Arrays.stream(new String(Utils.readBytes(input), Constants.CHARSET).split("\\s+"))
+					Arrays.stream(new String(AtomSqlUtils.readBytes(input), Constants.CHARSET).split("\\s+"))
 						.map(l -> new MethodInfo(l))
 						.forEach(i -> allParameters.put(i.parametersClass, i));
 				}
@@ -173,7 +173,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 			generatePackageName = ProcessorUtils.getPackageElement(clazz).getQualifiedName().toString();
 
-			generateClassName = Utils.extractSimpleClassName(className, generatePackageName);
+			generateClassName = AtomSqlUtils.extractSimpleClassName(className, generatePackageName);
 		}
 
 		Result result;

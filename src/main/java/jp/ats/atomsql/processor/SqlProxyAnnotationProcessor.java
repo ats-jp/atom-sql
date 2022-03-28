@@ -40,7 +40,7 @@ import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.Csv;
 import jp.ats.atomsql.HalfAtom;
 import jp.ats.atomsql.PlaceholderFinder;
-import jp.ats.atomsql.Utils;
+import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.Sql;
@@ -92,7 +92,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				var listFile = super.processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", Constants.PROXY_LIST);
 				try (var input = listFile.openInputStream()) {
 					Arrays.stream(
-						new String(Utils.readBytes(input), Constants.CHARSET).split("\\s+"))
+						new String(AtomSqlUtils.readBytes(input), Constants.CHARSET).split("\\s+"))
 						.forEach(l -> sqlProxyList.add(l));
 				}
 			}

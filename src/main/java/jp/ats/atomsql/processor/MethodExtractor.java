@@ -10,7 +10,7 @@ import javax.lang.model.element.Element;
 import javax.tools.Diagnostic.Kind;
 
 import jp.ats.atomsql.Constants;
-import jp.ats.atomsql.Utils;
+import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 
@@ -51,7 +51,7 @@ class MethodExtractor {
 			sql = sqlAnnotation.value();
 		} else {
 			//SQLファイルはクラスのバイナリ名と一致していないといけない
-			var classBinaryName = Utils.extractSimpleClassName(className, packageName);
+			var classBinaryName = AtomSqlUtils.extractSimpleClassName(className, packageName);
 			var sqlFileName = classBinaryName + "." + method.getSimpleName() + ".sql";
 
 			try {
