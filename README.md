@@ -6,8 +6,25 @@ Atom SQLは、Javaのアノテーションプロセッサーと動的プロキ�
 またAtom SQLで使用可能なSQL文は事前定義したもののみであり、値はすべてプレースホルダからセットするため、SQL Injectionの発生を回避することが可能です。
 
 ## インストール
+- Spring Framework  
 Spring FrameworkからAtom SQLを使用する場合は[Atom SQL Spring](https://github.com/ats-jp/atom-sql-spring)を参照のこと  
-その他の環境から使用する場合は、準備中  
+
+- その他  
+準備中  
+
+## アノテーションプロセッサーの設定
+- Eclipse  
+プロジェクトのプロパティで  
+  - `Java Compiler` > `Annotation Processing` > `Factory Path`のページを表示  
+  - `Add Variable...`をクリック  
+  - 変数`M2 REPO`を選択し、`Extend...`をクリック  
+  - `jp/ats/atom-sql/n.n.n/atom-sql-n.n.n.jar`を選択し`OK`をクリック  
+※`n.n.n`はインストールしている実際のバージョン番号を指定すること  
+  - `Apply and Close`をクリック  
+で設定完了  
+
+- その他  
+準備中  
 
 ## 使い方
 ### SqlProxyインターフェイス作成  
