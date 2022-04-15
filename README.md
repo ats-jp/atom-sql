@@ -100,8 +100,7 @@ public class SampleInfo {
 ```
 
 ※項目の型がプリミティブ型ではない場合は、Optionalとして受け取ることが可能  
-検索結果がnullとなる可能性がある項目はOptionalを使用することが可能  
-これによりnullとなる可能性を表明することが出来る  
+検索結果がnullとなる可能性がある項目の受け取りにOptionalを使用することでnullとなる可能性を表明することが出来る  
 
 - メソッドの作成  
 SELECT文を発行するためのメソッドをSqlProxy内に作成する  
@@ -217,7 +216,7 @@ MySQL InnoDB Clusterを採用している等、検索と更新で接続先が異
 ```java
 /**
  * 検索用Qualifier
- * Qualifierを何も指定しない場合デフォルトでこちらが使用されるため、指定する必要はない
+ * 例として更新不可能な接続 readpnly を指定
  */
 @Qualifier("readonly")
 @Sql("SELECT * FROM sample")
@@ -225,7 +224,7 @@ public List<SampleInfo> selectList();
 
 /**
  * 更新用Qualifier
- * 更新を行うためには必ず指定しなければならない
+ * 例として更新可能な接続 updatable を指定
  */
 @Qualifier("updatable")
 @Sql("UPDATE sample SET name = 'name' WHERE id = 0")
