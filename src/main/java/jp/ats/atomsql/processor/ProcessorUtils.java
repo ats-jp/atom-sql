@@ -2,6 +2,7 @@ package jp.ats.atomsql.processor;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -25,6 +26,11 @@ class ProcessorUtils {
 
 	static boolean sameClass(TypeElement type, Class<?> clazz) {
 		return type.getQualifiedName().toString().equals(clazz.getCanonicalName());
+	}
+
+	static boolean containsSameClass(TypeElement type, Class<?>... classes) {
+		var typeName = type.getQualifiedName().toString();
+		return Arrays.stream(classes).filter(c -> typeName.equals(c.getCanonicalName())).findFirst().isPresent();
 	}
 
 	static PackageElement getPackageElement(TypeElement clazz) {

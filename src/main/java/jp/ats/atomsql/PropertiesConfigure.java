@@ -5,6 +5,8 @@ import java.io.UncheckedIOException;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import jp.ats.atomsql.annotation.Qualifier;
+
 /**
  * Atom SQL用の設定をロードし、保持するクラスです。
  * @author 千葉 哲嗣
@@ -28,6 +30,12 @@ public class PropertiesConfigure implements Configure {
 	private final Pattern logStackTracePattern;
 
 	/**
+	 * use-qualifier<br>
+	 * {@link Qualifier}を使用するかどうか
+	 */
+	private final boolean useQualifier;
+
+	/**
 	 * クラスパスのルートにあるatom-sql.propertiesから設定を読み込みインスタンスを作成します。
 	 */
 	public PropertiesConfigure() {
@@ -43,6 +51,8 @@ public class PropertiesConfigure implements Configure {
 		enableLog = Boolean.valueOf(config.getProperty("enable-log", "false"));
 
 		logStackTracePattern = Pattern.compile(config.getProperty("log-stacktrace-pattern", ".+"));
+
+		useQualifier = Boolean.valueOf(config.getProperty("use-qualifier", "false"));
 	}
 
 	@Override
@@ -53,5 +63,10 @@ public class PropertiesConfigure implements Configure {
 	@Override
 	public Pattern logStackTracePattern() {
 		return logStackTracePattern;
+	}
+
+	@Override
+	public boolean useQualifier() {
+		return useQualifier;
 	}
 }

@@ -3,6 +3,7 @@ package jp.ats.atomsql;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlInterpolation;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
@@ -17,6 +18,11 @@ public interface Constants {
 	 * {@link SqlProxy}メタ情報保持クラスの名称サフィックス
 	 */
 	public static final String METADATA_CLASS_SUFFIX = "$AtomSqlMetadata";
+
+	/**
+	 * {@link DataObject}メタ情報保持クラスの名称サフィックス
+	 */
+	public static final String DATA_OBJECT_METADATA_CLASS_SUFFIX = "$AtomSqlDataObjectMetadata";
 
 	/**
 	 * SQLファイル、その他Atom SQLで使用する入出力ファイルの文字コード

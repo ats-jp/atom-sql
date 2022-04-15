@@ -1,7 +1,14 @@
 package jp.ats.atomsql.processor;
 
+import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -12,6 +19,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -23,6 +31,7 @@ import javax.lang.model.util.SimpleTypeVisitor14;
 import javax.tools.Diagnostic.Kind;
 
 import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
@@ -34,13 +43,15 @@ import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 @SupportedSourceVersion(SourceVersion.RELEASE_16)
 public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
-	private final ResultTypeChecker resultTypeChecker = new ResultTypeChecker();
-
 	private final TypeNameExtractor typeNameExtractor = new TypeNameExtractor(() -> DataObjectAnnotationProcessor.super.processingEnv);
 
 	private final DataObjectAnnotationProcessorMethodVisitor methodVisitor = new DataObjectAnnotationProcessorMethodVisitor();
 
 	private final MetadataBuilder builder = new MetadataBuilder(() -> super.processingEnv, methodVisitor);
+
+	// 二重作成防止チェッカー
+	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
+	private final Set<String> alreadyCreatedFiles = new HashSet<>();
 
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -57,7 +68,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 					return;
 				}
 
-				var visitor = new Visitor();
+				var visitor = new MyVisitor();
 				e.getEnclosedElements().forEach(enc -> {
 					enc.accept(visitor, null);
 				});
@@ -65,7 +76,10 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 				//レコードの場合、コンストラクタの引数名称を保存
 				if (kind == ElementKind.RECORD) {
 					builder.build(e);
-					return;
+				}
+
+				if (visitor.resultTypeChecker.optionals.size() > 0) {
+					buildDataObjectMetadata(e, visitor.resultTypeChecker.optionals);
 				}
 			});
 		});
@@ -73,7 +87,58 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 		return false;
 	}
 
-	private class Visitor extends SimpleElementVisitor14<Boolean, Void> {
+	void buildDataObjectMetadata(Element e, Map<Name, TypeElement> optionals) {
+		var elements = processingEnv.getElementUtils();
+		var packageName = elements.getPackageOf(e).getQualifiedName().toString();
+		var binaryName = elements.getBinaryName(ProcessorUtils.toTypeElement(e)).toString();
+
+		var packageNameLength = packageName.length();
+		var isPackageNameLengthZero = packageNameLength == 0;
+		var className = binaryName.substring(isPackageNameLengthZero ? 0 : packageNameLength + 1) + Constants.DATA_OBJECT_METADATA_CLASS_SUFFIX;
+
+		var fileName = isPackageNameLengthZero ? className : packageName + "." + className;
+
+		if (alreadyCreatedFiles.contains(fileName))
+			return;
+
+		var template = Formatter.readTemplate(AtomSqlDataObjectMetadataTemplate.class, "UTF-8");
+		template = Formatter.convertToTemplate(template);
+
+		Map<String, String> param = new HashMap<>();
+
+		param.put("PROCESSOR", DataObjectAnnotationProcessor.class.getName());
+
+		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
+		param.put("INTERFACE", className);
+
+		var optionalsPart = String.join(
+			", ",
+			optionals.entrySet().stream().map(DataObjectAnnotationProcessor::optionalsPart).toList());
+
+		template = Formatter.erase(template, optionalsPart.isEmpty());
+
+		param.put("OPTIONAL_DATAS", optionalsPart);
+
+		template = Formatter.format(template, param);
+
+		try {
+			try (var output = new BufferedOutputStream(processingEnv.getFiler().createSourceFile(fileName, e).openOutputStream())) {
+				output.write(template.getBytes(Constants.CHARSET));
+			}
+		} catch (IOException ioe) {
+			error(ioe.getMessage(), e);
+		}
+
+		alreadyCreatedFiles.add(fileName);
+	}
+
+	private static String optionalsPart(Map.Entry<Name, TypeElement> entry) {
+		return "@OptionalData(name = \"" + entry.getKey() + "\", type = " + entry.getValue().getQualifiedName() + ".class)";
+	}
+
+	private class MyVisitor extends SimpleElementVisitor14<Boolean, Void> {
+
+		private final ResultTypeChecker resultTypeChecker = new ResultTypeChecker();
 
 		@Override
 		public Boolean visitExecutable(ExecutableElement e, Void p) {
@@ -101,7 +166,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 			}
 
 			//パラメータがResultSetのみのコンストラクタはOK
-			if (!params.get(0).asType().accept(ParameterTypeChecker.instance, null)) {
+			if (!params.get(0).asType().accept(ParameterTypeIsResultSetChecker.instance, null)) {
 				error(errorMessage, e);
 				return false;
 			}
@@ -122,6 +187,8 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
 	private class ResultTypeChecker extends SimpleTypeVisitor14<Boolean, Element> {
 
+		private final Map<Name, TypeElement> optionals = new LinkedHashMap<>();
+
 		@Override
 		protected Boolean defaultAction(TypeMirror e, Element p) {
 			//結果タイプeは使用できません
@@ -139,46 +206,43 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public Boolean visitDeclared(DeclaredType t, Element p) {
-			TypeElement type = ProcessorUtils.toTypeElement(t.asElement());
+			var type = ProcessorUtils.toTypeElement(t.asElement());
 
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BIG_DECIMAL.type()))
+			if (ProcessorUtils.sameClass(type, Optional.class)) {
+				optionals.put(p.getSimpleName(), ProcessorUtils.toTypeElement(ProcessorUtils.toElement(t.getTypeArguments().get(0))));
 				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BINARY_STREAM.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BLOB.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BOOLEAN.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BYTE_ARRAY.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.CHARACTER_STREAM.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.CLOB.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.DOUBLE.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.FLOAT.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.INTEGER.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.LONG.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.STRING.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.DATE.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.TIME.type()))
-				return true;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.DATETIME.type()))
+			}
+
+			if (contains(type))
 				return true;
 
 			return defaultAction(t, p);
 		}
 	}
 
-	private static class ParameterTypeChecker extends SimpleTypeVisitor14<Boolean, Void> {
+	private static boolean contains(TypeElement type) {
+		return ProcessorUtils.containsSameClass(
+			type,
+			AtomSqlType.BIG_DECIMAL.type(),
+			AtomSqlType.BINARY_STREAM.type(),
+			AtomSqlType.BLOB.type(),
+			AtomSqlType.BOOLEAN.type(),
+			AtomSqlType.BYTE_ARRAY.type(),
+			AtomSqlType.CHARACTER_STREAM.type(),
+			AtomSqlType.CLOB.type(),
+			AtomSqlType.DOUBLE.type(),
+			AtomSqlType.FLOAT.type(),
+			AtomSqlType.INTEGER.type(),
+			AtomSqlType.LONG.type(),
+			AtomSqlType.STRING.type(),
+			AtomSqlType.DATE.type(),
+			AtomSqlType.TIME.type(),
+			AtomSqlType.DATETIME.type());
+	}
 
-		private static final ParameterTypeChecker instance = new ParameterTypeChecker();
+	private static class ParameterTypeIsResultSetChecker extends SimpleTypeVisitor14<Boolean, Void> {
+
+		private static final ParameterTypeIsResultSetChecker instance = new ParameterTypeIsResultSetChecker();
 
 		@Override
 		protected Boolean defaultAction(TypeMirror e, Void p) {
@@ -222,6 +286,6 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private void error(String message, Element e) {
-		super.processingEnv.getMessager().printMessage(Kind.ERROR, message, e);
+		processingEnv.getMessager().printMessage(Kind.ERROR, message, e);
 	}
 }

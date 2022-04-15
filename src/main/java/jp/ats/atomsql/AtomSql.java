@@ -1,6 +1,7 @@
 package jp.ats.atomsql;
 
 import java.io.IOException;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -42,6 +43,7 @@ import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.processor.annotation.Methods;
+import jp.ats.atomsql.processor.annotation.OptionalDatas;
 
 /**
  * Atom SQLの実行時の処理のほとんどを行うコアクラスです。<br>
@@ -136,6 +138,11 @@ public class AtomSql {
 			public Pattern logStackTracePattern() {
 				throw new UnsupportedOperationException();
 			}
+
+			@Override
+			public boolean useQualifier() {
+				throw new UnsupportedOperationException();
+			}
 		};
 
 		sqlLogger = new SqlLogger(config);
@@ -170,6 +177,26 @@ public class AtomSql {
 	}
 
 	/**
+	 * 設定で{@link Qualifier}を使用するとされている場合、対象に付与された{@link Qualifier}を返す<br>
+	 * 対象自体に{@link Qualifier}が無くても、その他のアノテーション自体に{@link Qualifier}が付与されていればそれを返す
+	 */
+	private Optional<Qualifier> qualifier(AnnotatedElement e) {
+		if (!config.useQualifier()) return Optional.empty();
+
+		var qualifier = e.getAnnotation(Qualifier.class);
+		if (qualifier != null) return Optional.of(qualifier);
+
+		var annotations = e.getAnnotations();
+
+		if (annotations.length == 0) return Optional.empty();
+
+		return Arrays.stream(annotations)
+			.map(a -> a.annotationType().getAnnotation(Qualifier.class))
+			.filter(q -> q != null)
+			.findFirst();
+	}
+
+	/**
 	 * {@link SqlProxy}が付与されたインターフェイスから{@link Proxy}オブジェクトを作成します。
 	 * @see Proxy
 	 * @see SqlProxy
@@ -200,8 +227,7 @@ public class AtomSql {
 				var proxyClass = proxy.getClass().getInterfaces()[0];
 
 				//メソッドに付与されたアノテーション > クラスに付与されたアノテーション
-				var nameAnnotation = method.getAnnotation(Qualifier.class);
-				if (nameAnnotation == null) nameAnnotation = proxyClass.getAnnotation(Qualifier.class);
+				var nameAnnotation = qualifier(method).or(() -> qualifier(proxyClass));
 
 				var proxyClassName = proxyClass.getName();
 
@@ -229,7 +255,7 @@ public class AtomSql {
 				var sql = loadSql(proxyClass, method).trim();
 
 				SqlProxyHelper helper;
-				var entry = nameAnnotation == null ? endpoints.get() : endpoints.get(nameAnnotation.value());
+				var entry = nameAnnotation.map(a -> endpoints.get(a.value())).orElseGet(() -> endpoints.get());
 				if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
 					var sqlParametersClass = find.sqlParameters();
 					var sqlParameters = sqlParametersClass.getConstructor().newInstance();
@@ -657,10 +683,21 @@ public class AtomSql {
 			var parameterTypes = method.parameterTypes();
 			var parameters = new Object[parameterNames.length];
 
+			var optionals = new Optionals();
 			for (var i = 0; i < parameterNames.length; i++) {
-				var type = AtomSqlType.selectForResultSet(parameterTypes[i]);
+				var parameterType = parameterTypes[i];
+				var parameterName = parameterNames[i];
+
+				var needsOptional = false;
+				if (Optional.class.equals(parameterType)) {
+					parameterType = optionals.get(parameterName);
+					needsOptional = true;
+				}
+
+				var type = AtomSqlType.selectForResultSet(parameterType);
 				try {
-					parameters[i] = type.get(rs, parameterNames[i]);
+					var value = type.get(rs, parameterName);
+					parameters[i] = needsOptional ? Optional.ofNullable(value) : value;
 				} catch (SQLException e) {
 					throw new AtomSqlException(e);
 				}
@@ -683,10 +720,22 @@ public class AtomSql {
 				throw new IllegalStateException(e);
 			}
 
+			var optionals = new Optionals();
 			Arrays.stream(dataObjectClass.getFields()).forEach(f -> {
-				var type = AtomSqlType.selectForResultSet(f.getType());
+				var fieldName = f.getName();
+				var fieldType = f.getType();
+
+				var needsOptional = false;
+				if (Optional.class.equals(fieldType)) {
+					fieldType = optionals.get(fieldName);
+					needsOptional = true;
+				}
+
+				var type = AtomSqlType.selectForResultSet(fieldType);
+
 				try {
-					f.set(object, type.get(rs, f.getName()));
+					var value = type.get(rs, fieldName);
+					f.set(object, needsOptional ? Optional.ofNullable(value) : value);
 				} catch (SQLException e) {
 					throw new AtomSqlException(e);
 				} catch (IllegalAccessException e) {
@@ -695,6 +744,32 @@ public class AtomSql {
 			});
 
 			return object;
+		}
+
+		private class Optionals {
+
+			Map<String, Class<?>> map;
+
+			private Class<?> get(String name) {
+				if (map == null) {
+					map = new HashMap<>();
+
+					Arrays.stream(loadOptionalDatas().value()).forEach(d -> map.put(d.name(), d.type()));
+				}
+
+				return map.get(name);
+			}
+		}
+
+		private OptionalDatas loadOptionalDatas() {
+			try {
+				return Class.forName(
+					dataObjectClass.getName() + Constants.DATA_OBJECT_METADATA_CLASS_SUFFIX,
+					true,
+					Thread.currentThread().getContextClassLoader()).getAnnotation(OptionalDatas.class);
+			} catch (ClassNotFoundException e) {
+				throw new IllegalStateException(e);
+			}
 		}
 
 		void logElapsed(long startNanos) {

@@ -2,6 +2,8 @@ package jp.ats.atomsql;
 
 import java.util.regex.Pattern;
 
+import jp.ats.atomsql.annotation.Qualifier;
+
 /**
  * Atom SQL用の設定をロードし、保持するクラスです。
  * @author 千葉 哲嗣
@@ -23,4 +25,10 @@ public interface Configure {
 	 * @return フィルタパターン
 	 */
 	Pattern logStackTracePattern();
+
+	/**
+	 * {@link Qualifier}を使用するかどうか
+	 * @return 使用する場合、true
+	 */
+	boolean useQualifier();
 }

@@ -36,11 +36,11 @@ import javax.tools.StandardLocation;
 import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.Csv;
 import jp.ats.atomsql.HalfAtom;
 import jp.ats.atomsql.PlaceholderFinder;
-import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.Sql;
@@ -277,35 +277,23 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return processConsumerType(p);
 			}
 
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BIG_DECIMAL.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BINARY_STREAM.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BLOB.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BOOLEAN.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.BYTE_ARRAY.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.CHARACTER_STREAM.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.CLOB.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.DOUBLE.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.FLOAT.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.INTEGER.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.LONG.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.STRING.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.DATE.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.TIME.type()))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.DATETIME.type()))
+			if (ProcessorUtils.containsSameClass(
+				type,
+				AtomSqlType.BIG_DECIMAL.type(),
+				AtomSqlType.BINARY_STREAM.type(),
+				AtomSqlType.BLOB.type(),
+				AtomSqlType.BOOLEAN.type(),
+				AtomSqlType.BYTE_ARRAY.type(),
+				AtomSqlType.CHARACTER_STREAM.type(),
+				AtomSqlType.CLOB.type(),
+				AtomSqlType.DOUBLE.type(),
+				AtomSqlType.FLOAT.type(),
+				AtomSqlType.INTEGER.type(),
+				AtomSqlType.LONG.type(),
+				AtomSqlType.STRING.type(),
+				AtomSqlType.DATE.type(),
+				AtomSqlType.TIME.type(),
+				AtomSqlType.DATETIME.type()))
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, AtomSqlType.CSV.type())) {
 				var argumentType = t.getTypeArguments().get(0);

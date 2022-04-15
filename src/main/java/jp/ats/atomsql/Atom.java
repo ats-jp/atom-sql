@@ -166,6 +166,11 @@ public class Atom<T> {
 			public Pattern logStackTracePattern() {
 				throw new IllegalAtomException();
 			}
+
+			@Override
+			public boolean useQualifier() {
+				throw new IllegalAtomException();
+			}
 		}, new Endpoints(new Endpoint() {
 
 			@Override
