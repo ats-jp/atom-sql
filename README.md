@@ -56,7 +56,7 @@ public interface SampleProxy {
  * SELECT句にid, nameが定義されている想定の検索結果格納レコード
  */
 @DataObject
-public record SampleInfo(long id, String name) {}
+public record SampleInfo(long id, String name, Optional<String> note) {}
 ```
 
 2. パラメーターなしのコンストラクタを持ち、フィールド名がSELECT句の項目名と一致しているクラス  
@@ -71,6 +71,8 @@ public class SampleInfo {
     public long id;
 
     public String name;
+
+    public Optional<String> note;
 }
 ```
 
@@ -87,9 +89,12 @@ public class SampleInfo {
 
     public final String name;
 
+    public Optional<String> note;
+
     public SampleInfo(ResultSet rs) throws SQLException {
         id = rs.getLong("id");
         name = rs.getString("name");
+        note = Optional.ofNullable(rs.getString("note"));
     }
 }
 ```
