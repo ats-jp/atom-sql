@@ -37,6 +37,7 @@ import jp.ats.atomsql.InnerSql.Placeholder;
 import jp.ats.atomsql.InnerSql.Text;
 import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.ConfidentialSql;
+import jp.ats.atomsql.annotation.NoSqlLog;
 import jp.ats.atomsql.annotation.NonThreadSafe;
 import jp.ats.atomsql.annotation.Qualifier;
 import jp.ats.atomsql.annotation.Sql;
@@ -98,7 +99,7 @@ public class AtomSql {
 	 */
 	public AtomSql(Endpoints endpoints) {
 		config = new PropertiesConfigure();
-		sqlLogger = new SqlLogger(config);
+		sqlLogger = SqlLogger.instance(config);
 		this.endpoints = Objects.requireNonNull(endpoints);
 	}
 
@@ -110,7 +111,7 @@ public class AtomSql {
 	 */
 	public AtomSql(Configure config, Endpoints endpoints) {
 		this.config = Objects.requireNonNull(config);
-		sqlLogger = new SqlLogger(config);
+		sqlLogger = SqlLogger.instance(config);
 		this.endpoints = Objects.requireNonNull(endpoints);
 	}
 
@@ -145,7 +146,7 @@ public class AtomSql {
 			}
 		};
 
-		sqlLogger = new SqlLogger(config);
+		sqlLogger = SqlLogger.instance(config);
 
 		endpoints = new Endpoints(new Endpoint() {
 
@@ -215,6 +216,8 @@ public class AtomSql {
 			//アノテーションSqlProxyが見つかりません
 			throw new IllegalArgumentException("Annotation " + SqlProxy.class.getSimpleName() + " is not found");
 
+		var noSqlLogOnClass = proxyInterface.isAnnotationPresent(NoSqlLog.class);
+
 		@SuppressWarnings("unchecked")
 		T instance = (T) Proxy.newProxyInstance(
 			Thread.currentThread().getContextClassLoader(),
@@ -222,7 +225,7 @@ public class AtomSql {
 			(proxy, method, args) -> {
 				if (method.isDefault()) return InvocationHandler.invokeDefault(proxy, method, args);
 
-				if (method.getAnnotation(AtomSqlSupplier.class) != null) return AtomSql.this;
+				if (method.isAnnotationPresent(AtomSqlSupplier.class)) return AtomSql.this;
 
 				var proxyClass = proxy.getClass().getInterfaces()[0];
 
@@ -254,6 +257,8 @@ public class AtomSql {
 
 				var sql = loadSql(proxyClass, method).trim();
 
+				var mySqlLogger = noSqlLogOnClass || method.isAnnotationPresent(NoSqlLog.class) ? SqlLogger.disabled : sqlLogger;
+
 				SqlProxyHelper helper;
 				var entry = nameAnnotation.map(a -> endpoints.get(a.value())).orElseGet(() -> endpoints.get());
 				if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
@@ -281,7 +286,7 @@ public class AtomSql {
 						find.dataObject(),
 						values.toArray(Object[]::new),
 						config,
-						sqlLogger);
+						mySqlLogger);
 				} else {
 					helper = new SqlProxyHelper(
 						sql,
@@ -291,7 +296,7 @@ public class AtomSql {
 						find.dataObject(),
 						args,
 						config,
-						sqlLogger);
+						mySqlLogger);
 				}
 
 				var atom = new Atom<Object>(AtomSql.this, helper, true);

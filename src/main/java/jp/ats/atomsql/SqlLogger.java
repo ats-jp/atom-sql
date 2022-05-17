@@ -8,16 +8,32 @@ import org.apache.commons.logging.Log;
 /**
  * @author 千葉 哲嗣
  */
-class SqlLogger {
+abstract class SqlLogger {
 
-	private final Configure config;
+	abstract void perform(Consumer<Log> consumer);
 
-	SqlLogger(Configure config) {
-		this.config = Objects.requireNonNull(config);
+	static final SqlLogger disabled = new SqlLogger() {
+
+		@Override
+		void perform(Consumer<Log> consumer) {
+		}
+	};
+
+	static SqlLogger instance(Configure config) {
+		return new SqlLoggerImpl(config);
 	}
 
-	void perform(Consumer<Log> consumer) {
-		if (config.enableLog()) consumer.accept(AtomSql.log);
+	private static class SqlLoggerImpl extends SqlLogger {
 
+		private final Configure config;
+
+		SqlLoggerImpl(Configure config) {
+			this.config = Objects.requireNonNull(config);
+		}
+
+		@Override
+		void perform(Consumer<Log> consumer) {
+			if (config.enableLog()) consumer.accept(AtomSql.log);
+		}
 	}
 }
