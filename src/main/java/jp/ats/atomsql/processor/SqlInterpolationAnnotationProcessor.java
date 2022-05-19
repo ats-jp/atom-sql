@@ -21,9 +21,10 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
 import jp.ats.atomsql.Atom;
+import jp.ats.atomsql.AtomSqlInitializer;
+import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.HalfAtom;
-import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 
@@ -42,6 +43,10 @@ public class SqlInterpolationAnnotationProcessor extends AbstractProcessor {
 
 	//生成クラス名, メソッド名
 	private final Map<String, MethodInfo> allInterpolations = new HashMap<>();
+
+	static {
+		AtomSqlInitializer.initializeIfUninitialized();
+	}
 
 	private static class MethodInfo {
 

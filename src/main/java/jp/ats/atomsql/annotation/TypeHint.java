@@ -16,13 +16,13 @@ public @interface TypeHint {
 
 	/**
 	 * 型のヒント
-	 * @return {@link AtomSqlType}
+	 * @return {@link AtomSqlType}実装クラスのクラス名
 	 */
-	AtomSqlType type();
+	String type();
 
 	/**
 	 * {@link AtomSqlType}の中で型パラメーターが存在するものを{@link #type()}で指定する場合の型引数です。
-	 * @return {@link AtomSqlType}
+	 * @return {@link AtomSqlType}実装クラスのクラス名
 	 */
-	AtomSqlType typeArgument() default AtomSqlType.NULL;
+	String typeArgument() default "NULL";
 }

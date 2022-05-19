@@ -30,7 +30,8 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor14;
 import javax.tools.Diagnostic.Kind;
 
-import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.AtomSqlInitializer;
+import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
@@ -52,6 +53,10 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 	// 二重作成防止チェッカー
 	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
 	private final Set<String> alreadyCreatedFiles = new HashSet<>();
+
+	static {
+		AtomSqlInitializer.initializeIfUninitialized();
+	}
 
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -221,23 +226,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private static boolean contains(TypeElement type) {
-		return ProcessorUtils.containsSameClass(
-			type,
-			AtomSqlType.BIG_DECIMAL.type(),
-			AtomSqlType.BINARY_STREAM.type(),
-			AtomSqlType.BLOB.type(),
-			AtomSqlType.BOOLEAN.type(),
-			AtomSqlType.BYTE_ARRAY.type(),
-			AtomSqlType.CHARACTER_STREAM.type(),
-			AtomSqlType.CLOB.type(),
-			AtomSqlType.DOUBLE.type(),
-			AtomSqlType.FLOAT.type(),
-			AtomSqlType.INTEGER.type(),
-			AtomSqlType.LONG.type(),
-			AtomSqlType.STRING.type(),
-			AtomSqlType.DATE.type(),
-			AtomSqlType.TIME.type(),
-			AtomSqlType.DATETIME.type());
+		return ProcessorUtils.containsSameClass(type, AtomSqlTypeFactory.instance().nonPrimitiveTypes());
 	}
 
 	private static class ParameterTypeIsResultSetChecker extends SimpleTypeVisitor14<Boolean, Void> {

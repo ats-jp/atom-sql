@@ -149,29 +149,15 @@ public class Atom<T> {
 	 * Atom結合用のインスタンスを生成します。<br>
 	 * 生成されたインスタンスはスレッドセーフであり、static変数に保存し使用することが可能です。<br>
 	 * このメソッドで生成されたインスタンスでは、検索等のデータベース操作を行うことはできません。<br>
-	 * 通常生成されたAtomインスタンスに結合するためだけに使用してください。
+	 * 通常生成されたAtomインスタンスに結合するためだけに使用してください。<br>
+	 * また、このメソッドを呼ぶ前に初期化が完了している必要があります。
+	 * @see AtomSql#initialize(Configure)
 	 * @see IllegalAtomException
 	 * @param creator
 	 * @return creator内で生成されたインスタンス
 	 */
 	public static Atom<?> newStaticInstance(Function<AtomSql, Atom<?>> creator) {
-		return creator.apply(new AtomSql(new Configure() {
-
-			@Override
-			public boolean enableLog() {
-				throw new IllegalAtomException();
-			}
-
-			@Override
-			public Pattern logStackTracePattern() {
-				throw new IllegalAtomException();
-			}
-
-			@Override
-			public boolean useQualifier() {
-				throw new IllegalAtomException();
-			}
-		}, new Endpoints(new Endpoint() {
+		return creator.apply(new AtomSql(new Endpoints(new Endpoint() {
 
 			@Override
 			public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {

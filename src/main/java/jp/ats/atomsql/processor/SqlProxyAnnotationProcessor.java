@@ -35,7 +35,8 @@ import javax.tools.StandardLocation;
 
 import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.AtomSql;
-import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.AtomSqlInitializer;
+import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.Csv;
@@ -52,6 +53,7 @@ import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
+import jp.ats.atomsql.type.CSV;
 
 /**
  * @author 千葉 哲嗣
@@ -71,6 +73,10 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 	private final MethodExtractor extractor = new MethodExtractor(() -> SqlProxyAnnotationProcessor.super.processingEnv);
 
 	private final MetadataBuilder builder = new MetadataBuilder(() -> super.processingEnv, methodVisitor);
+
+	static {
+		AtomSqlInitializer.initializeIfUninitialized();
+	}
 
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -277,25 +283,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return processConsumerType(p);
 			}
 
-			if (ProcessorUtils.containsSameClass(
-				type,
-				AtomSqlType.BIG_DECIMAL.type(),
-				AtomSqlType.BINARY_STREAM.type(),
-				AtomSqlType.BLOB.type(),
-				AtomSqlType.BOOLEAN.type(),
-				AtomSqlType.BYTE_ARRAY.type(),
-				AtomSqlType.CHARACTER_STREAM.type(),
-				AtomSqlType.CLOB.type(),
-				AtomSqlType.DOUBLE.type(),
-				AtomSqlType.FLOAT.type(),
-				AtomSqlType.INTEGER.type(),
-				AtomSqlType.LONG.type(),
-				AtomSqlType.STRING.type(),
-				AtomSqlType.DATE.type(),
-				AtomSqlType.TIME.type(),
-				AtomSqlType.DATETIME.type()))
+			if (ProcessorUtils.containsSameClass(type, AtomSqlTypeFactory.instance().nonPrimitiveTypes()))
 				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, AtomSqlType.CSV.type())) {
+			if (ProcessorUtils.sameClass(type, CSV.instance.type())) {
 				var argumentType = t.getTypeArguments().get(0);
 				var element = ProcessorUtils.toElement(argumentType);
 				var typeElement = ProcessorUtils.toTypeElement(element);

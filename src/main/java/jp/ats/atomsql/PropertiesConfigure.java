@@ -33,7 +33,9 @@ public class PropertiesConfigure implements Configure {
 	 * use-qualifier<br>
 	 * {@link Qualifier}を使用するかどうか
 	 */
-	private final boolean useQualifier;
+	private final boolean usesQualifier;
+
+	private final AtomSqlTypeFactory typeFactory;
 
 	/**
 	 * クラスパスのルートにあるatom-sql.propertiesから設定を読み込みインスタンスを作成します。
@@ -52,7 +54,19 @@ public class PropertiesConfigure implements Configure {
 
 		logStackTracePattern = Pattern.compile(config.getProperty("log-stacktrace-pattern", ".+"));
 
-		useQualifier = Boolean.valueOf(config.getProperty("use-qualifier", "false"));
+		usesQualifier = Boolean.valueOf(config.getProperty("use-qualifier", "false"));
+
+		var typeFactoryClass = config.getProperty("type-factory-class", null);
+
+		if (typeFactoryClass == null) {
+			typeFactory = DefaultAtomSqlTypeFactory.instance;
+		} else {
+			try {
+				typeFactory = (AtomSqlTypeFactory) Class.forName(typeFactoryClass).getConstructor().newInstance();
+			} catch (Exception e) {
+				throw new IllegalStateException(e);
+			}
+		}
 	}
 
 	@Override
@@ -66,7 +80,12 @@ public class PropertiesConfigure implements Configure {
 	}
 
 	@Override
-	public boolean useQualifier() {
-		return useQualifier;
+	public boolean usesQualifier() {
+		return usesQualifier;
+	}
+
+	@Override
+	public AtomSqlTypeFactory atomSqlTypeFactory() {
+		return typeFactory;
 	}
 }

@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
@@ -53,9 +52,49 @@ import jp.ats.atomsql.processor.annotation.OptionalDatas;
  */
 public class AtomSql {
 
-	static final Log log = LogFactory.getLog(AtomSql.class);
+	/**
+	 * AtomSqlにパラメーターの設定を適用して初期化します。
+	 * @param config 設定
+	 * @throws IllegalStateException 既に初期化済みの場合
+	 */
+	public static void initialize(Configure config) {
+		AtomSqlInitializer.initialize(config);
+	}
 
-	private final Configure config;
+	/**
+	 * AtomSqlにデフォルトの設定を適用して初期化します。
+	 * @throws IllegalStateException 既に初期化済みの場合
+	 */
+	public static void initialize() {
+		AtomSqlInitializer.initialize();
+	}
+
+	/**
+	 * AtomSqlにパラメーターの設定を適用して初期化します。<br>
+	 * 既に初期化済みの場合このメソッドは何も行いません。
+	 * @param config 設定
+	 */
+	public static void initializeIfUninitialized(Configure config) {
+		AtomSqlInitializer.initializeIfUninitialized(config);
+	}
+
+	/**
+	 * AtomSqlにデフォルトの設定を適用して初期化します。<br>
+	 * 既に初期化済みの場合このメソッドは何も行いません。
+	 */
+	public static void initializeIfUninitialized() {
+		AtomSqlInitializer.initializeIfUninitialized();
+	}
+
+	/**
+	 * 現設定値
+	 * @return {@link Configure}
+	 */
+	public static Configure configure() {
+		return AtomSqlInitializer.configure();
+	}
+
+	static final Log log = LogFactory.getLog(AtomSql.class);
 
 	private final SqlLogger sqlLogger;
 
@@ -98,20 +137,7 @@ public class AtomSql {
 	 * @param endpoints {@link Endpoints}
 	 */
 	public AtomSql(Endpoints endpoints) {
-		config = new PropertiesConfigure();
-		sqlLogger = SqlLogger.instance(config);
-		this.endpoints = Objects.requireNonNull(endpoints);
-	}
-
-	/**
-	 * 通常のコンストラクタです。<br>
-	 * {@link Endpoints}の持つ{@link Endpoint}の実装を切り替えることで、動作検証や自動テスト用に実行することが可能です。
-	 * @param config {@link Configure}
-	 * @param endpoints {@link Endpoints}
-	 */
-	public AtomSql(Configure config, Endpoints endpoints) {
-		this.config = Objects.requireNonNull(config);
-		sqlLogger = SqlLogger.instance(config);
+		sqlLogger = SqlLogger.instance();
 		this.endpoints = Objects.requireNonNull(endpoints);
 	}
 
@@ -122,31 +148,12 @@ public class AtomSql {
 	 * @param base コピー元
 	 */
 	public AtomSql(AtomSql base) {
-		config = base.config;
 		sqlLogger = base.sqlLogger;
 		this.endpoints = base.endpoints;
 	}
 
 	AtomSql() {
-		config = new Configure() {
-
-			@Override
-			public boolean enableLog() {
-				throw new UnsupportedOperationException();
-			}
-
-			@Override
-			public Pattern logStackTracePattern() {
-				throw new UnsupportedOperationException();
-			}
-
-			@Override
-			public boolean useQualifier() {
-				throw new UnsupportedOperationException();
-			}
-		};
-
-		sqlLogger = SqlLogger.instance(config);
+		sqlLogger = SqlLogger.instance();
 
 		endpoints = new Endpoints(new Endpoint() {
 
@@ -182,7 +189,7 @@ public class AtomSql {
 	 * 対象自体に{@link Qualifier}が無くても、その他のアノテーション自体に{@link Qualifier}が付与されていればそれを返す
 	 */
 	private Optional<Qualifier> qualifier(AnnotatedElement e) {
-		if (!config.useQualifier()) return Optional.empty();
+		if (!configure().usesQualifier()) return Optional.empty();
 
 		var qualifier = e.getAnnotation(Qualifier.class);
 		if (qualifier != null) return Optional.of(qualifier);
@@ -285,7 +292,6 @@ public class AtomSql {
 						names.toArray(String[]::new),
 						find.dataObject(),
 						values.toArray(Object[]::new),
-						config,
 						mySqlLogger);
 				} else {
 					helper = new SqlProxyHelper(
@@ -295,7 +301,6 @@ public class AtomSql {
 						find.parameters(),
 						find.dataObject(),
 						args,
-						config,
 						mySqlLogger);
 				}
 
@@ -322,7 +327,6 @@ public class AtomSql {
 			});
 
 		return instance;
-
 	}
 
 	/**
@@ -529,7 +533,6 @@ public class AtomSql {
 			new String[0],
 			Object.class,
 			new Object[0],
-			config,
 			sqlLogger);
 	}
 
@@ -569,8 +572,6 @@ public class AtomSql {
 
 		private final Class<?> dataObjectClass;
 
-		private final Configure config;
-
 		private final SqlLogger sqlLogger;
 
 		private Set<String> confidentials(String[] confidentials, String[] parameterNames) {
@@ -591,11 +592,9 @@ public class AtomSql {
 			String[] parameterNames,
 			Class<?> dataObjectClass,
 			Object[] args,
-			Configure config,
 			SqlLogger sqlLogger) {
 			this.entry = entry;
 			this.dataObjectClass = dataObjectClass;
-			this.config = config;
 			this.sqlLogger = sqlLogger;
 
 			Map<String, Object> argMap = new LinkedHashMap<>();
@@ -615,7 +614,7 @@ public class AtomSql {
 
 				var value = argMap.get(f.placeholder);
 
-				var type = AtomSqlType.selectForPreparedStatement(value);
+				var type = AtomSqlTypeFactory.instance().selectForPreparedStatement(value);
 
 				elements.add(
 					new Placeholder(
@@ -636,7 +635,6 @@ public class AtomSql {
 			this.sql = base.sql;
 			this.entry = base.entry;
 			this.dataObjectClass = newDataObjectClass;
-			this.config = base.config;
 			this.sqlLogger = base.sqlLogger;
 		}
 
@@ -646,7 +644,6 @@ public class AtomSql {
 			this.sql = sql;
 			this.entry = main.entry;
 			this.dataObjectClass = main.dataObjectClass;
-			this.config = main.config;
 			this.sqlLogger = main.sqlLogger;
 		}
 
@@ -699,7 +696,7 @@ public class AtomSql {
 					needsOptional = true;
 				}
 
-				var type = AtomSqlType.selectForResultSet(parameterType);
+				var type = AtomSqlTypeFactory.instance().selectForResultSet(parameterType);
 				try {
 					var value = type.get(rs, parameterName);
 					parameters[i] = needsOptional ? Optional.ofNullable(value) : value;
@@ -736,7 +733,7 @@ public class AtomSql {
 					needsOptional = true;
 				}
 
-				var type = AtomSqlType.selectForResultSet(fieldType);
+				var type = AtomSqlTypeFactory.instance().selectForResultSet(fieldType);
 
 				try {
 					var value = type.get(rs, fieldName);
@@ -803,7 +800,7 @@ public class AtomSql {
 					if (elementString.contains(packageName) || elementString.contains("(Unknown Source)"))
 						continue;
 
-					if (config.logStackTracePattern().matcher(elementString).find())
+					if (configure().logStackTracePattern().matcher(elementString).find())
 						log.info(" " + elementString);
 				}
 

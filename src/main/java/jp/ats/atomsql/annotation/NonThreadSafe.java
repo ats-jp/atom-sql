@@ -1,6 +1,5 @@
 package jp.ats.atomsql.annotation;
 
-import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -21,6 +20,6 @@ import jp.ats.atomsql.NonThreadSafeException;
  * @author 千葉 哲嗣
  */
 @Retention(RUNTIME)
-@Target({ FIELD, METHOD })
+@Target({ METHOD })
 public @interface NonThreadSafe {
 }

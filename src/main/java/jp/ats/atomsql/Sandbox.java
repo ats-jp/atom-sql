@@ -34,6 +34,7 @@ public class Sandbox {
 	 * @param process 検査したい処理
 	 */
 	public static void execute(Consumer<AtomSql> process) {
+		AtomSqlInitializer.initializeIfUninitialized();
 		pairs.set(new LinkedList<Pair>());
 		try {
 			process.accept(new AtomSql(new Endpoints(new SandboxEndpoint())));
@@ -50,9 +51,10 @@ public class Sandbox {
 	 * @param process 検査したい処理
 	 */
 	public static void execute(Configure config, Consumer<AtomSql> process) {
+		AtomSql.initialize(config);
 		pairs.set(new LinkedList<Pair>());
 		try {
-			process.accept(new AtomSql(config, new Endpoints(new SandboxEndpoint())));
+			process.accept(new AtomSql(new Endpoints(new SandboxEndpoint())));
 		} finally {
 			pairs.remove();
 			resultHolder.remove();

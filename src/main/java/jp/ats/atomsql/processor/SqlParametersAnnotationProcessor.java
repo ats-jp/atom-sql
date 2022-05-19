@@ -23,15 +23,19 @@ import javax.lang.model.element.VariableElement;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
+import jp.ats.atomsql.AtomSqlInitializer;
 import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.AtomSqlTypeFactory;
+import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.UnknownSqlTypeNameException;
-import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.TypeHint;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
+import jp.ats.atomsql.type.NULL;
+import jp.ats.atomsql.type.OBJECT;
 
 @SupportedAnnotationTypes("jp.ats.atomsql.annotation.SqlParameters")
 @SupportedSourceVersion(SourceVersion.RELEASE_16)
@@ -72,6 +76,10 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		private String pack() {
 			return parametersClass + "/" + clazz + "/" + method;
 		}
+	}
+
+	static {
+		AtomSqlInitializer.initializeIfUninitialized();
 	}
 
 	@Override
@@ -234,24 +242,26 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 			var annotatedHint = annotatedHints.get(f.placeholder);
 
+			var typeFactory = AtomSqlTypeFactory.instance();
+
 			Optional<AtomSqlType> annotatedHintType;
 			Optional<AtomSqlType> annotatedTypeArgument;
 			if (annotatedHint != null) {
-				annotatedHintType = Optional.of(annotatedHint.type());
-				var arg = annotatedHint.typeArgument();
-				annotatedTypeArgument = arg == AtomSqlType.NULL ? Optional.empty() : Optional.of(arg);
+				annotatedHintType = Optional.of(typeFactory.typeOf(annotatedHint.type()));
+				var arg = typeFactory.typeOf(annotatedHint.typeArgument());
+				annotatedTypeArgument = arg == NULL.instance ? Optional.empty() : Optional.of(arg.toTypeArgument());
 			} else {
 				annotatedHintType = Optional.empty();
 				annotatedTypeArgument = Optional.empty();
 			}
 
 			var typeArgument = annotatedTypeArgument.or(
-				() -> f.typeArgumentHint.map(AtomSqlType::typeArgumentOf))
+				() -> f.typeArgumentHint.map(typeFactory::typeArgumentOf))
 				.map(t -> "<" + t.type().getName() + ">")
 				.orElse("");
 
 			var field = "public "
-				+ annotatedHintType.orElseGet(() -> f.typeHint.map(AtomSqlType::typeOf).orElse(AtomSqlType.OBJECT)).type().getName()
+				+ annotatedHintType.orElseGet(() -> f.typeHint.map(typeFactory::typeOf).orElse(OBJECT.instance)).type().getName()
 				+ typeArgument
 				+ " "
 				+ f.placeholder

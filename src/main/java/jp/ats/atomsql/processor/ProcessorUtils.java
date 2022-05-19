@@ -28,7 +28,7 @@ class ProcessorUtils {
 		return type.getQualifiedName().toString().equals(clazz.getCanonicalName());
 	}
 
-	static boolean containsSameClass(TypeElement type, Class<?>... classes) {
+	static boolean containsSameClass(TypeElement type, Class<?>[] classes) {
 		var typeName = type.getQualifiedName().toString();
 		return Arrays.stream(classes).filter(c -> typeName.equals(c.getCanonicalName())).findFirst().isPresent();
 	}

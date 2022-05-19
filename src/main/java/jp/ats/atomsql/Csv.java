@@ -56,7 +56,10 @@ public class Csv<T> {
 		this.values = Collections.unmodifiableList(values);
 	}
 
-	List<T> values() {
+	/**
+	 * @return 内部で保持する値
+	 */
+	public List<T> values() {
 		return values;
 	}
 
@@ -64,7 +67,7 @@ public class Csv<T> {
 		//Csvの中にCsvは不可
 		if (value instanceof Csv) throw new IllegalArgumentException("Csv cannot be used for Csv elements");
 
-		var type = AtomSqlType.selectForPreparedStatement(value);
+		var type = AtomSqlTypeFactory.instance().selectForPreparedStatement(value);
 
 		if (type.nonThreadSafe()) throw new NonThreadSafeException();
 		values.add(value);

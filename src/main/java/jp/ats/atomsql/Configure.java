@@ -30,5 +30,10 @@ public interface Configure {
 	 * {@link Qualifier}を使用するかどうか
 	 * @return 使用する場合、true
 	 */
-	boolean useQualifier();
+	boolean usesQualifier();
+
+	/**
+	 * @return {@link AtomSqlTypeFactory}のインスタンス
+	 */
+	AtomSqlTypeFactory atomSqlTypeFactory();
 }
