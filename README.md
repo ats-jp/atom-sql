@@ -269,8 +269,8 @@ public int updateSample(String name, int id);
 また、パラメーター変数の型も、後述のAtom SQLで使用可能な型のみ指定可能となっている  
 
 - Atom SQLで使用可能な型  
-バインド可能な型はあらかじめ定められており、それ以外の型を使用することは出来ない  
-使用可能な型は`jp.ats.atomsql.AtomSqlType`というenumに定義されている  
+バインド可能な型はあらかじめ定められており、それ以外の型を使用するには`AtomSqlTypeFactory`を新たに拡張する等する必要がある  
+使用可能な型は`jp.ats.atomsql.AtomSqlType`というインターフェイスを実装するクラスとして定義されており、`jp.ats.atomsql.type`パッケージに属している  
 
 |型名|Javaクラス|SQLでの型|スレッドセーフか?|
 |:--|:--|:--|:--:|
@@ -446,8 +446,8 @@ public int updateSample(Consumer<SampleParameters> consumer);
 ```java
 @Sql("UPDATE sample SET name = :name WHERE id = :id")
 @SqlParameters(typeHints = {
-    @TypeHint(name = "name", type = AtomSqlType.STRING),
-    @TypeHint(name = "id", type = AtomSqlType.P_LONG),
+    @TypeHint(name = "name", type = "STRING"),
+    @TypeHint(name = "id", type = "P_LONG"),
 })
 public int updateSample(Consumer<SampleParameters> consumer);
 ```
@@ -457,12 +457,12 @@ CSV型を使用する場合
 ```java
 @Sql("SELECT * FROM sample WHERE id IN (:ids)")
 @SqlParameters(typeHints = {
-    @TypeHint(name = "ids", type = AtomSqlType.CSV, typeArgument=AtomSqlType.LONG),
+    @TypeHint(name = "ids", type = "CSV", typeArgument="LONG"),
 })
 public int updateSample(Consumer<SampleParameters> consumer);
 ```
 
-※インライン型ヒントはSQLの見通しが悪くなりがちなので、そのような場合は`@TypeHint`アノテーションを使用する
+※インライン型ヒントはSQLの見通しが悪くなりがちなので、そのような場合は`@TypeHint`アノテーションを使用する  
 
 ※型ヒントはあくまでヒントであり、SQL内のプレースホルダ全てに型ヒントが設定されていなくてもコンパイルエラーとはならないので指定漏れには注意が必要  
 
