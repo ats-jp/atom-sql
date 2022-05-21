@@ -40,7 +40,7 @@ public interface AtomSqlType {
 	 * @see BIG_DECIMAL
 	 * @see TypeHint
 	 */
-	public static final String BIG_DECIMAL = BIG_DECIMAL.class.getSimpleName();
+	public static final String BIG_DECIMAL = "BIG_DECIMAL";
 
 	/**
 	 * BINARY_STREAM<br>
@@ -48,7 +48,7 @@ public interface AtomSqlType {
 	 * @see BINARY_STREAM
 	 * @see TypeHint
 	 */
-	public static final String BINARY_STREAM = BINARY_STREAM.class.getSimpleName();
+	public static final String BINARY_STREAM = "BINARY_STREAM";
 
 	/**
 	 * BLOB<br>
@@ -56,7 +56,7 @@ public interface AtomSqlType {
 	 * @see BLOB
 	 * @see TypeHint
 	 */
-	public static final String BLOB = BLOB.class.getSimpleName();
+	public static final String BLOB = "BLOB";
 
 	/**
 	 * BOOLEAN<br>
@@ -64,7 +64,7 @@ public interface AtomSqlType {
 	 * @see BOOLEAN
 	 * @see TypeHint
 	 */
-	public static final String BOOLEAN = BOOLEAN.class.getSimpleName();
+	public static final String BOOLEAN = "BOOLEAN";
 
 	/**
 	 * BYTE_ARRAY<br>
@@ -72,7 +72,7 @@ public interface AtomSqlType {
 	 * @see BYTE_ARRAY
 	 * @see TypeHint
 	 */
-	public static final String BYTE_ARRAY = BYTE_ARRAY.class.getSimpleName();
+	public static final String BYTE_ARRAY = "BYTE_ARRAY";
 
 	/**
 	 * CHARACTER_STREAM<br>
@@ -80,7 +80,7 @@ public interface AtomSqlType {
 	 * @see CHARACTER_STREAM
 	 * @see TypeHint
 	 */
-	public static final String CHARACTER_STREAM = CHARACTER_STREAM.class.getSimpleName();
+	public static final String CHARACTER_STREAM = "CHARACTER_STREAM";
 
 	/**
 	 * CLOB<br>
@@ -88,7 +88,7 @@ public interface AtomSqlType {
 	 * @see CLOB
 	 * @see TypeHint
 	 */
-	public static final String CLOB = CLOB.class.getSimpleName();
+	public static final String CLOB = "CLOB";
 
 	/**
 	 * CSV<br>
@@ -96,7 +96,7 @@ public interface AtomSqlType {
 	 * @see CSV
 	 * @see TypeHint
 	 */
-	public static final String CSV = CSV.class.getSimpleName();
+	public static final String CSV = "CSV";
 
 	/**
 	 * DATE<br>
@@ -104,7 +104,7 @@ public interface AtomSqlType {
 	 * @see DATE
 	 * @see TypeHint
 	 */
-	public static final String DATE = DATE.class.getSimpleName();
+	public static final String DATE = "DATE";
 
 	/**
 	 * DATETIME<br>
@@ -112,7 +112,7 @@ public interface AtomSqlType {
 	 * @see DATETIME
 	 * @see TypeHint
 	 */
-	public static final String DATETIME = DATETIME.class.getSimpleName();
+	public static final String DATETIME = "DATETIME";
 
 	/**
 	 * DOUBLE<br>
@@ -120,7 +120,7 @@ public interface AtomSqlType {
 	 * @see DOUBLE
 	 * @see TypeHint
 	 */
-	public static final String DOUBLE = DOUBLE.class.getSimpleName();
+	public static final String DOUBLE = "DOUBLE";
 
 	/**
 	 * FLOAT<br>
@@ -128,7 +128,7 @@ public interface AtomSqlType {
 	 * @see FLOAT
 	 * @see TypeHint
 	 */
-	public static final String FLOAT = FLOAT.class.getSimpleName();
+	public static final String FLOAT = "FLOAT";
 
 	/**
 	 * INTEGER<br>
@@ -136,7 +136,7 @@ public interface AtomSqlType {
 	 * @see INTEGER
 	 * @see TypeHint
 	 */
-	public static final String INTEGER = INTEGER.class.getSimpleName();
+	public static final String INTEGER = "INTEGER";
 
 	/**
 	 * LONG<br>
@@ -144,7 +144,7 @@ public interface AtomSqlType {
 	 * @see LONG
 	 * @see TypeHint
 	 */
-	public static final String LONG = LONG.class.getSimpleName();
+	public static final String LONG = "LONG";
 
 	/**
 	 * OBJECT<br>
@@ -152,7 +152,7 @@ public interface AtomSqlType {
 	 * @see OBJECT
 	 * @see TypeHint
 	 */
-	public static final String OBJECT = OBJECT.class.getSimpleName();
+	public static final String OBJECT = "OBJECT";
 
 	/**
 	 * P_BOOLEAN<br>
@@ -160,7 +160,7 @@ public interface AtomSqlType {
 	 * @see P_BOOLEAN
 	 * @see TypeHint
 	 */
-	public static final String P_BOOLEAN = P_BOOLEAN.class.getSimpleName();
+	public static final String P_BOOLEAN = "P_BOOLEAN";
 
 	/**
 	 * P_DOUBLE<br>
@@ -168,7 +168,7 @@ public interface AtomSqlType {
 	 * @see P_DOUBLE
 	 * @see TypeHint
 	 */
-	public static final String P_DOUBLE = P_DOUBLE.class.getSimpleName();
+	public static final String P_DOUBLE = "P_DOUBLE";
 
 	/**
 	 * P_FLOAT<br>
@@ -176,7 +176,7 @@ public interface AtomSqlType {
 	 * @see P_FLOAT
 	 * @see TypeHint
 	 */
-	public static final String P_FLOAT = P_FLOAT.class.getSimpleName();
+	public static final String P_FLOAT = "P_FLOAT";
 
 	/**
 	 * P_INT<br>
@@ -184,7 +184,7 @@ public interface AtomSqlType {
 	 * @see P_INT
 	 * @see TypeHint
 	 */
-	public static final String P_INT = P_INT.class.getSimpleName();
+	public static final String P_INT = "P_INT";
 
 	/**
 	 * P_LONG<br>
@@ -192,7 +192,7 @@ public interface AtomSqlType {
 	 * @see P_LONG
 	 * @see TypeHint
 	 */
-	public static final String P_LONG = P_LONG.class.getSimpleName();
+	public static final String P_LONG = "P_LONG";
 
 	/**
 	 * STRING<br>
@@ -200,7 +200,7 @@ public interface AtomSqlType {
 	 * @see STRING
 	 * @see TypeHint
 	 */
-	public static final String STRING = STRING.class.getSimpleName();
+	public static final String STRING = "STRING";
 
 	/**
 	 * TIME<br>
@@ -208,7 +208,7 @@ public interface AtomSqlType {
 	 * @see TIME
 	 * @see TypeHint
 	 */
-	public static final String TIME = TIME.class.getSimpleName();
+	public static final String TIME = "TIME";
 
 	/**
 	 * この型に対応するJavaでの型を返します。
