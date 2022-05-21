@@ -37,7 +37,7 @@ public class P_BOOLEAN implements AtomSqlType {
 
 	@Override
 	public AtomSqlType toTypeArgument() {
-		return BOOLEAN.instance;
+		return jp.ats.atomsql.type.BOOLEAN.instance;
 	}
 
 	@Override

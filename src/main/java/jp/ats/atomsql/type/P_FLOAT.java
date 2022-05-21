@@ -37,7 +37,7 @@ public class P_FLOAT implements AtomSqlType {
 
 	@Override
 	public AtomSqlType toTypeArgument() {
-		return FLOAT.instance;
+		return jp.ats.atomsql.type.FLOAT.instance;
 	}
 
 	@Override

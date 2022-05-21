@@ -37,7 +37,7 @@ public class P_LONG implements AtomSqlType {
 
 	@Override
 	public AtomSqlType toTypeArgument() {
-		return LONG.instance;
+		return jp.ats.atomsql.type.LONG.instance;
 	}
 
 	@Override

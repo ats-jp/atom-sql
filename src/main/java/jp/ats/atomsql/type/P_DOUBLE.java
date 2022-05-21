@@ -37,7 +37,7 @@ public class P_DOUBLE implements AtomSqlType {
 
 	@Override
 	public AtomSqlType toTypeArgument() {
-		return DOUBLE.instance;
+		return jp.ats.atomsql.type.DOUBLE.instance;
 	}
 
 	@Override

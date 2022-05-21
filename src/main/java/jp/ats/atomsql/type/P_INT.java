@@ -37,7 +37,7 @@ public class P_INT implements AtomSqlType {
 
 	@Override
 	public AtomSqlType toTypeArgument() {
-		return INTEGER.instance;
+		return jp.ats.atomsql.type.INTEGER.instance;
 	}
 
 	@Override
