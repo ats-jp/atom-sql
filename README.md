@@ -446,8 +446,8 @@ public int updateSample(Consumer<SampleParameters> consumer);
 ```java
 @Sql("UPDATE sample SET name = :name WHERE id = :id")
 @SqlParameters(typeHints = {
-    @TypeHint(name = "name", type = "STRING"),
-    @TypeHint(name = "id", type = "P_LONG"),
+    @TypeHint(name = "name", type = AtomSqlType.STRING),
+    @TypeHint(name = "id", type = AtomSqlType.P_LONG),
 })
 public int updateSample(Consumer<SampleParameters> consumer);
 ```
@@ -457,7 +457,7 @@ CSV型を使用する場合
 ```java
 @Sql("SELECT * FROM sample WHERE id IN (:ids)")
 @SqlParameters(typeHints = {
-    @TypeHint(name = "ids", type = "CSV", typeArgument="LONG"),
+    @TypeHint(name = "ids", type = AtomSqlType.CSV, typeArgument=AtomSqlType.LONG),
 })
 public int updateSample(Consumer<SampleParameters> consumer);
 ```
