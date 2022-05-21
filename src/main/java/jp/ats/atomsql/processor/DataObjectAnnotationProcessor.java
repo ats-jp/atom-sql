@@ -218,15 +218,11 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 				return true;
 			}
 
-			if (contains(type))
+			if (AtomSqlTypeFactory.instance().canUseForResult(type))
 				return true;
 
 			return defaultAction(t, p);
 		}
-	}
-
-	private static boolean contains(TypeElement type) {
-		return ProcessorUtils.containsSameClass(type, AtomSqlTypeFactory.instance().nonPrimitiveTypes());
 	}
 
 	private static class ParameterTypeIsResultSetChecker extends SimpleTypeVisitor14<Boolean, Void> {

@@ -1,5 +1,7 @@
 package jp.ats.atomsql;
 
+import javax.lang.model.element.TypeElement;
+
 /**
  * @author 千葉 哲嗣
  */
@@ -37,10 +39,18 @@ public interface AtomSqlTypeFactory {
 	AtomSqlType typeArgumentOf(String name);
 
 	/**
-	 * プリミティブ型ではない使用可能な型の実際のクラス配列を返します。
-	 * @return プリミティブ型ではない使用可能な型の配列
+	 * プリミティブ型ではない型のうち、SQLにバインドする値として使用可能な型かどうかを返します。
+	 * @param parameterType {@link TypeElement}
+	 * @return SQLにバインドする値として使用可能な型の場合、true
 	 */
-	Class<?>[] nonPrimitiveTypes();
+	boolean canUseForParameter(TypeElement parameterType);
+
+	/**
+	 * プリミティブ型ではない型のうち、検索結果から取得する値として使用可能な型かどうかを返します。
+	 * @param resultType {@link TypeElement}
+	 * @return 検索結果から取得する値として使用可能な型の場合、true
+	 */
+	boolean canUseForResult(TypeElement resultType);
 
 	/**
 	 * 現在設定されているインスタンスを返します。

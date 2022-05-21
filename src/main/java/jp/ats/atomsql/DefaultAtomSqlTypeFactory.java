@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.lang.model.element.TypeElement;
+
 import jp.ats.atomsql.type.BIG_DECIMAL;
 import jp.ats.atomsql.type.BINARY_STREAM;
 import jp.ats.atomsql.type.BLOB;
@@ -29,7 +31,11 @@ import jp.ats.atomsql.type.P_LONG;
 import jp.ats.atomsql.type.STRING;
 import jp.ats.atomsql.type.TIME;
 
-class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
+/**
+ * {@link AtomSqlTypeFactory}のデフォルト実装です。
+ * @author 千葉 哲嗣
+ */
+public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 
 	private final Map<Class<?>, AtomSqlType> typeMap = new HashMap<>();
 
@@ -78,6 +84,9 @@ class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 		DATETIME.instance.type()
 	};
 
+	/**
+	 * singleton
+	 */
 	public static AtomSqlTypeFactory instance = new DefaultAtomSqlTypeFactory();
 
 	private DefaultAtomSqlTypeFactory() {
@@ -123,7 +132,17 @@ class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 	}
 
 	@Override
-	public Class<?>[] nonPrimitiveTypes() {
-		return nonPrimitiveTypes.clone();
+	public boolean canUseForParameter(TypeElement parameterType) {
+		return canUse(parameterType);
+	}
+
+	@Override
+	public boolean canUseForResult(TypeElement resultType) {
+		return canUse(resultType);
+	}
+
+	private boolean canUse(TypeElement type) {
+		var typeName = type.getQualifiedName().toString();
+		return Arrays.stream(nonPrimitiveTypes).filter(c -> typeName.equals(c.getCanonicalName())).findFirst().isPresent();
 	}
 }
