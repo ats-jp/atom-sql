@@ -257,7 +257,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 			var typeArgument = annotatedTypeArgument.or(
 				() -> f.typeArgumentHint.map(typeFactory::typeArgumentOf))
-				.map(t -> "<" + t.type().getName() + ">")
+				.map(t -> "<" + t.typeArgumentExpression() + ">")
 				.orElse("");
 
 			var field = "public "

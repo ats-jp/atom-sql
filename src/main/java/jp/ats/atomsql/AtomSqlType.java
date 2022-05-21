@@ -248,11 +248,19 @@ public interface AtomSqlType {
 	boolean nonThreadSafe();
 
 	/**
-	 * SQL内で使用するプレースホルダ文字列を返します。
+	 * SQL内で使用するプレースホルダ文字列表現を返します。
 	 * @param value
-	 * @return プレースホルダ文字列
+	 * @return プレースホルダ文字列表現
 	 */
 	default String placeholderExpression(Object value) {
 		return "?";
+	}
+
+	/**
+	 * この型が{@link CSV}の型パラメーターとして使用される場合の文字列表現を返します。
+	 * @return 型パラメーター文字列表現
+	 */
+	default String typeArgumentExpression() {
+		return type().getName();
 	}
 }
