@@ -61,11 +61,7 @@ public class PropertiesConfigure implements Configure {
 		if (typeFactoryClass == null) {
 			typeFactory = DefaultAtomSqlTypeFactory.instance;
 		} else {
-			try {
-				typeFactory = (AtomSqlTypeFactory) Class.forName(typeFactoryClass).getConstructor().newInstance();
-			} catch (Exception e) {
-				throw new IllegalStateException(e);
-			}
+			typeFactory = AtomSqlTypeFactory.newInstance(typeFactoryClass);
 		}
 	}
 

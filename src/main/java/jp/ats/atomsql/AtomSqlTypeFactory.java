@@ -62,4 +62,17 @@ public interface AtomSqlTypeFactory {
 	public static AtomSqlTypeFactory instance() {
 		return AtomSqlInitializer.configure().atomSqlTypeFactory();
 	}
+
+	/**
+	 * クラス名からインスタンスを生成します。
+	 * @param className {@link AtomSqlTypeFactory}を実装したクラス名
+	 * @return {@link AtomSqlTypeFactory}
+	 */
+	public static AtomSqlTypeFactory newInstance(String className) {
+		try {
+			return (AtomSqlTypeFactory) Class.forName(className, true, Thread.currentThread().getContextClassLoader()).getConstructor().newInstance();
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+	}
 }
