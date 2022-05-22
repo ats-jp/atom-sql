@@ -21,7 +21,7 @@ import jp.ats.atomsql.AtomSql;
 /**
  * @author 千葉 哲嗣
  */
-class ProcessorUtils {
+public class ProcessorUtils {
 
 	static boolean sameClass(TypeElement type, Class<?> clazz) {
 		return type.getQualifiedName().toString().equals(clazz.getCanonicalName());
@@ -45,7 +45,13 @@ class ProcessorUtils {
 
 	private static Path classOutputPath;
 
-	static synchronized Path getClassOutputPath(ProcessingEnvironment env) throws IOException {
+	/**
+	 * 内部使用
+	 * @param env
+	 * @return {@link Path}
+	 * @throws IOException
+	 */
+	public static synchronized Path getClassOutputPath(ProcessingEnvironment env) throws IOException {
 		//複数回getResource, createResourceするとエラーとなるので一度取得したパスを（コンパイル時なので）雑にキャッシュし利用する
 		if (classOutputPath != null) return classOutputPath;
 
@@ -57,10 +63,21 @@ class ProcessorUtils {
 		return classOutputPath;
 	}
 
-	static record PackageNameAndBinaryClassName(String packageName, String binaryClassName) {
+	/**
+	 * 内部使用
+	 * @param packageName 
+	 * @param binaryClassName 
+	 */
+	public static record PackageNameAndBinaryClassName(String packageName, String binaryClassName) {
 	}
 
-	static PackageNameAndBinaryClassName getPackageNameAndBinaryClassName(Element method, ProcessingEnvironment env) {
+	/**
+	 * 内部使用
+	 * @param method
+	 * @param env
+	 * @return {@link PackageNameAndBinaryClassName}
+	 */
+	public static PackageNameAndBinaryClassName getPackageNameAndBinaryClassName(Element method, ProcessingEnvironment env) {
 		var clazz = method.getEnclosingElement().accept(TypeConverter.instance, null);
 
 		PackageElement packageElement = getPackageElement(clazz);
@@ -70,23 +87,48 @@ class ProcessorUtils {
 			env.getElementUtils().getBinaryName(clazz).toString());
 	}
 
-	static ExecutableElement toExecutableElement(Element e) {
+	/**
+	 * 内部使用
+	 * @param e
+	 * @return {@link ExecutableElement}
+	 */
+	public static ExecutableElement toExecutableElement(Element e) {
 		return e.accept(MethodExtractor.instance, null);
 	}
 
-	static List<? extends TypeMirror> getTypeArgument(Element p) {
+	/**
+	 * 内部使用
+	 * @param p
+	 * @return {@link TypeMirror}
+	 */
+	public static List<? extends TypeMirror> getTypeArgument(Element p) {
 		return p.asType().accept(TypeArgumentsExtractor.instance, null);
 	}
 
-	static List<? extends TypeMirror> getTypeArgument(TypeMirror p) {
+	/**
+	 * 内部使用
+	 * @param p
+	 * @return {@link TypeMirror}
+	 */
+	public static List<? extends TypeMirror> getTypeArgument(TypeMirror p) {
 		return p.accept(TypeArgumentsExtractor.instance, null);
 	}
 
-	static Element toElement(TypeMirror type) {
+	/**
+	 * 内部使用
+	 * @param type
+	 * @return {@link Element}
+	 */
+	public static Element toElement(TypeMirror type) {
 		return type.accept(ElementConverter.instance, null);
 	}
 
-	static TypeElement toTypeElement(Element e) {
+	/**
+	 * 内部使用
+	 * @param e
+	 * @return {@link TypeElement}
+	 */
+	public static TypeElement toTypeElement(Element e) {
 		return e.accept(TypeConverter.instance, null);
 	}
 

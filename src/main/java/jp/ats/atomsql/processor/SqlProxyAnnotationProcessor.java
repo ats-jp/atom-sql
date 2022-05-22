@@ -283,7 +283,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return processConsumerType(p);
 			}
 
-			if (AtomSqlTypeFactory.instance().canUseForParameter(type))
+			if (AtomSqlTypeFactory.instance().canUseForParameter(type, processingEnv.getMessager()))
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, CSV.instance.type())) {
 				var argumentType = t.getTypeArguments().get(0);

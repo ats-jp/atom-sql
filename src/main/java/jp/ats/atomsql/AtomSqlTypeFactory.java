@@ -1,5 +1,6 @@
 package jp.ats.atomsql;
 
+import javax.annotation.processing.Messager;
 import javax.lang.model.element.TypeElement;
 
 /**
@@ -41,16 +42,18 @@ public interface AtomSqlTypeFactory {
 	/**
 	 * プリミティブ型ではない型のうち、SQLにバインドする値として使用可能な型かどうかを返します。
 	 * @param parameterType {@link TypeElement}
+	 * @param messager {@link Messager}
 	 * @return SQLにバインドする値として使用可能な型の場合、true
 	 */
-	boolean canUseForParameter(TypeElement parameterType);
+	boolean canUseForParameter(TypeElement parameterType, Messager messager);
 
 	/**
 	 * プリミティブ型ではない型のうち、検索結果から取得する値として使用可能な型かどうかを返します。
 	 * @param resultType {@link TypeElement}
+	 * @param messager {@link Messager}
 	 * @return 検索結果から取得する値として使用可能な型の場合、true
 	 */
-	boolean canUseForResult(TypeElement resultType);
+	boolean canUseForResult(TypeElement resultType, Messager messager);
 
 	/**
 	 * 現在設定されているインスタンスを返します。

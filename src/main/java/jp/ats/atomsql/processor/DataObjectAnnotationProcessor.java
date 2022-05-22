@@ -218,7 +218,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 				return true;
 			}
 
-			if (AtomSqlTypeFactory.instance().canUseForResult(type))
+			if (AtomSqlTypeFactory.instance().canUseForResult(type, processingEnv.getMessager()))
 				return true;
 
 			return defaultAction(t, p);
