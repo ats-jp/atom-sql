@@ -70,7 +70,10 @@ public interface AtomSqlTypeFactory {
 	 */
 	public static AtomSqlTypeFactory newInstance(String className) {
 		try {
-			return (AtomSqlTypeFactory) Class.forName(className, true, Thread.currentThread().getContextClassLoader()).getConstructor().newInstance();
+			return (AtomSqlTypeFactory) Class.forName(
+				className,
+				true,
+				AtomSqlTypeFactory.class.getClassLoader()/*AtomSqlTypeFactoryにキャストするため、同じクラスローダーを使用*/).getConstructor().newInstance();
 		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
