@@ -71,4 +71,22 @@ public interface AtomSqlTypeFactory {
 			throw new IllegalStateException(e);
 		}
 	}
+
+	/**
+	 * クラス名からインスタンスを生成します。<br>
+	 * Annotation Processor用
+	 * @param className {@link AtomSqlTypeFactory}を実装したクラス名
+	 * @return {@link AtomSqlTypeFactory}
+	 */
+	public static AtomSqlTypeFactory newInstanceForProcessor(String className) {
+		if (className == null || className.isBlank()) return DefaultAtomSqlTypeFactory.instance;
+		try {
+			return (AtomSqlTypeFactory) Class.forName(
+				className,
+				true,
+				AtomSqlTypeFactory.class.getClassLoader()).getConstructor().newInstance();
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+	}
 }

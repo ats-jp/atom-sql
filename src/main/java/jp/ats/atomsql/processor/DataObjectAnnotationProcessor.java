@@ -64,7 +64,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 	 * 
 	 */
 	public DataObjectAnnotationProcessor() {
-		typeFactory = AtomSqlTypeFactory.newInstance(AtomSqlInitializer.configure().atomSqlTypeFactoryClass());
+		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().atomSqlTypeFactoryClass());
 	}
 
 	@Override

@@ -84,7 +84,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 	 * 
 	 */
 	public SqlProxyAnnotationProcessor() {
-		typeFactory = AtomSqlTypeFactory.newInstance(AtomSqlInitializer.configure().atomSqlTypeFactoryClass());
+		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().atomSqlTypeFactoryClass());
 	}
 
 	@Override
