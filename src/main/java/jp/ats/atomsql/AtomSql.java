@@ -96,6 +96,8 @@ public class AtomSql {
 
 	static final Log log = LogFactory.getLog(AtomSql.class);
 
+	private final AtomSqlTypeFactory typeFactory;
+
 	private final SqlLogger sqlLogger;
 
 	private static final String packageName = AtomSql.class.getPackageName();
@@ -137,6 +139,7 @@ public class AtomSql {
 	 * @param endpoints {@link Endpoints}
 	 */
 	public AtomSql(Endpoints endpoints) {
+		typeFactory = AtomSqlTypeFactory.newInstance(configure().atomSqlTypeFactoryClass());
 		sqlLogger = SqlLogger.instance();
 		this.endpoints = Objects.requireNonNull(endpoints);
 	}
@@ -148,11 +151,13 @@ public class AtomSql {
 	 * @param base コピー元
 	 */
 	public AtomSql(AtomSql base) {
+		typeFactory = base.typeFactory;
 		sqlLogger = base.sqlLogger;
 		this.endpoints = base.endpoints;
 	}
 
 	AtomSql() {
+		typeFactory = AtomSqlTypeFactory.newInstance(configure().atomSqlTypeFactoryClass());
 		sqlLogger = SqlLogger.instance();
 
 		endpoints = new Endpoints(new Endpoint() {
@@ -292,6 +297,7 @@ public class AtomSql {
 						names.toArray(String[]::new),
 						find.dataObject(),
 						values.toArray(Object[]::new),
+						typeFactory,
 						mySqlLogger);
 				} else {
 					helper = new SqlProxyHelper(
@@ -301,6 +307,7 @@ public class AtomSql {
 						find.parameters(),
 						find.dataObject(),
 						args,
+						typeFactory,
 						mySqlLogger);
 				}
 
@@ -533,6 +540,7 @@ public class AtomSql {
 			new String[0],
 			Object.class,
 			new Object[0],
+			typeFactory,
 			sqlLogger);
 	}
 
@@ -572,6 +580,8 @@ public class AtomSql {
 
 		private final Class<?> dataObjectClass;
 
+		private final AtomSqlTypeFactory typeFactory;
+
 		private final SqlLogger sqlLogger;
 
 		private Set<String> confidentials(String[] confidentials, String[] parameterNames) {
@@ -592,9 +602,11 @@ public class AtomSql {
 			String[] parameterNames,
 			Class<?> dataObjectClass,
 			Object[] args,
+			AtomSqlTypeFactory typeFactory,
 			SqlLogger sqlLogger) {
 			this.entry = entry;
 			this.dataObjectClass = dataObjectClass;
+			this.typeFactory = typeFactory;
 			this.sqlLogger = sqlLogger;
 
 			Map<String, Object> argMap = new LinkedHashMap<>();
@@ -614,7 +626,7 @@ public class AtomSql {
 
 				var value = argMap.get(f.placeholder);
 
-				var type = AtomSqlTypeFactory.instance().selectForPreparedStatement(value);
+				var type = typeFactory.selectForPreparedStatement(value);
 
 				elements.add(
 					new Placeholder(
@@ -635,6 +647,7 @@ public class AtomSql {
 			this.sql = base.sql;
 			this.entry = base.entry;
 			this.dataObjectClass = newDataObjectClass;
+			this.typeFactory = base.typeFactory;
 			this.sqlLogger = base.sqlLogger;
 		}
 
@@ -644,6 +657,7 @@ public class AtomSql {
 			this.sql = sql;
 			this.entry = main.entry;
 			this.dataObjectClass = main.dataObjectClass;
+			this.typeFactory = main.typeFactory;
 			this.sqlLogger = main.sqlLogger;
 		}
 
@@ -696,7 +710,7 @@ public class AtomSql {
 					needsOptional = true;
 				}
 
-				var type = AtomSqlTypeFactory.instance().selectForResultSet(parameterType);
+				var type = typeFactory.selectForResultSet(parameterType);
 				try {
 					var value = type.get(rs, parameterName);
 					parameters[i] = needsOptional ? Optional.ofNullable(value) : value;
@@ -733,7 +747,7 @@ public class AtomSql {
 					needsOptional = true;
 				}
 
-				var type = AtomSqlTypeFactory.instance().selectForResultSet(fieldType);
+				var type = typeFactory.selectForResultSet(fieldType);
 
 				try {
 					var value = type.get(rs, fieldName);
@@ -782,7 +796,7 @@ public class AtomSql {
 		public void setValues(PreparedStatement ps) throws SQLException {
 			int[] i = { 1 };
 			sql.placeholders(p -> {
-				i[0] = p.type().bind(i[0], ps, p.value());
+				i[0] = p.type().bind(i[0], ps, p.value(), typeFactory);
 			});
 
 			sqlLogger.perform(log -> {

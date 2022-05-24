@@ -62,6 +62,8 @@ import jp.ats.atomsql.type.CSV;
 @SupportedSourceVersion(SourceVersion.RELEASE_16)
 public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
+	private final AtomSqlTypeFactory typeFactory;
+
 	private final TypeNameExtractor typeNameExtractor = new TypeNameExtractor(() -> SqlProxyAnnotationProcessor.super.processingEnv);
 
 	private final SqlProxyAnnotationProcessorMethodVisitor methodVisitor = new SqlProxyAnnotationProcessorMethodVisitor();
@@ -76,6 +78,13 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 	static {
 		AtomSqlInitializer.initializeIfUninitialized();
+	}
+
+	/**
+	 * 
+	 */
+	public SqlProxyAnnotationProcessor() {
+		typeFactory = AtomSqlTypeFactory.newInstance(AtomSqlInitializer.configure().atomSqlTypeFactoryClass());
 	}
 
 	@Override
@@ -283,7 +292,7 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 				return processConsumerType(p);
 			}
 
-			if (AtomSqlTypeFactory.instance().canUseForParameter(type, processingEnv.getMessager()))
+			if (typeFactory.canUseForParameter(type, processingEnv.getMessager()))
 				return DEFAULT_VALUE;
 			if (ProcessorUtils.sameClass(type, CSV.instance.type())) {
 				var argumentType = t.getTypeArguments().get(0);

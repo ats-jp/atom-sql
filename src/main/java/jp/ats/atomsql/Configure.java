@@ -33,7 +33,7 @@ public interface Configure {
 	boolean usesQualifier();
 
 	/**
-	 * @return {@link AtomSqlTypeFactory}のインスタンス
+	 * @return {@link AtomSqlTypeFactory}のFQCN
 	 */
-	AtomSqlTypeFactory atomSqlTypeFactory();
+	String atomSqlTypeFactoryClass();
 }

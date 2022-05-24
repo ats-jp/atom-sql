@@ -56,24 +56,17 @@ public interface AtomSqlTypeFactory {
 	boolean canUseForResult(TypeElement resultType, Messager messager);
 
 	/**
-	 * 現在設定されているインスタンスを返します。
-	 * @return {@link AtomSqlTypeFactory}
-	 */
-	public static AtomSqlTypeFactory instance() {
-		return AtomSqlInitializer.configure().atomSqlTypeFactory();
-	}
-
-	/**
 	 * クラス名からインスタンスを生成します。
 	 * @param className {@link AtomSqlTypeFactory}を実装したクラス名
 	 * @return {@link AtomSqlTypeFactory}
 	 */
 	public static AtomSqlTypeFactory newInstance(String className) {
+		if (className == null || className.isBlank()) return DefaultAtomSqlTypeFactory.instance;
 		try {
 			return (AtomSqlTypeFactory) Class.forName(
 				className,
 				true,
-				AtomSqlTypeFactory.class.getClassLoader()/*AtomSqlTypeFactoryにキャストするため、同じクラスローダーを使用*/).getConstructor().newInstance();
+				Thread.currentThread().getContextClassLoader()).getConstructor().newInstance();
 		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}

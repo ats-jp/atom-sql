@@ -6,6 +6,7 @@ import java.sql.SQLException;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * {@link Integer}
@@ -26,7 +27,7 @@ public class INTEGER implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value) {
+	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
 		try {
 			statement.setInt(index, (int) value);
 			return index + 1;

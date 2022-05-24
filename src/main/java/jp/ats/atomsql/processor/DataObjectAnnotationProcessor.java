@@ -44,6 +44,8 @@ import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 @SupportedSourceVersion(SourceVersion.RELEASE_16)
 public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
+	private final AtomSqlTypeFactory typeFactory;
+
 	private final TypeNameExtractor typeNameExtractor = new TypeNameExtractor(() -> DataObjectAnnotationProcessor.super.processingEnv);
 
 	private final DataObjectAnnotationProcessorMethodVisitor methodVisitor = new DataObjectAnnotationProcessorMethodVisitor();
@@ -56,6 +58,13 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
 	static {
 		AtomSqlInitializer.initializeIfUninitialized();
+	}
+
+	/**
+	 * 
+	 */
+	public DataObjectAnnotationProcessor() {
+		typeFactory = AtomSqlTypeFactory.newInstance(AtomSqlInitializer.configure().atomSqlTypeFactoryClass());
 	}
 
 	@Override
@@ -218,7 +227,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 				return true;
 			}
 
-			if (AtomSqlTypeFactory.instance().canUseForResult(type, processingEnv.getMessager()))
+			if (typeFactory.canUseForResult(type, processingEnv.getMessager()))
 				return true;
 
 			return defaultAction(t, p);

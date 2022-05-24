@@ -7,6 +7,7 @@ import java.sql.SQLException;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * {@link Clob}
@@ -27,7 +28,7 @@ public class CLOB implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value) {
+	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
 		try {
 			statement.setClob(index, (Clob) value);
 			return index + 1;

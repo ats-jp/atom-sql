@@ -35,7 +35,7 @@ public class PropertiesConfigure implements Configure {
 	 */
 	private final boolean usesQualifier;
 
-	private final AtomSqlTypeFactory typeFactory;
+	private final String typeFactoryClass;
 
 	/**
 	 * クラスパスのルートにあるatom-sql.propertiesから設定を読み込みインスタンスを作成します。
@@ -56,13 +56,7 @@ public class PropertiesConfigure implements Configure {
 
 		usesQualifier = Boolean.valueOf(config.getProperty("use-qualifier", "false"));
 
-		var typeFactoryClass = config.getProperty("type-factory-class", null);
-
-		if (typeFactoryClass == null) {
-			typeFactory = DefaultAtomSqlTypeFactory.instance;
-		} else {
-			typeFactory = AtomSqlTypeFactory.newInstance(typeFactoryClass);
-		}
+		typeFactoryClass = config.getProperty("type-factory-class", null);
 	}
 
 	@Override
@@ -81,7 +75,7 @@ public class PropertiesConfigure implements Configure {
 	}
 
 	@Override
-	public AtomSqlTypeFactory atomSqlTypeFactory() {
-		return typeFactory;
+	public String atomSqlTypeFactoryClass() {
+		return typeFactoryClass;
 	}
 }

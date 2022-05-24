@@ -2,7 +2,6 @@ package jp.ats.atomsql;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -50,10 +49,7 @@ public class Csv<T> {
 	private final List<T> values;
 
 	private Csv(Stream<T> stream) {
-		List<T> values = new LinkedList<>();
-		stream.forEach(e -> checkAndAdd(e, values));
-
-		this.values = Collections.unmodifiableList(values);
+		this.values = Collections.unmodifiableList(stream.toList());
 	}
 
 	/**
@@ -61,15 +57,5 @@ public class Csv<T> {
 	 */
 	public List<T> values() {
 		return values;
-	}
-
-	private static <T> void checkAndAdd(T value, List<T> values) {
-		//Csvの中にCsvは不可
-		if (value instanceof Csv) throw new IllegalArgumentException("Csv cannot be used for Csv elements");
-
-		var type = AtomSqlTypeFactory.instance().selectForPreparedStatement(value);
-
-		if (type.nonThreadSafe()) throw new NonThreadSafeException();
-		values.add(value);
 	}
 }

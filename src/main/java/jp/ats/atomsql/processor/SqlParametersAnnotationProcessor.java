@@ -42,6 +42,8 @@ import jp.ats.atomsql.type.OBJECT;
 @SuppressWarnings("javadoc")
 public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
+	private final AtomSqlTypeFactory typeFactory;
+
 	// 二重作成防止チェッカー
 	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
 	private final Set<String> alreadyCreatedFiles = new HashSet<>();
@@ -80,6 +82,13 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 	static {
 		AtomSqlInitializer.initializeIfUninitialized();
+	}
+
+	/**
+	 * 
+	 */
+	public SqlParametersAnnotationProcessor() {
+		typeFactory = AtomSqlTypeFactory.newInstance(AtomSqlInitializer.configure().atomSqlTypeFactoryClass());
 	}
 
 	@Override
@@ -241,8 +250,6 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 			dubplicateChecker.add(f.placeholder);
 
 			var annotatedHint = annotatedHints.get(f.placeholder);
-
-			var typeFactory = AtomSqlTypeFactory.instance();
 
 			Optional<AtomSqlType> annotatedHintType;
 			Optional<AtomSqlType> annotatedTypeArgument;

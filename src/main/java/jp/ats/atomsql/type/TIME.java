@@ -8,6 +8,7 @@ import java.time.LocalTime;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * {@link LocalTime}
@@ -28,7 +29,7 @@ public class TIME implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value) {
+	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
 		try {
 			statement.setTime(index, Time.valueOf((LocalTime) value));
 			return index + 1;

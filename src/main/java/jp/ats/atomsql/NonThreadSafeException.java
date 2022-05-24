@@ -10,7 +10,10 @@ public class NonThreadSafeException extends RuntimeException {
 
 	private static final long serialVersionUID = -9143790236887713121L;
 
-	NonThreadSafeException() {
+	/**
+	 * 単一のコンストラクタです。
+	 */
+	public NonThreadSafeException() {
 		super(NonThreadSafe.class.getName() + " values can only be used within " + AtomSql.class.getName() + "#tryNonThreadSafe");
 	}
 }
