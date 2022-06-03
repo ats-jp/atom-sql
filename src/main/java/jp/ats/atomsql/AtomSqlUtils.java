@@ -2,8 +2,10 @@ package jp.ats.atomsql;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,8 +26,8 @@ public class AtomSqlUtils {
 	}
 
 	public static byte[] readBytes(InputStream in) throws IOException {
-		byte[] concat = BYTE_EMPTY_ARRAY;
-		byte[] b = new byte[BUFFER_SIZE];
+		var concat = BYTE_EMPTY_ARRAY;
+		var b = new byte[BUFFER_SIZE];
 		int readed;
 		while ((readed = in.read(b, 0, BUFFER_SIZE)) > 0) {
 			concat = concatByteArray(concat, concat.length, b, readed);
@@ -34,7 +36,17 @@ public class AtomSqlUtils {
 	}
 
 	public static List<Class<?>> loadProxyClasses() throws IOException {
-		try (var proxyList = AtomSqlUtils.class.getClassLoader().getResourceAsStream(Constants.PROXY_LIST)) {
+		List<Class<?>> result = new LinkedList<>();
+		var enumeration = AtomSqlUtils.class.getClassLoader().getResources(Constants.PROXY_LIST);
+		while (enumeration.hasMoreElements()) {
+			result.addAll(loadProxyClasses(enumeration.nextElement()));
+		}
+
+		return result;
+	}
+
+	private static List<Class<?>> loadProxyClasses(URL url) throws IOException {
+		try (var proxyList = url.openStream()) {
 			if (proxyList == null) return Collections.emptyList();
 
 			return Arrays.stream(new String(AtomSqlUtils.readBytes(proxyList), Constants.CHARSET).split("\\s+")).map(l -> {
@@ -61,7 +73,7 @@ public class AtomSqlUtils {
 	}
 
 	private static byte[] concatByteArray(byte[] array1, int lengthof1, byte[] array2, int lengthof2) {
-		byte[] concat = new byte[lengthof1 + lengthof2];
+		var concat = new byte[lengthof1 + lengthof2];
 		System.arraycopy(array1, 0, concat, 0, lengthof1);
 		System.arraycopy(array2, 0, concat, lengthof1, lengthof2);
 		return concat;
