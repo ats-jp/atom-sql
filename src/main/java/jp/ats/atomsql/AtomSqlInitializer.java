@@ -1,7 +1,7 @@
 package jp.ats.atomsql;
 
 /**
- * 
+ * 内部使用クラス
  */
 public class AtomSqlInitializer {
 
