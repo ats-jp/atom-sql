@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,12 +84,27 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 				}
 
 				var visitor = new MyVisitor();
+				List<Element> recordConstructors = new LinkedList<>();
 				e.getEnclosedElements().forEach(enc -> {
-					enc.accept(visitor, null);
+					enc.accept(visitor, recordConstructors);
 				});
 
 				//レコードの場合、コンストラクタの引数名称を保存
 				if (kind == ElementKind.RECORD) {
+					if (recordConstructors.size() > 1) {
+						//レコードのコンストラクタが複数名ある場合、パラメーター名がarg0, arg1のようになってしまうため、単一であることを強制する
+						//レコードのコンストラクタは単一である必要があります
+						recordConstructors.forEach(c -> {
+							//EclipseではrecordにErrorを設定できないので余計なコンストラクタ側にErrorを設定する
+							error("There must be a single constructor of record", c);
+						});
+
+						//EclipseではrecordにErrorを設定できないが、将来修正された時の為に一応Errorを設定しておく
+						error("There must be a single constructor of record", e);
+
+						return;
+					}
+
 					builder.build(e);
 				}
 
@@ -150,19 +166,22 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 		return "@OptionalData(name = \"" + entry.getKey() + "\", type = " + entry.getValue().getQualifiedName() + ".class)";
 	}
 
-	private class MyVisitor extends SimpleElementVisitor14<Boolean, Void> {
+	private class MyVisitor extends SimpleElementVisitor14<Boolean, List<Element>> {
 
 		private final ResultTypeChecker resultTypeChecker = new ResultTypeChecker();
 
 		@Override
-		public Boolean visitExecutable(ExecutableElement e, Void p) {
+		public Boolean visitExecutable(ExecutableElement e, List<Element> p) {
 			//コンストラクタ以外はスキップ
 			if (!"<init>".equals(e.getSimpleName().toString()))
 				return true;
 
 			//レコードのコンストラクタの場合はスキップ
-			if (e.getEnclosingElement().getKind() == ElementKind.RECORD)
+			if (e.getEnclosingElement().getKind() == ElementKind.RECORD) {
+				//レコードコンストラクタの数を数える目的で追加
+				p.add(e);
 				return true;
+			}
 
 			var params = e.getParameters();
 
@@ -189,12 +208,12 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 		}
 
 		@Override
-		public Boolean visitRecordComponent(RecordComponentElement e, Void p) {
+		public Boolean visitRecordComponent(RecordComponentElement e, List<Element> p) {
 			return e.asType().accept(resultTypeChecker, e);
 		}
 
 		@Override
-		public Boolean visitVariable(VariableElement e, Void p) {
+		public Boolean visitVariable(VariableElement e, List<Element> p) {
 			return e.asType().accept(resultTypeChecker, e);
 		}
 	}

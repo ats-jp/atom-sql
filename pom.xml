@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>jp.ats</groupId>
 	<artifactId>atom-sql</artifactId>
-	<version>0.4.3</version>
+	<version>0.4.4</version>
 	<name>Atom SQL</name>
 	<description>A JDBC wrapper with SQL injection resistant</description>
 
