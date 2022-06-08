@@ -436,7 +436,7 @@ public class Atom<T> {
 		for (int i = 0; i < atoms.length; i++) {
 			var atom = atoms[i];
 
-			var pattern = Pattern.compile("/\\*\\$\\{" + i + "\\}\\*/");
+			var pattern = pattern(String.valueOf(i));
 			sql = sql.put(pattern, atom.helper().sql);
 		}
 
@@ -451,7 +451,28 @@ public class Atom<T> {
 	 * 変数の書式は /*${<i>キーワード</i>}*&#47; です。<br>
 	 * キーワードにはJavaの識別子と同じ規則が適用され、規則に反する場合には例外がスローされます。<br>
 	 * キーワードのスペルミスを防ぎたい場合は、{@link SqlInterpolation}機能の使用を検討してください。
-	 * @param atoms プレースホルダをキー、{@link Atom}を値として格納したマップ
+	 * @param keyword 変数名
+	 * @param atom 展開する{@link Atom}
+	 * @return 展開された新しい{@link Atom}
+	 */
+	public Atom<T> put(String keyword, Atom<?> atom) {
+		var helper = helper();
+		var sql = helper.sql;
+
+		var pattern = pattern(Objects.requireNonNull(keyword));
+
+		return new Atom<T>(
+			atomSql,
+			new SqlProxyHelper(sql.put(pattern, atom.helper().sql), helper),
+			true);
+	}
+
+	/**
+	 * この{@link Atom}の持つSQL文内のこのメソッド専用変数に、パラメータで回収する{@link Atom}のもつSQL文を展開します。<br>
+	 * 変数の書式は /*${<i>キーワード</i>}*&#47; です。<br>
+	 * キーワードにはJavaの識別子と同じ規則が適用され、規則に反する場合には例外がスローされます。<br>
+	 * キーワードのスペルミスを防ぎたい場合は、{@link SqlInterpolation}機能の使用を検討してください。
+	 * @param atoms 変数名をキー、{@link Atom}を値として格納したマップ
 	 * @return 展開された新しい{@link Atom}
 	 */
 	public Atom<T> put(Map<String, Atom<?>> atoms) {
@@ -461,7 +482,7 @@ public class Atom<T> {
 		atoms.entrySet().stream().forEach(e -> {
 			var atom = e.getValue();
 
-			var pattern = Pattern.compile("/\\*\\$\\{" + Objects.requireNonNull(e.getKey()) + "\\}\\*/");
+			var pattern = pattern(Objects.requireNonNull(e.getKey()));
 			sql[0] = sql[0].put(pattern, atom.helper().sql);
 		});
 
@@ -469,6 +490,10 @@ public class Atom<T> {
 			atomSql,
 			new SqlProxyHelper(sql[0], helper),
 			true);
+	}
+
+	private static Pattern pattern(String keyword) {
+		return Pattern.compile("/\\*\\$\\{" + keyword + "\\}\\*/");
 	}
 
 	/**
