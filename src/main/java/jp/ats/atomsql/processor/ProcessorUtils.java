@@ -9,6 +9,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.UnknownElementException;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
@@ -27,15 +28,19 @@ public class ProcessorUtils {
 		return type.getQualifiedName().toString().equals(clazz.getCanonicalName());
 	}
 
-	static PackageElement getPackageElement(TypeElement clazz) {
+	static String getPackageName(TypeElement clazz) {
 		Element enclosing = clazz;
 		PackageElement packageElement = null;
-		do {
-			enclosing = enclosing.getEnclosingElement();
-			packageElement = enclosing.accept(PackageExtractor.instance, null);
-		} while (packageElement == null);
+		try {
+			do {
+				enclosing = enclosing.getEnclosingElement();
+				packageElement = enclosing.accept(PackageExtractor.instance, null);
+			} while (packageElement == null);
+		} catch (UnknownElementException e) {
+			return "";
+		}
 
-		return packageElement;
+		return packageElement.getQualifiedName().toString();
 	}
 
 	/**
@@ -80,10 +85,8 @@ public class ProcessorUtils {
 	public static PackageNameAndBinaryClassName getPackageNameAndBinaryClassName(Element method, ProcessingEnvironment env) {
 		var clazz = method.getEnclosingElement().accept(TypeConverter.instance, null);
 
-		PackageElement packageElement = getPackageElement(clazz);
-
 		return new PackageNameAndBinaryClassName(
-			packageElement.getQualifiedName().toString(),
+			getPackageName(clazz),
 			env.getElementUtils().getBinaryName(clazz).toString());
 	}
 

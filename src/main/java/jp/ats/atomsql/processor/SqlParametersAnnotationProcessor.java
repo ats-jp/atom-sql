@@ -188,7 +188,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 			var clazz = ProcessorUtils.toTypeElement(element);
 			var className = clazz.getQualifiedName().toString();
 
-			generatePackageName = ProcessorUtils.getPackageElement(clazz).getQualifiedName().toString();
+			generatePackageName = ProcessorUtils.getPackageName(clazz);
 
 			generateClassName = AtomSqlUtils.extractSimpleClassName(className, generatePackageName);
 		}
