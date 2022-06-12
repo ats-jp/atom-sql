@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.annotation.processing.Messager;
 import javax.lang.model.element.TypeElement;
 
 import jp.ats.atomsql.type.BIG_DECIMAL;
@@ -133,12 +132,12 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 	}
 
 	@Override
-	public boolean canUseForParameter(TypeElement parameterType, Messager messager) {
+	public boolean canUseForParameter(TypeElement parameterType) {
 		return canUse(parameterType);
 	}
 
 	@Override
-	public boolean canUseForResult(TypeElement resultType, Messager messager) {
+	public boolean canUseForResult(TypeElement resultType) {
 		return canUse(resultType);
 	}
 

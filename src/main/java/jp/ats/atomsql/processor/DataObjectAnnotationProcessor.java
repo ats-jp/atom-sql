@@ -26,6 +26,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor14;
@@ -92,7 +93,7 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 				//レコードの場合、コンストラクタの引数名称を保存
 				if (kind == ElementKind.RECORD) {
 					if (recordConstructors.size() > 1) {
-						//レコードのコンストラクタが複数名ある場合、パラメーター名がarg0, arg1のようになってしまうため、単一であることを強制する
+						//レコードのコンストラクタが複数ある場合、パラメーター名がarg0, arg1のようになってしまうため、単一であることを強制する
 						//レコードのコンストラクタは単一である必要があります
 						recordConstructors.forEach(c -> {
 							//EclipseではrecordにErrorを設定できないので余計なコンストラクタ側にErrorを設定する
@@ -242,11 +243,22 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 			var type = ProcessorUtils.toTypeElement(t.asElement());
 
 			if (ProcessorUtils.sameClass(type, Optional.class)) {
-				optionals.put(p.getSimpleName(), ProcessorUtils.toTypeElement(ProcessorUtils.toElement(t.getTypeArguments().get(0))));
+				var arg = t.getTypeArguments().get(0);
+
+				if (arg.getKind() == TypeKind.WILDCARD) {
+					return defaultAction(t, p);
+				}
+
+				var argType = ProcessorUtils.toTypeElement(ProcessorUtils.toElement(arg));
+				if (!typeFactory.canUseForResult(argType))
+					return defaultAction(t, p);
+
+				optionals.put(p.getSimpleName(), argType);
+
 				return true;
 			}
 
-			if (typeFactory.canUseForResult(type, processingEnv.getMessager()))
+			if (typeFactory.canUseForResult(type))
 				return true;
 
 			return defaultAction(t, p);

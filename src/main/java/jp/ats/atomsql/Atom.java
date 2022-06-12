@@ -218,6 +218,40 @@ public class Atom<T> {
 	}
 
 	/**
+	 * {@link DataObject}の型を強制的にセットし、検索結果を取得します。
+	 * @see #stream()
+	 * @see #apply(Class)
+	 * @param dataObjectClass データオブジェクトの型
+	 * @return {@DataObject}付与結果オブジェクトの{@link Stream}
+	 */
+	public <R> Stream<R> stream(Class<R> dataObjectClass) {
+		return apply(dataObjectClass).stream();
+	}
+
+	/**
+	 * {@link DataObject}の型を強制的にセットし、検索結果を取得します。
+	 * @see #list()
+	 * @see #apply(Class)
+	 * @param dataObjectClass データオブジェクトの型
+	 * @return {@DataObject}付与結果オブジェクトの{@link List}
+	 */
+	public <R> List<R> list(Class<R> dataObjectClass) {
+		return apply(dataObjectClass).list();
+	}
+
+	/**
+	 * {@link DataObject}の型を強制的にセットし、検索結果を取得します。
+	 * @see #get()
+	 * @see #apply(Class)
+	 * @param dataObjectClass データオブジェクトの型
+	 * @return {@link DataObject}付与型の結果オブジェクト
+	 * @throws IllegalStateException 検索結果が2件以上ある場合
+	 */
+	public <R> Optional<R> get(Class<R> dataObjectClass) {
+		return apply(dataObjectClass).get();
+	}
+
+	/**
 	 * データオブジェクトの型を持たない{@link Atom}から、データオブジェクトの型を与えたインスタンスを新たに生成します。
 	 * @param <R> {@link DataObject}が付与された型
 	 * @param dataObjectClass {@link DataObject}が付与されたクラスオブジェクト
