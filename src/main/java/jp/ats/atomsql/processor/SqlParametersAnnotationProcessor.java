@@ -102,6 +102,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 				var listFile = super.processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", Constants.PARAMETERS_LIST);
 				try (var input = listFile.openInputStream()) {
 					Arrays.stream(new String(AtomSqlUtils.readBytes(input), Constants.CHARSET).split("\\s+"))
+						.filter(l -> l.length() > 0)//空の場合スキップ
 						.map(l -> new MethodInfo(l))
 						.forEach(i -> allParameters.put(i.parametersClass, i));
 				}
