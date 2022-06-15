@@ -1,5 +1,7 @@
 package jp.ats.atomsql;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -18,23 +20,40 @@ public class PlaceholderFinder {
 	private static final Pattern pattern = Pattern.compile(":([^\\s[\\p{Punct}&&[^_$]]]+)(?:/\\*([A-Z_]+)(?:<([A-Z_]+)>|)\\*/|)");
 
 	public static String execute(String sql, Consumer<Found> placeholderConsumer) {
+		//誤検出分保管
+		List<String> pseudoMatches = new LinkedList<>();
 		while (true) {
 			var matcher = pattern.matcher(sql);
 
 			if (!matcher.find())
 				break;
 
-			var found = new Found();
-
-			found.gap = sql.substring(0, matcher.start());
-
-			sql = sql.substring(matcher.end());
+			var gap = sql.substring(0, matcher.start());
 
 			var matched = matcher.group(1);
 
-			if (!SourceVersion.isIdentifier(matched) || SourceVersion.isKeyword(matched)) continue;
+			var matchedAll = matcher.group();
 
-			found.all = matcher.group();
+			sql = sql.substring(matcher.end());
+
+			if (!SourceVersion.isIdentifier(matched) || SourceVersion.isKeyword(matched)) {
+				pseudoMatches.add(gap);
+				pseudoMatches.add(matchedAll);
+				continue;
+			}
+
+			var found = new Found();
+
+			//溜まった誤検出分を追加
+			if (pseudoMatches.size() > 0) {
+				pseudoMatches.add(gap);
+				gap = String.join("", pseudoMatches);
+				pseudoMatches.clear();
+			}
+
+			found.gap = gap;
+
+			found.all = matchedAll;
 
 			found.placeholder = matched;
 
@@ -43,6 +62,12 @@ public class PlaceholderFinder {
 			found.typeArgumentHint = Optional.ofNullable(matcher.group(3));
 
 			placeholderConsumer.accept(found);
+		}
+
+		//溜まった誤検出分を追加
+		if (pseudoMatches.size() > 0) {
+			pseudoMatches.add(sql);
+			return String.join("", pseudoMatches);
 		}
 
 		return sql;
