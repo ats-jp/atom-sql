@@ -84,9 +84,21 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 					return;
 				}
 
+				var elements = e.getEnclosedElements();
+
+				var detector = new ResultSetConstructorTypeDetector();
+				for (var enc : elements) {
+					if (enc.accept(detector, null)) {
+						if (kind != ElementKind.RECORD) {
+							//パラメータがResultSetのみのコンストラクタがありrecordではない場合、フィールドはどのような型でも自由なので検査しない
+							return;
+						}
+					}
+				}
+
 				var visitor = new MyVisitor();
 				List<Element> recordConstructors = new LinkedList<>();
-				e.getEnclosedElements().forEach(enc -> {
+				elements.forEach(enc -> {
 					enc.accept(visitor, recordConstructors);
 				});
 
@@ -167,6 +179,30 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 		return "@OptionalData(name = \"" + entry.getKey() + "\", type = " + entry.getValue().getQualifiedName() + ".class)";
 	}
 
+	private class ResultSetConstructorTypeDetector extends SimpleElementVisitor14<Boolean, Void> {
+
+		@Override
+		protected Boolean defaultAction(Element e, Void p) {
+			return false;
+		}
+
+		@Override
+		public Boolean visitExecutable(ExecutableElement e, Void p) {
+			//コンストラクタ以外はスキップ
+			if (!"<init>".equals(e.getSimpleName().toString()))
+				return false;
+
+			var params = e.getParameters();
+
+			if (params.size() != 1) return false;
+
+			//パラメータがResultSetのみのコンストラクタはOK
+			if (params.get(0).asType().accept(ParameterTypeIsResultSetChecker.instance, null)) return true;
+
+			return false;
+		}
+	}
+
 	private class MyVisitor extends SimpleElementVisitor14<Boolean, List<Element>> {
 
 		private final ResultTypeChecker resultTypeChecker = new ResultTypeChecker();
@@ -195,12 +231,6 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 			var errorMessage = DataObject.class.getSimpleName() + " requires a constructor with only ResultSet parameter or no parameter";
 
 			if (params.size() != 1) {
-				error(errorMessage, e);
-				return false;
-			}
-
-			//パラメータがResultSetのみのコンストラクタはOK
-			if (!params.get(0).asType().accept(ParameterTypeIsResultSetChecker.instance, null)) {
 				error(errorMessage, e);
 				return false;
 			}
