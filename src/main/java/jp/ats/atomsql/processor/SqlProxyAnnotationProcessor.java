@@ -352,8 +352,9 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 		@Override
 		public Void visitExecutable(ExecutableElement e, List<MethodInfo> p) {
-			if (e.getModifiers().contains(Modifier.DEFAULT)) {
-				//デフォルトメソッドは対象外
+			var modifiers = e.getModifiers();
+			if (modifiers.contains(Modifier.DEFAULT) || modifiers.contains(Modifier.STATIC)) {
+				//デフォルトメソッド、スタティックメソッドは対象外
 				return DEFAULT_VALUE;
 			}
 
