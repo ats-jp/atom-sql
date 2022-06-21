@@ -10,11 +10,13 @@ import jp.ats.atomsql.annotation.Qualifier;
  * @param enableLog SQLログを出力するかどうか
  * @param logStackTracePattern SQLログに含まれる呼び出し元情報のフィルタパターン（正規表現）
  * @param usesQualifier {@link Qualifier}を使用するかどうか
- * @param atomSqlTypeFactoryClass {@link AtomSqlTypeFactory}
+ * @param typeFactoryClass {@link AtomSqlTypeFactory}
+ * @param batchThreshold バッチ更新時の閾値
  */
 public record SimpleConfigure(
 	boolean enableLog,
 	Pattern logStackTracePattern,
 	boolean usesQualifier,
-	String atomSqlTypeFactoryClass) implements Configure {
+	String typeFactoryClass,
+	int batchThreshold) implements Configure {
 }

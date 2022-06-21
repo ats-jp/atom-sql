@@ -88,7 +88,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 	 * 
 	 */
 	public SqlParametersAnnotationProcessor() {
-		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().atomSqlTypeFactoryClass());
+		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().typeFactoryClass());
 	}
 
 	@Override

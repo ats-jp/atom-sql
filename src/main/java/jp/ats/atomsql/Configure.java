@@ -27,13 +27,24 @@ public interface Configure {
 	Pattern logStackTracePattern();
 
 	/**
+	 * use-qualifier<br>
 	 * {@link Qualifier}を使用するかどうか
 	 * @return 使用する場合、true
 	 */
 	boolean usesQualifier();
 
 	/**
+	 * type-factory-class<br>
 	 * @return {@link AtomSqlTypeFactory}のFQCN
 	 */
-	String atomSqlTypeFactoryClass();
+	String typeFactoryClass();
+
+	/**
+	 * batch-threshold<br>
+	 * バッチ更新時の閾値<br>
+	 * この値を超えるとバッチ実行され、件数がリセットされる<br>
+	 * この値が0以下の場合、閾値はないものとして扱われる
+	 * @return バッチ更新時の閾値
+	 */
+	int batchThreshold();
 }

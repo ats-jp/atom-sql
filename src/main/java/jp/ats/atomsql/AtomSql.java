@@ -110,27 +110,60 @@ public class AtomSql {
 
 	private final Endpoints endpoints;
 
-	static class BatchResources {
+	class BatchResources {
 
-		Map<String, Map<String, List<SqlProxyHelper>>> resources = new HashMap<>();
+		private final Map<String, Map<String, List<SqlProxyHelper>>> resources = new HashMap<>();
+
+		private final int threshold;
+
+		private int num = 0;
+
+		private BatchResources() {
+			var threshold = configure().batchThreshold();
+			this.threshold = threshold > 0 ? threshold : Integer.MAX_VALUE;
+		}
 
 		void put(String name, SqlProxyHelper helper) {
+			if (num == threshold) flushAll();
+
 			resources.computeIfAbsent(name, n -> new HashMap<>()).computeIfAbsent(helper.sql.string(), s -> new LinkedList<>()).add(helper);
+			num++;
 		}
 
-		private void forEach(BatchResourceConsumer consumer) {
+		private void flushAll() {
 			resources.forEach((name, map) -> {
 				map.forEach((sql, helpers) -> {
-					consumer.accept(name, sql, helpers);
+					flush(name, sql, helpers);
 				});
 			});
+
+			num = 0;
+			resources.clear();
 		}
-	}
 
-	@FunctionalInterface
-	static interface BatchResourceConsumer {
+		private void flush(String name, String sql, List<SqlProxyHelper> helpers) {
+			var startNanos = System.nanoTime();
+			try {
+				endpoints.get(name).endpoint().batchUpdate(sql, new BatchPreparedStatementSetter() {
 
-		void accept(String name, String sql, List<SqlProxyHelper> helpers);
+					@Override
+					public void setValues(PreparedStatement ps, int i) throws SQLException {
+						helpers.get(i).setValues(ps);
+					}
+
+					@Override
+					public int getBatchSize() {
+						int size = helpers.size();
+
+						sqlLogger.perform(log -> log.info("batch size: " + size));
+
+						return size;
+					}
+				});
+			} finally {
+				logElapsed(sqlLogger, startNanos);
+			}
+		}
 	}
 
 	/**
@@ -139,7 +172,7 @@ public class AtomSql {
 	 * @param endpoints {@link Endpoints}
 	 */
 	public AtomSql(Endpoints endpoints) {
-		typeFactory = AtomSqlTypeFactory.newInstance(configure().atomSqlTypeFactoryClass());
+		typeFactory = AtomSqlTypeFactory.newInstance(configure().typeFactoryClass());
 		sqlLogger = SqlLogger.instance();
 		this.endpoints = Objects.requireNonNull(endpoints);
 	}
@@ -157,7 +190,7 @@ public class AtomSql {
 	}
 
 	AtomSql() {
-		typeFactory = AtomSqlTypeFactory.newInstance(configure().atomSqlTypeFactoryClass());
+		typeFactory = AtomSqlTypeFactory.newInstance(configure().typeFactoryClass());
 		sqlLogger = SqlLogger.instance();
 
 		endpoints = new Endpoints(new Endpoint() {
@@ -343,11 +376,12 @@ public class AtomSql {
 	 * @param runnable 更新処理を含む汎用処理
 	 */
 	public void tryBatch(Runnable runnable) {
-		batchResources.set(new BatchResources());
+		var resources = new BatchResources();
+		batchResources.set(resources);
 		try {
 			runnable.run();
 		} finally {
-			executeBatch();
+			resources.flushAll();
 			batchResources.remove();
 		}
 	}
@@ -361,43 +395,18 @@ public class AtomSql {
 	 * @return {@link Supplier}の返却値
 	 */
 	public <T> T tryBatch(Supplier<T> supplier) {
-		batchResources.set(new BatchResources());
+		var resources = new BatchResources();
+		batchResources.set(resources);
 		try {
 			return supplier.get();
 		} finally {
-			executeBatch();
+			resources.flushAll();
 			batchResources.remove();
 		}
 	}
 
 	BatchResources batchResources() {
 		return batchResources.get();
-	}
-
-	private void executeBatch() {
-		batchResources.get().forEach((name, sql, helpers) -> {
-			var startNanos = System.nanoTime();
-			try {
-				endpoints.get(name).endpoint().batchUpdate(sql, new BatchPreparedStatementSetter() {
-
-					@Override
-					public void setValues(PreparedStatement ps, int i) throws SQLException {
-						helpers.get(i).setValues(ps);
-					}
-
-					@Override
-					public int getBatchSize() {
-						int size = helpers.size();
-
-						sqlLogger.perform(log -> log.info("batch size: " + size));
-
-						return size;
-					}
-				});
-			} finally {
-				logElapsed(sqlLogger, startNanos);
-			}
-		});
 	}
 
 	/**

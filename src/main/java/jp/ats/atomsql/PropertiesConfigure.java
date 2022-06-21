@@ -35,7 +35,19 @@ public class PropertiesConfigure implements Configure {
 	 */
 	private final boolean usesQualifier;
 
+	/**
+	 * type-factory-class<br>
+	 * {@link AtomSqlTypeFactory}のFQCN
+	 */
 	private final String typeFactoryClass;
+
+	/**
+	 * batch-threshold<br>
+	 * バッチ更新時の閾値<br>
+	 * この値を超えるとバッチ実行され、件数がリセットされる<br>
+	 * この値が0以下の場合、閾値はないものとして扱われる
+	 */
+	private final int batchThreshold;
 
 	/**
 	 * クラスパスのルートにあるatom-sql.propertiesから設定を読み込みインスタンスを作成します。
@@ -57,6 +69,8 @@ public class PropertiesConfigure implements Configure {
 		usesQualifier = Boolean.valueOf(config.getProperty("use-qualifier", "false"));
 
 		typeFactoryClass = config.getProperty("type-factory-class", null);
+
+		batchThreshold = Integer.parseInt(config.getProperty("batch-threshold", "0"));
 	}
 
 	@Override
@@ -75,7 +89,12 @@ public class PropertiesConfigure implements Configure {
 	}
 
 	@Override
-	public String atomSqlTypeFactoryClass() {
+	public String typeFactoryClass() {
 		return typeFactoryClass;
+	}
+
+	@Override
+	public int batchThreshold() {
+		return batchThreshold;
 	}
 }
