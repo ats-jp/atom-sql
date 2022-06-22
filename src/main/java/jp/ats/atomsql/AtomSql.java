@@ -302,7 +302,17 @@ public class AtomSql {
 
 				var sql = loadSql(proxyClass, method).trim();
 
-				var mySqlLogger = noSqlLogOnClass || method.isAnnotationPresent(NoSqlLog.class) ? SqlLogger.disabled : sqlLogger;
+				SqlLogger mySqlLogger;
+				if (configure().enableLog()) {
+					var noSqlLogOnMethod = method.isAnnotationPresent(NoSqlLog.class);
+					if (noSqlLogOnClass || noSqlLogOnMethod) {
+						mySqlLogger = SqlLogger.noSqlLogInstance(noSqlLogOnMethod ? method.toString() : proxyInterface.toString());
+					} else {
+						mySqlLogger = sqlLogger;
+					}
+				} else {
+					mySqlLogger = SqlLogger.disabled;
+				}
 
 				SqlProxyHelper helper;
 				var entry = nameAnnotation.map(a -> endpoints.get(a.value())).orElseGet(() -> endpoints.get());

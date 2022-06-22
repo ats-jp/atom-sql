@@ -4,6 +4,8 @@ import java.util.function.Consumer;
 
 import org.apache.commons.logging.Log;
 
+import jp.ats.atomsql.annotation.NoSqlLog;
+
 /**
  * @author 千葉 哲嗣
  */
@@ -17,6 +19,16 @@ abstract class SqlLogger {
 		void perform(Consumer<Log> consumer) {
 		}
 	};
+
+	static SqlLogger noSqlLogInstance(String noSqlLog) {
+		return new SqlLogger() {
+
+			@Override
+			void perform(Consumer<Log> consumer) {
+				AtomSql.log.info("------ @" + NoSqlLog.class.getSimpleName() + " ------ " + noSqlLog);
+			}
+		};
+	}
 
 	static SqlLogger instance() {
 		return new SqlLoggerImpl();
