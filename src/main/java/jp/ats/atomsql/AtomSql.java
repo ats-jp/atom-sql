@@ -391,8 +391,12 @@ public class AtomSql {
 		try {
 			runnable.run();
 		} finally {
-			resources.flushAll();
-			batchResources.remove();
+			try {
+				resources.flushAll();
+			} finally {
+				//バッチ実行中にエラーが発生した場合でも必ずクリア
+				batchResources.remove();
+			}
 		}
 	}
 
@@ -410,8 +414,12 @@ public class AtomSql {
 		try {
 			return supplier.get();
 		} finally {
-			resources.flushAll();
-			batchResources.remove();
+			try {
+				resources.flushAll();
+			} finally {
+				//バッチ実行中にエラーが発生した場合でも必ずクリア
+				batchResources.remove();
+			}
 		}
 	}
 
