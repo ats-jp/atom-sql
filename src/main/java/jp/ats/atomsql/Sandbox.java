@@ -75,7 +75,7 @@ public class Sandbox {
 	private static class SandboxEndpoint implements Endpoint {
 
 		@Override
-		public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
+		public int[] batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
 			var size = bpss.getBatchSize();
 			for (var i = 0; i < size; i++) {
 				try {
@@ -84,6 +84,8 @@ public class Sandbox {
 					throw new IllegalStateException(e);
 				}
 			}
+
+			return new int[size];
 		}
 
 		@Override

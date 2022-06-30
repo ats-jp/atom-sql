@@ -33,7 +33,7 @@ public class JdbcEndpoint implements Endpoint {
 	}
 
 	@Override
-	public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
+	public int[] batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
 		try (var ps = connection().prepareStatement(Constants.NEW_LINE + sql)) {
 			var size = bpss.getBatchSize();
 			for (var i = 0; i < size; i++) {
@@ -41,7 +41,7 @@ public class JdbcEndpoint implements Endpoint {
 				ps.addBatch();
 			}
 
-			ps.executeBatch();
+			return ps.executeBatch();
 		} catch (SQLException e) {
 			throw new AtomSqlException(e);
 		}

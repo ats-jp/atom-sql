@@ -160,7 +160,7 @@ public class Atom<T> {
 		return creator.apply(new AtomSql(new Endpoints(new Endpoint() {
 
 			@Override
-			public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
+			public int[] batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
 				throw new IllegalAtomException();
 			}
 
@@ -392,9 +392,34 @@ public class Atom<T> {
 			}
 		}
 
-		resources.put(helper.entry.name(), helper);
+		resources.put(helper.entry.name(), helper, null);
 
 		return 0;
+	}
+
+	/**
+	 * 更新処理（INSERT, UPDATE, DELETE）のDML文、DDL文を実行します。<br>
+	 * バッチ更新であっても処理結果件数はresultListenerに通知されます。
+	 * @param resultConsumer 
+	 * @see AtomSql#tryBatch(Runnable)
+	 * @see AtomSql#tryBatch(Supplier)
+	 */
+	public void update(Consumer<Integer> resultConsumer) {
+		var helper = helper();
+
+		var resources = atomSql.batchResources();
+		if (resources == null) {//バッチ実行中ではない
+			var startNanos = System.nanoTime();
+			try {
+				resultConsumer.accept(helper.entry.endpoint().update(helper.sql.string(), helper));
+
+				return;
+			} finally {
+				helper.logElapsed(startNanos);
+			}
+		}
+
+		resources.put(helper.entry.name(), helper, Objects.requireNonNull(resultConsumer));
 	}
 
 	/**

@@ -16,8 +16,9 @@ public interface Endpoint {
 	 * JdbcTemplate#batchUpdate(String, BatchPreparedStatementSetter)を参考にしたメソッドです。
 	 * @param sql
 	 * @param bpss
+	 * @return affected rows
 	 */
-	void batchUpdate(String sql, BatchPreparedStatementSetter bpss);
+	int[] batchUpdate(String sql, BatchPreparedStatementSetter bpss);
 
 	/**
 	 * JdbcTemplate#queryForStream(String, PreparedStatementSetter, RowMapper)を参考にしたメソッドです。

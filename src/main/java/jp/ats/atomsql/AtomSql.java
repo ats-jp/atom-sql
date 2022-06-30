@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -112,7 +113,10 @@ public class AtomSql {
 
 	class BatchResources {
 
-		private final Map<String, Map<String, List<SqlProxyHelper>>> resources = new HashMap<>();
+		private static record Resource(SqlProxyHelper helper, Consumer<Integer> resultConsumer) {
+		}
+
+		private final Map<String, Map<String, List<Resource>>> allResources = new HashMap<>();
 
 		private final int threshold;
 
@@ -123,43 +127,48 @@ public class AtomSql {
 			this.threshold = threshold > 0 ? threshold : Integer.MAX_VALUE;
 		}
 
-		void put(String name, SqlProxyHelper helper) {
+		void put(String name, SqlProxyHelper helper, Consumer<Integer> resultConsumer) {
 			if (num == threshold) flushAll();
 
-			resources.computeIfAbsent(name, n -> new HashMap<>()).computeIfAbsent(helper.sql.string(), s -> new LinkedList<>()).add(helper);
+			allResources.computeIfAbsent(name, n -> new HashMap<>()).computeIfAbsent(helper.sql.string(), s -> new ArrayList<>()).add(new Resource(helper, resultConsumer));
 			num++;
 		}
 
 		private void flushAll() {
-			resources.forEach((name, map) -> {
-				map.forEach((sql, helpers) -> {
-					flush(name, sql, helpers);
+			allResources.forEach((name, map) -> {
+				map.forEach((sql, resources) -> {
+					flush(name, sql, resources);
 				});
 			});
 
 			num = 0;
-			resources.clear();
+			allResources.clear();
 		}
 
-		private void flush(String name, String sql, List<SqlProxyHelper> helpers) {
+		private void flush(String name, String sql, List<Resource> resources) {
 			var startNanos = System.nanoTime();
 			try {
-				endpoints.get(name).endpoint().batchUpdate(sql, new BatchPreparedStatementSetter() {
+				var results = endpoints.get(name).endpoint().batchUpdate(sql, new BatchPreparedStatementSetter() {
 
 					@Override
 					public void setValues(PreparedStatement ps, int i) throws SQLException {
-						helpers.get(i).setValues(ps);
+						resources.get(i).helper.setValues(ps);
 					}
 
 					@Override
 					public int getBatchSize() {
-						int size = helpers.size();
+						int size = resources.size();
 
 						sqlLogger.perform(log -> log.info("batch size: " + size));
 
 						return size;
 					}
 				});
+
+				for (var i = 0; i < results.length; i++) {
+					var resultConsumer = resources.get(i).resultConsumer;
+					if (resultConsumer != null) resultConsumer.accept(results[i]);
+				}
 			} finally {
 				logElapsed(sqlLogger, startNanos);
 			}
@@ -196,7 +205,7 @@ public class AtomSql {
 		endpoints = new Endpoints(new Endpoint() {
 
 			@Override
-			public void batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
+			public int[] batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
 				throw new UnsupportedOperationException();
 			}
 
