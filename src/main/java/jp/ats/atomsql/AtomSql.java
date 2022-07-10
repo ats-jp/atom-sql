@@ -113,7 +113,10 @@ public class AtomSql {
 
 	class BatchResources {
 
-		private static record Resource(SqlProxyHelper helper, Consumer<Integer> resultConsumer) {
+		private static record Resource(
+			SqlProxyHelper helper,
+			Consumer<Integer> resultConsumer,
+			Optional<StackTraceElement[]> stackTrace) {
 		}
 
 		private final Map<String, Map<String, List<Resource>>> allResources = new HashMap<>();
@@ -127,10 +130,14 @@ public class AtomSql {
 			this.threshold = threshold > 0 ? threshold : Integer.MAX_VALUE;
 		}
 
-		void put(String name, SqlProxyHelper helper, Consumer<Integer> resultConsumer) {
+		void put(String name, SqlProxyHelper helper, Consumer<Integer> resultConsumer, Optional<StackTraceElement[]> stackTrace) {
 			if (num == threshold) flushAll();
 
-			allResources.computeIfAbsent(name, n -> new HashMap<>()).computeIfAbsent(helper.sql.string(), s -> new ArrayList<>()).add(new Resource(helper, resultConsumer));
+			allResources.computeIfAbsent(name, n -> new HashMap<>())
+				.computeIfAbsent(
+					helper.sql.string(),
+					s -> new ArrayList<>())
+				.add(new Resource(helper, resultConsumer, stackTrace));
 			num++;
 		}
 
@@ -152,7 +159,8 @@ public class AtomSql {
 
 					@Override
 					public void setValues(PreparedStatement ps, int i) throws SQLException {
-						resources.get(i).helper.setValues(ps);
+						var resource = resources.get(i);
+						resource.helper.setValues(ps, resource.stackTrace);
 					}
 
 					@Override
@@ -829,7 +837,7 @@ public class AtomSql {
 		}
 
 		@Override
-		public void setValues(PreparedStatement ps) throws SQLException {
+		public void setValues(PreparedStatement ps, Optional<StackTraceElement[]> stackTrace) throws SQLException {
 			int[] i = { 1 };
 			sql.placeholders(p -> {
 				i[0] = p.type().bind(i[0], ps, p.value(), typeFactory);
@@ -843,11 +851,10 @@ public class AtomSql {
 				}
 
 				log.info("call from:");
-				var elements = new Throwable().getStackTrace();
-				for (var element : elements) {
+				for (var element : stackTrace.get()) {
 					var elementString = element.toString();
 
-					if (elementString.contains(packageName) || elementString.contains("(Unknown Source)"))
+					if (elementString.contains(packageName) || elementString.contains("(Unknown Source)") || elementString.contains("<generated>"))
 						continue;
 
 					if (configure().logStackTracePattern().matcher(elementString).find())

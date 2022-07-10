@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -77,5 +78,9 @@ public class AtomSqlUtils {
 		System.arraycopy(array1, 0, concat, 0, lengthof1);
 		System.arraycopy(array2, 0, concat, lengthof1, lengthof2);
 		return concat;
+	}
+
+	static Optional<StackTraceElement[]> stackTrace() {
+		return AtomSql.configure().enableLog() ? Optional.of(new Throwable().getStackTrace()) : Optional.empty();
 	}
 }

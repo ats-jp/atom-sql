@@ -51,9 +51,16 @@ class MetadataBuilder {
 
 		hasError = false;
 
-		e.getEnclosedElements().forEach(enc -> {
-			enc.accept(visitor, infos);
-		});
+		try {
+			e.getEnclosedElements().forEach(enc -> {
+				enc.accept(visitor, infos);
+			});
+		} catch (Exception ex) {
+			//EclipseでAbortCompilationが発生することへの対応
+			error(ex.getMessage(), e);
+
+			return;
+		}
 
 		if (hasError) {
 			return;

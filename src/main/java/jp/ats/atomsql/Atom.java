@@ -392,7 +392,7 @@ public class Atom<T> {
 			}
 		}
 
-		resources.put(helper.entry.name(), helper, null);
+		resources.put(helper.entry.name(), helper, null, AtomSqlUtils.stackTrace());
 
 		return 0;
 	}
@@ -419,7 +419,7 @@ public class Atom<T> {
 			}
 		}
 
-		resources.put(helper.entry.name(), helper, Objects.requireNonNull(resultConsumer));
+		resources.put(helper.entry.name(), helper, Objects.requireNonNull(resultConsumer), AtomSqlUtils.stackTrace());
 	}
 
 	/**

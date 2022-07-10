@@ -84,7 +84,15 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 					return;
 				}
 
-				var elements = e.getEnclosedElements();
+				List<? extends Element> elements;
+				try {
+					elements = e.getEnclosedElements();
+				} catch (Exception ex) {
+					//EclipseでAbortCompilationが発生することへの対応
+					error(ex.getMessage(), e);
+
+					return;
+				}
 
 				var detector = new ResultSetConstructorTypeDetector();
 				for (var enc : elements) {
