@@ -9,14 +9,11 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -37,106 +34,63 @@ import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 import jp.ats.atomsql.type.NULL;
 import jp.ats.atomsql.type.OBJECT;
 
-@SupportedAnnotationTypes("jp.ats.atomsql.annotation.SqlParameters")
-@SupportedSourceVersion(SourceVersion.RELEASE_16)
-@SuppressWarnings("javadoc")
-public class SqlParametersAnnotationProcessor extends AbstractProcessor {
+/**
+ * @author 千葉 哲嗣
+ */
+class SqlParametersProcessor {
+
+	private final Supplier<ProcessingEnvironment> processingEnv;
 
 	private final AtomSqlTypeFactory typeFactory;
-
-	// 二重作成防止チェッカー
-	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
-	private final Set<String> alreadyCreatedFiles = new HashSet<>();
 
 	//生成クラス名, メソッド名
 	//メソッドのパラメータの型はConsumer<SqlParameters>固定なので識別にはメソッド名だけでOK
 	private final Map<String, MethodInfo> allParameters = new HashMap<>();
 
-	private final MethodExtractor extractor = new MethodExtractor(() -> super.processingEnv);
+	private final MethodExtractor extractor;
 
-	private static class MethodInfo {
-
-		private final String parametersClass;
-
-		private final String clazz;
-
-		private final String method;
-
-		private MethodInfo(String line) {
-			var splitted = line.split("/");
-			parametersClass = splitted[0];
-			clazz = splitted[1];
-			method = splitted[2];
-		}
-
-		private MethodInfo(String parametersClass, String clazz, String method) {
-			this.parametersClass = parametersClass;
-			this.clazz = clazz;
-			this.method = method;
-		}
-
-		private String pack() {
-			return parametersClass + "/" + clazz + "/" + method;
-		}
-	}
-
-	static {
-		AtomSqlInitializer.initializeIfUninitialized();
-	}
-
-	/**
-	 * 
-	 */
-	public SqlParametersAnnotationProcessor() {
+	SqlParametersProcessor(Supplier<ProcessingEnvironment> processingEnv) {
+		this.processingEnv = processingEnv;
 		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().typeFactoryClass());
+		extractor = new MethodExtractor(processingEnv);
 	}
 
-	@Override
-	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-		if (annotations.size() == 0)
-			return false;
-
+	void process(TypeElement annotation, RoundEnvironment roundEnv) {
+		var env = processingEnv.get();
 		try {
 			//他のクラスで作られた過去分を追加
-			if (Files.exists(ProcessorUtils.getClassOutputPath(super.processingEnv).resolve(Constants.PARAMETERS_LIST))) {
-				var listFile = super.processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", Constants.PARAMETERS_LIST);
+			if (Files.exists(ProcessorUtils.getClassOutputPath(env).resolve(Constants.PARAMETERS_LIST))) {
+				var listFile = env.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", Constants.PARAMETERS_LIST);
 				try (var input = listFile.openInputStream()) {
 					Arrays.stream(new String(AtomSqlUtils.readBytes(input), Constants.CHARSET).split("\\s+"))
 						.filter(l -> l.length() > 0)//空の場合スキップ
 						.map(l -> new MethodInfo(l))
-						.forEach(i -> allParameters.put(i.parametersClass, i));
+						.forEach(i -> allParameters.put(i.generatedClass, i));
 				}
 			}
 		} catch (IOException e) {
-			super.processingEnv.getMessager().printMessage(Kind.ERROR, e.getMessage());
-			return false;
+			env.getMessager().printMessage(Kind.ERROR, e.getMessage());
+			return;
 		}
 
-		annotations.forEach(a -> {
-			roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
-				try {
-					execute(e);
-				} catch (UnknownSqlTypeNameException ustne) {
-					error("Invalid type hint name [" + ustne.unknownTypeName() + "]", e);
-				} catch (ProcessException pe) {
-					//スキップして次の対象へ
-				}
-			});
+		roundEnv.getElementsAnnotatedWith(annotation).forEach(e -> {
+			try {
+				execute(e);
+			} catch (UnknownSqlTypeNameException ustne) {
+				error("Invalid type hint name [" + ustne.unknownTypeName() + "]", e);
+			} catch (ProcessException pe) {
+				//スキップして次の対象へ
+			}
 		});
 
 		var data = String.join(Constants.NEW_LINE, (allParameters.values().stream().map(i -> i.pack()).toList()));
 
-		try {
-			try (var output = new BufferedOutputStream(
-				super.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", Constants.PARAMETERS_LIST).openOutputStream())) {
-				output.write(data.getBytes(Constants.CHARSET));
-			}
+		try (var output = new BufferedOutputStream(
+			env.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", Constants.PARAMETERS_LIST).openOutputStream())) {
+			output.write(data.getBytes(Constants.CHARSET));
 		} catch (IOException e) {
-			super.processingEnv.getMessager().printMessage(Kind.ERROR, e.getMessage());
-			return false;
+			env.getMessager().printMessage(Kind.ERROR, e.getMessage());
 		}
-
-		return true;
 	}
 
 	static String defaultSqlParametersClassName(String packageName, String className, String methodName) {
@@ -213,15 +167,13 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		var newClassName = packageName.isEmpty() ? generateClassName : packageName + "." + generateClassName;
 
 		var info = allParameters.get(newClassName);
-		if (info != null && (!info.clazz.equals(className) || !info.method.equals(methodName))) {
+		if (info != null && (!info.enclosingClass.equals(className) || !info.method.equals(methodName))) {
 			//generateClassNameという名前は既に他で使われています
 			error("The name [" + generateClassName + "] has already been used elsewhere", e);
 			return;
 		}
 
 		allParameters.put(newClassName, new MethodInfo(newClassName, className, methodName));
-
-		if (alreadyCreatedFiles.contains(newClassName)) return;
 
 		var sql = result.sql;
 
@@ -230,7 +182,7 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 
 		Map<String, String> param = new HashMap<>();
 
-		param.put("PROCESSOR", SqlParametersAnnotationProcessor.class.getName());
+		param.put("PROCESSOR", SqlParametersProcessor.class.getName());
 
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("CLASS", generateClassName);
@@ -282,17 +234,15 @@ public class SqlParametersAnnotationProcessor extends AbstractProcessor {
 		template = Formatter.format(template, param);
 
 		try {
-			try (var output = new BufferedOutputStream(super.processingEnv.getFiler().createSourceFile(newClassName, e).openOutputStream())) {
+			try (var output = new BufferedOutputStream(processingEnv.get().getFiler().createSourceFile(newClassName, e).openOutputStream())) {
 				output.write(template.getBytes(Constants.CHARSET));
 			}
 		} catch (IOException ioe) {
 			error(ioe.getMessage(), e);
 		}
-
-		alreadyCreatedFiles.add(newClassName);
 	}
 
 	private void error(String message, Element e) {
-		super.processingEnv.getMessager().printMessage(Kind.ERROR, message, e);
+		processingEnv.get().getMessager().printMessage(Kind.ERROR, message, e);
 	}
 }

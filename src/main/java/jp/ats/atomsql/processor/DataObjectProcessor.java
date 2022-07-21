@@ -4,19 +4,15 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.Supplier;
 
-import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -42,104 +38,89 @@ import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 /**
  * @author 千葉 哲嗣
  */
-@SupportedAnnotationTypes("jp.ats.atomsql.annotation.DataObject")
-@SupportedSourceVersion(SourceVersion.RELEASE_16)
-public class DataObjectAnnotationProcessor extends AbstractProcessor {
+class DataObjectProcessor {
+
+	private final Supplier<ProcessingEnvironment> processingEnv;
 
 	private final AtomSqlTypeFactory typeFactory;
 
-	private final TypeNameExtractor typeNameExtractor = new TypeNameExtractor(() -> DataObjectAnnotationProcessor.super.processingEnv);
+	private final TypeNameExtractor typeNameExtractor;
 
 	private final DataObjectAnnotationProcessorMethodVisitor methodVisitor = new DataObjectAnnotationProcessorMethodVisitor();
 
-	private final MetadataBuilder builder = new MetadataBuilder(() -> super.processingEnv, methodVisitor);
+	private final MetadataBuilder builder;
 
-	// 二重作成防止チェッカー
-	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
-	private final Set<String> alreadyCreatedFiles = new HashSet<>();
-
-	static {
-		AtomSqlInitializer.initializeIfUninitialized();
-	}
-
-	/**
-	 * 
-	 */
-	public DataObjectAnnotationProcessor() {
+	DataObjectProcessor(Supplier<ProcessingEnvironment> processingEnv) {
+		this.processingEnv = processingEnv;
 		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().typeFactoryClass());
+		typeNameExtractor = new TypeNameExtractor(processingEnv);
+		builder = new MetadataBuilder(processingEnv, methodVisitor);
 	}
 
-	@Override
-	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-		if (annotations.size() == 0)
-			return false;
+	void process(TypeElement annotation, RoundEnvironment roundEnv) {
+		roundEnv.getElementsAnnotatedWith(annotation).forEach(e -> {
+			ElementKind kind = e.getKind();
+			if (kind != ElementKind.CLASS && kind != ElementKind.RECORD) {
+				//kindにDataObjectを注釈することはできません
+				error("Cannot annotate " + kind.name() + " with " + DataObject.class.getSimpleName(), e);
 
-		annotations.forEach(a -> {
-			roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
-				ElementKind kind = e.getKind();
-				if (kind != ElementKind.CLASS && kind != ElementKind.RECORD) {
-					//kindにDataObjectを注釈することはできません
-					error("Cannot annotate " + kind.name() + " with " + DataObject.class.getSimpleName(), e);
+				return;
+			}
 
-					return;
-				}
+			List<? extends Element> elements;
+			try {
+				elements = e.getEnclosedElements();
+			} catch (Exception ex) {
+				//EclipseでAbortCompilationが発生することへの対応
+				error(ProcessorUtils.message(ex), e);
 
-				List<? extends Element> elements;
-				try {
-					elements = e.getEnclosedElements();
-				} catch (Exception ex) {
-					//EclipseでAbortCompilationが発生することへの対応
-					error(ex.getMessage(), e);
+				return;
+			}
 
-					return;
-				}
-
-				var detector = new ResultSetConstructorTypeDetector();
-				for (var enc : elements) {
-					if (enc.accept(detector, null)) {
-						if (kind != ElementKind.RECORD) {
-							//パラメータがResultSetのみのコンストラクタがありrecordではない場合、フィールドはどのような型でも自由なので検査しない
-							return;
-						}
-					}
-				}
-
-				var visitor = new MyVisitor();
-				List<Element> recordConstructors = new LinkedList<>();
-				elements.forEach(enc -> {
-					enc.accept(visitor, recordConstructors);
-				});
-
-				//レコードの場合、コンストラクタの引数名称を保存
-				if (kind == ElementKind.RECORD) {
-					if (recordConstructors.size() > 1) {
-						//レコードのコンストラクタが複数ある場合、パラメーター名がarg0, arg1のようになってしまうため、単一であることを強制する
-						//レコードのコンストラクタは単一である必要があります
-						recordConstructors.forEach(c -> {
-							//EclipseではrecordにErrorを設定できないので余計なコンストラクタ側にErrorを設定する
-							error("There must be a single constructor of record", c);
-						});
-
-						//EclipseではrecordにErrorを設定できないが、将来修正された時の為に一応Errorを設定しておく
-						error("There must be a single constructor of record", e);
-
+			var detector = new ResultSetConstructorTypeDetector();
+			for (var enc : elements) {
+				if (enc.accept(detector, null)) {
+					if (kind != ElementKind.RECORD) {
+						//パラメータがResultSetのみのコンストラクタがありrecordではない場合、フィールドはどのような型でも自由なので検査しない
 						return;
 					}
-
-					builder.build(e);
 				}
+			}
 
-				if (visitor.resultTypeChecker.optionals.size() > 0) {
-					buildDataObjectMetadata(e, visitor.resultTypeChecker.optionals);
-				}
+			var visitor = new MyVisitor();
+			List<Element> recordConstructors = new LinkedList<>();
+			elements.forEach(enc -> {
+				enc.accept(visitor, recordConstructors);
 			});
-		});
 
-		return false;
+			//レコードの場合、コンストラクタの引数名称を保存
+			if (kind == ElementKind.RECORD) {
+				if (recordConstructors.size() > 1) {
+					//レコードのコンストラクタが複数ある場合、パラメーター名がarg0, arg1のようになってしまうため、単一であることを強制する
+					//レコードのコンストラクタは単一である必要があります
+					recordConstructors.forEach(c -> {
+						//EclipseではrecordにErrorを設定できないので余計なコンストラクタ側にErrorを設定する
+						error("There must be a single constructor of record", c);
+					});
+
+					//EclipseではrecordにErrorを設定できないが、将来修正された時の為に一応Errorを設定しておく
+					error("There must be a single constructor of record", e);
+
+					return;
+				}
+
+				builder.build(e);
+			}
+
+			if (visitor.resultTypeChecker.optionals.size() > 0) {
+				buildDataObjectMetadata(e, visitor.resultTypeChecker.optionals);
+			}
+		});
 	}
 
 	void buildDataObjectMetadata(Element e, Map<Name, TypeElement> optionals) {
-		var elements = processingEnv.getElementUtils();
+		var env = processingEnv.get();
+		var elements = env.getElementUtils();
 		var packageName = elements.getPackageOf(e).getQualifiedName().toString();
 		var binaryName = elements.getBinaryName(ProcessorUtils.toTypeElement(e)).toString();
 
@@ -149,22 +130,19 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 
 		var fileName = isPackageNameLengthZero ? className : packageName + "." + className;
 
-		if (alreadyCreatedFiles.contains(fileName))
-			return;
-
 		var template = Formatter.readTemplate(AtomSqlDataObjectMetadataTemplate.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);
 
 		Map<String, String> param = new HashMap<>();
 
-		param.put("PROCESSOR", DataObjectAnnotationProcessor.class.getName());
+		param.put("PROCESSOR", DataObjectProcessor.class.getName());
 
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("INTERFACE", className);
 
 		var optionalsPart = String.join(
 			", ",
-			optionals.entrySet().stream().map(DataObjectAnnotationProcessor::optionalsPart).toList());
+			optionals.entrySet().stream().map(DataObjectProcessor::optionalsPart).toList());
 
 		template = Formatter.erase(template, optionalsPart.isEmpty());
 
@@ -173,14 +151,12 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 		template = Formatter.format(template, param);
 
 		try {
-			try (var output = new BufferedOutputStream(processingEnv.getFiler().createSourceFile(fileName, e).openOutputStream())) {
+			try (var output = new BufferedOutputStream(env.getFiler().createSourceFile(fileName, e).openOutputStream())) {
 				output.write(template.getBytes(Constants.CHARSET));
 			}
 		} catch (IOException ioe) {
 			error(ioe.getMessage(), e);
 		}
-
-		alreadyCreatedFiles.add(fileName);
 	}
 
 	private static String optionalsPart(Map.Entry<Name, TypeElement> entry) {
@@ -349,6 +325,6 @@ public class DataObjectAnnotationProcessor extends AbstractProcessor {
 	}
 
 	private void error(String message, Element e) {
-		processingEnv.getMessager().printMessage(Kind.ERROR, message, e);
+		processingEnv.get().getMessager().printMessage(Kind.ERROR, message, e);
 	}
 }

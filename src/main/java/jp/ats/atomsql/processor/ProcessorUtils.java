@@ -135,6 +135,13 @@ public class ProcessorUtils {
 		return e.accept(TypeConverter.instance, null);
 	}
 
+	static String message(Exception e) {
+		var message = e.getMessage();
+		if (message == null || message.isBlank()) return e.getClass().getName();
+
+		return message;
+	}
+
 	private static class TypeConverter extends SimpleElementVisitor14<TypeElement, Void> {
 
 		static final TypeConverter instance = new TypeConverter();

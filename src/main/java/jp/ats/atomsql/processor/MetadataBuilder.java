@@ -57,7 +57,7 @@ class MetadataBuilder {
 			});
 		} catch (Exception ex) {
 			//EclipseでAbortCompilationが発生することへの対応
-			error(ex.getMessage(), e);
+			error(ProcessorUtils.message(ex), e);
 
 			return;
 		}
@@ -84,7 +84,7 @@ class MetadataBuilder {
 		if (alreadyCreatedFiles.contains(fileName))
 			return;
 
-		param.put("PROCESSOR", SqlProxyAnnotationProcessor.class.getName());
+		param.put("PROCESSOR", SqlProxyProcessor.class.getName());
 
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("INTERFACE", className);

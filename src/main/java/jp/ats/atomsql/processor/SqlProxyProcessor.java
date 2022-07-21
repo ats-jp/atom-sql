@@ -10,13 +10,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -58,13 +56,13 @@ import jp.ats.atomsql.type.CSV;
 /**
  * @author 千葉 哲嗣
  */
-@SupportedAnnotationTypes("jp.ats.atomsql.annotation.SqlProxy")
-@SupportedSourceVersion(SourceVersion.RELEASE_16)
-public class SqlProxyAnnotationProcessor extends AbstractProcessor {
+class SqlProxyProcessor {
+
+	private final Supplier<ProcessingEnvironment> processingEnv;
 
 	private final AtomSqlTypeFactory typeFactory;
 
-	private final TypeNameExtractor typeNameExtractor = new TypeNameExtractor(() -> SqlProxyAnnotationProcessor.super.processingEnv);
+	private final TypeNameExtractor typeNameExtractor;
 
 	private final SqlProxyAnnotationProcessorMethodVisitor methodVisitor = new SqlProxyAnnotationProcessorMethodVisitor();
 
@@ -72,39 +70,32 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 
 	private final Set<String> sqlProxyList = new HashSet<>();
 
-	private final MethodExtractor extractor = new MethodExtractor(() -> SqlProxyAnnotationProcessor.super.processingEnv);
+	private final MethodExtractor extractor;
 
-	private final MetadataBuilder builder = new MetadataBuilder(() -> super.processingEnv, methodVisitor);
+	private final MetadataBuilder builder;
 
-	static {
-		AtomSqlInitializer.initializeIfUninitialized();
-	}
-
-	/**
-	 * 
-	 */
-	public SqlProxyAnnotationProcessor() {
+	public SqlProxyProcessor(Supplier<ProcessingEnvironment> processingEnv) {
+		this.processingEnv = processingEnv;
 		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().typeFactoryClass());
+		typeNameExtractor = new TypeNameExtractor(processingEnv);
+		extractor = new MethodExtractor(processingEnv);
+		builder = new MetadataBuilder(processingEnv, methodVisitor);
 	}
 
-	@Override
-	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-		annotations.forEach(a -> {
-			roundEnv.getElementsAnnotatedWith(a).forEach(e -> {
-				try {
-					execute(e);
-				} catch (ProcessException pe) {
-					//スキップして次の対象へ
-				}
-			});
+	void process(TypeElement annotation, RoundEnvironment roundEnv) {
+		roundEnv.getElementsAnnotatedWith(annotation).forEach(e -> {
+			try {
+				execute(e);
+			} catch (ProcessException pe) {
+				//スキップして次の対象へ
+			}
 		});
 
-		if (!roundEnv.processingOver()) return true;
-
+		var env = processingEnv.get();
 		try {
-			//他のクラスで作られた過去分を追加
-			if (Files.exists(ProcessorUtils.getClassOutputPath(super.processingEnv).resolve(Constants.PROXY_LIST))) {
-				var listFile = super.processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", Constants.PROXY_LIST);
+			//他のプロセスで作られた過去分を追加
+			if (Files.exists(ProcessorUtils.getClassOutputPath(env).resolve(Constants.PROXY_LIST))) {
+				var listFile = env.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", Constants.PROXY_LIST);
 				try (var input = listFile.openInputStream()) {
 					Arrays.stream(
 						new String(AtomSqlUtils.readBytes(input), Constants.CHARSET).split("\\s+"))
@@ -115,16 +106,14 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 			var data = String.join(Constants.NEW_LINE, sqlProxyList).getBytes(Constants.CHARSET);
 
 			try (var output = new BufferedOutputStream(
-				super.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", Constants.PROXY_LIST).openOutputStream())) {
+				env.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", Constants.PROXY_LIST).openOutputStream())) {
 				output.write(data);
 			}
 		} catch (IOException ioe) {
-			super.processingEnv.getMessager().printMessage(Kind.ERROR, ioe.getMessage());
+			env.getMessager().printMessage(Kind.ERROR, ioe.getMessage());
 		}
 
 		sqlProxyList.clear();
-
-		return true;
 	}
 
 	private void execute(Element e) {
@@ -139,11 +128,11 @@ public class SqlProxyAnnotationProcessor extends AbstractProcessor {
 		builder.build(e);
 
 		if (!builder.hasError())
-			sqlProxyList.add(super.processingEnv.getElementUtils().getBinaryName(ProcessorUtils.toTypeElement(e)).toString());
+			sqlProxyList.add(processingEnv.get().getElementUtils().getBinaryName(ProcessorUtils.toTypeElement(e)).toString());
 	}
 
 	private void error(String message, Element e) {
-		super.processingEnv.getMessager().printMessage(Kind.ERROR, message, e);
+		processingEnv.get().getMessager().printMessage(Kind.ERROR, message, e);
 	}
 
 	private static record ReturnTypeCheckerResult(TypeMirror dataObjectType, TypeMirror sqlInterpolationType) {
