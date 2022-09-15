@@ -16,6 +16,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
@@ -224,12 +225,20 @@ class DataObjectProcessor {
 
 		@Override
 		public Boolean visitRecordComponent(RecordComponentElement e, List<Element> p) {
+			if (isStatic(e)) return true;
+
 			return e.asType().accept(resultTypeChecker, e);
 		}
 
 		@Override
 		public Boolean visitVariable(VariableElement e, List<Element> p) {
+			if (isStatic(e)) return true;
+
 			return e.asType().accept(resultTypeChecker, e);
+		}
+
+		private static boolean isStatic(Element e) {
+			return e.getModifiers().contains(Modifier.STATIC);
 		}
 	}
 

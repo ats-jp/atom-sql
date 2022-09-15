@@ -6,6 +6,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -782,6 +783,11 @@ public class AtomSql {
 
 			var optionals = new Optionals();
 			Arrays.stream(dataObjectClass.getFields()).forEach(f -> {
+				var modifiers = f.getModifiers();
+				//フィールドがstaticの場合は対象から除外
+				//publicではない、finalの場合は以降の処理でエラーを起こすことで使用出来ないことを通知する
+				if (Modifier.isStatic(modifiers)) return;
+
 				var fieldName = f.getName();
 				var fieldType = f.getType();
 
