@@ -30,7 +30,7 @@ import jp.ats.atomsql.AtomSql;
  * フィールドをfinalとして定義したい場合、こちらを選択してください。
  * @author 千葉 哲嗣
  */
-@Target({ TYPE })
+@Target(TYPE)
 @Retention(RUNTIME)
 public @interface DataObject {
 }

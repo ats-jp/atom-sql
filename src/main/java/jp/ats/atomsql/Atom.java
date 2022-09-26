@@ -399,7 +399,8 @@ public class Atom<T> {
 
 	/**
 	 * 更新処理（INSERT, UPDATE, DELETE）のDML文、DDL文を実行します。<br>
-	 * バッチ更新であっても処理結果件数はresultListenerに通知されます。
+	 * バッチ更新であっても処理結果件数はresultListenerに通知されます。<br>
+	 * バッチ更新の場合、resultListener内で例外を投げると、未実行のバッチ更新が失われるため、途中から更新を再開することは出来ません。
 	 * @param resultConsumer 
 	 * @see AtomSql#tryBatch(Runnable)
 	 * @see AtomSql#tryBatch(Supplier)

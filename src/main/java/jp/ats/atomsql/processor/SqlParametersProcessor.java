@@ -30,6 +30,7 @@ import jp.ats.atomsql.UnknownSqlTypeNameException;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.TypeHint;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
+import jp.ats.atomsql.processor.MethodExtractor.SqlNotFoundException;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 import jp.ats.atomsql.type.NULL;
 import jp.ats.atomsql.type.OBJECT;
@@ -151,9 +152,8 @@ class SqlParametersProcessor {
 		Result result;
 		try {
 			result = extractor.execute(e);
-		} catch (SqlFileNotFoundException sfnfe) {
-			//メソッドeにはSQLファイルが必要です
-			error("Method " + e.getSimpleName() + " requires a SQL file", e);
+		} catch (SqlNotFoundException | SqlFileNotFoundException ex) {
+			error(ex.getMessage(), e);
 			return;
 		}
 

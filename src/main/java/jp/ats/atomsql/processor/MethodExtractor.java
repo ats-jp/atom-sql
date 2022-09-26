@@ -9,9 +9,10 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic.Kind;
 
-import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.AtomSqlUtils;
+import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.annotation.Sql;
+import jp.ats.atomsql.annotation.SqlFile;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 
 class MethodExtractor {
@@ -36,7 +37,23 @@ class MethodExtractor {
 
 	}
 
-	Result execute(Element method) throws SqlFileNotFoundException {
+	public static final class SqlNotFoundException extends Exception {
+
+		private static final long serialVersionUID = -7784753424212397646L;
+
+		private SqlNotFoundException(String message) {
+			super(message);
+		}
+
+		//メソッド%sにはSqlアノテーションかSqlFileアノテーションが必要です
+		private static final String messageTemplate = "Method %s requires a " + Sql.class.getSimpleName() + " annotation or a " + SqlFile.class.getSimpleName() + " annotation";
+
+		public static String message(String methodName) {
+			return String.format(messageTemplate, methodName);
+		}
+	}
+
+	Result execute(Element method) throws SqlNotFoundException, SqlFileNotFoundException {
 		var env = envSupplier.get();
 
 		var packageNameAndBinaryClassName = ProcessorUtils.getPackageNameAndBinaryClassName(method, env);
@@ -50,9 +67,17 @@ class MethodExtractor {
 		if (sqlAnnotation != null) {
 			sql = sqlAnnotation.value();
 		} else {
-			//SQLファイルはクラスのバイナリ名と一致していないといけない
-			var classBinaryName = AtomSqlUtils.extractSimpleClassName(className, packageName);
-			var sqlFileName = classBinaryName + "." + method.getSimpleName() + ".sql";
+			var sqlFileAnnotation = method.getAnnotation(SqlFile.class);
+
+			if (sqlFileAnnotation == null)
+				throw new SqlNotFoundException("Method " + method.getSimpleName().toString() + " requires a " + Sql.class.getSimpleName() + " annotation or a " + SqlFile.class.getSimpleName() + " annotation");
+
+			var sqlFileName = sqlFileAnnotation.value();
+			if (sqlFileName.isEmpty()) {
+				//デフォルトのSQLファイル名は、クラスのバイナリ名と一致していないといけない
+				var classBinaryName = AtomSqlUtils.extractSimpleClassName(className, packageName);
+				sqlFileName = classBinaryName + "." + method.getSimpleName() + ".sql";
+			}
 
 			try {
 				sql = new String(

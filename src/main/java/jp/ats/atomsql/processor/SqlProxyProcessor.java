@@ -42,7 +42,6 @@ import jp.ats.atomsql.HalfAtom;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.DataObject;
-import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlInterpolation;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
@@ -50,6 +49,7 @@ import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
+import jp.ats.atomsql.processor.MethodExtractor.SqlNotFoundException;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 import jp.ats.atomsql.type.CSV;
 
@@ -433,9 +433,8 @@ class SqlProxyProcessor {
 			try {
 				//SQLファイルが存在するかチェックするために実行
 				result = extractor.execute(e);
-			} catch (SqlFileNotFoundException sfnfe) {
-				//メソッドeにはSqlアノテーションかSQLファイルが必要です
-				error("Method " + e.getSimpleName() + " requires a " + Sql.class.getSimpleName() + " annotation or a SQL file", e);
+			} catch (SqlNotFoundException | SqlFileNotFoundException ex) {
+				error(ex.getMessage(), e);
 
 				builder.setError();
 

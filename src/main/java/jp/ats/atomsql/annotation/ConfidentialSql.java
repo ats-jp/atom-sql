@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  * valueにパラメータ名を指定しない場合、すべての値がログに出力されなくなります。
  * @author 千葉 哲嗣
  */
-@Target({ METHOD })
+@Target(METHOD)
 @Retention(RUNTIME)
 public @interface ConfidentialSql {
 

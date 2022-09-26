@@ -13,7 +13,7 @@ import jp.ats.atomsql.Atom;
  * 完全なSQLである必要はなく、{@link Atom}を使用して結合等の操作が可能です。
  * @author 千葉 哲嗣
  */
-@Target({ METHOD })
+@Target(METHOD)
 @Retention(RUNTIME)
 public @interface Sql {
 

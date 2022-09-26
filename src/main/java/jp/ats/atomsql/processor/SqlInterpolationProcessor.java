@@ -22,6 +22,7 @@ import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.HalfAtom;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
+import jp.ats.atomsql.processor.MethodExtractor.SqlNotFoundException;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
 
 /**
@@ -126,9 +127,8 @@ class SqlInterpolationProcessor {
 		Result result;
 		try {
 			result = extractor.execute(e);
-		} catch (SqlFileNotFoundException sfnfe) {
-			//メソッドeにはSQLファイルが必要です
-			error("Method " + e.getSimpleName() + " requires a SQL file", e);
+		} catch (SqlNotFoundException | SqlFileNotFoundException ex) {
+			error(ex.getMessage(), e);
 			return;
 		}
 

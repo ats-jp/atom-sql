@@ -42,6 +42,7 @@ import jp.ats.atomsql.annotation.NoSqlLog;
 import jp.ats.atomsql.annotation.NonThreadSafe;
 import jp.ats.atomsql.annotation.Qualifier;
 import jp.ats.atomsql.annotation.Sql;
+import jp.ats.atomsql.annotation.SqlFile;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.processor.annotation.Methods;
@@ -143,14 +144,17 @@ public class AtomSql {
 		}
 
 		private void flushAll() {
-			allResources.forEach((name, map) -> {
-				map.forEach((sql, resources) -> {
-					flush(name, sql, resources);
+			try {
+				allResources.forEach((name, map) -> {
+					map.forEach((sql, resources) -> {
+						flush(name, sql, resources);
+					});
 				});
-			});
-
-			num = 0;
-			allResources.clear();
+			} finally {
+				//flush内で例外が発生した場合、tryBatch等のfinallyでflushAllが実施されるため、二度実行されないように必ず空にする
+				num = 0;
+				allResources.clear();
+			}
 		}
 
 		private void flush(String name, String sql, List<Resource> resources) {
@@ -400,7 +404,8 @@ public class AtomSql {
 	/**
 	 * バッチ処理を実施します。<br>
 	 * {@link Runnable}内で行われる更新処理はすべて、即時実行はされずに集められ、{@Runnable}の処理が終了したのち一括で実行されます。<br>
-	 * 大量の更新処理を行わなければならない場合、処理の高速化を見込むことが可能です。
+	 * 大量の更新処理を行わなければならない場合、処理の高速化を見込むことが可能です。<br>
+	 * 閾値に達した場合など一括実行中に例外が発生した場合、未実施の更新はすべて破棄されます。
 	 * @param runnable 更新処理を含む汎用処理
 	 */
 	public void tryBatch(Runnable runnable) {
@@ -421,6 +426,7 @@ public class AtomSql {
 	/**
 	 * バッチ処理を実施します。<br>
 	 * {@link #tryBatch(Runnable)}と違い、何らかの処理結果を取り出したい場合に使用します<br>
+	 * 閾値に達した場合など一括実行中に例外が発生した場合、未実施の更新はすべて破棄されます。
 	 * @param <T> 返却値の型
 	 * @see #tryBatch(Runnable)
 	 * @param supplier 結果を返却が可能な更新処理を含む汎用処理
@@ -604,10 +610,17 @@ public class AtomSql {
 			return sqlContainer.value();
 		}
 
-		var sqlFileName = AtomSqlUtils.extractSimpleClassName(proxyClassName, decreredClass.getPackage().getName())
-			+ "."
-			+ method.getName()
-			+ ".sql";
+		var sqlFile = method.getAnnotation(SqlFile.class);
+		if (sqlFile == null)
+			throw new IllegalStateException("Method " + method.getName() + " requires " + Sql.class.getSimpleName() + " annotation or a " + SqlFile.class.getSimpleName() + " annotation");
+
+		var sqlFileName = sqlFile.value();
+		if (sqlFileName.isEmpty()) {
+			sqlFileName = AtomSqlUtils.extractSimpleClassName(proxyClassName, decreredClass.getPackage().getName())
+				+ "."
+				+ method.getName()
+				+ ".sql";
+		}
 
 		var url = decreredClass.getResource(sqlFileName);
 		if (url == null)

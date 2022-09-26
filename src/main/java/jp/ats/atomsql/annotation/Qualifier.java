@@ -13,8 +13,8 @@ import jp.ats.atomsql.Endpoint;
  * {@link Endpoint}を登録する対象となる識別子を表します。
  * @author 千葉 哲嗣
  */
-@Retention(RUNTIME)
 @Target({ TYPE, METHOD })
+@Retention(RUNTIME)
 public @interface Qualifier {
 
 	/**

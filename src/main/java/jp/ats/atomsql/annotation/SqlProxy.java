@@ -30,7 +30,7 @@ import jp.ats.atomsql.AtomSql;
  * Proxyインターフェイスではdefaultメソッドを定義し使用することが可能ですが、注意点としてその場合Proxyインターフェイスをpublicにする必要があります。
  * @author 千葉 哲嗣
  */
-@Target({ TYPE })
+@Target(TYPE)
 @Retention(RUNTIME)
 public @interface SqlProxy {
 }

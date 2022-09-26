@@ -29,6 +29,7 @@ public class SimpleMavenSqlFileResolver implements SqlFileResolver {
 			return Files.readAllBytes(java);
 		}
 
-		throw new SqlFileNotFoundException();
+		//SQLファイル %s が見つかりません
+		throw new SqlFileNotFoundException("SQL file " + sqlFileName + " was not found");
 	}
 }

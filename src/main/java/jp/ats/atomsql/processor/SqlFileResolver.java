@@ -32,5 +32,13 @@ public interface SqlFileResolver {
 	public class SqlFileNotFoundException extends Exception {
 
 		private static final long serialVersionUID = 846870994213882546L;
+
+		/**
+		 * コンストラクタ
+		 * @param message 例外メッセージ
+		 */
+		public SqlFileNotFoundException(String message) {
+			super(message);
+		}
 	}
 }

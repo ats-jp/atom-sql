@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * このアノテーションを付与するメソッドの戻り値はvalueで指定した{SqlProxy}型、パラメータ数は0である必要があります。
  * @author 千葉 哲嗣
  */
-@Retention(RUNTIME)
 @Target(METHOD)
+@Retention(RUNTIME)
 public @interface SqlProxySupplier {
 }

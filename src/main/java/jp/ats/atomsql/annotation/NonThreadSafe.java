@@ -19,7 +19,7 @@ import jp.ats.atomsql.NonThreadSafeException;
  * @see AtomSql#tryNonThreadSafe(Supplier)
  * @author 千葉 哲嗣
  */
+@Target(METHOD)
 @Retention(RUNTIME)
-@Target({ METHOD })
 public @interface NonThreadSafe {
 }

@@ -18,7 +18,7 @@ import jp.ats.atomsql.HalfAtom;
  * このアノテーションで指定するクラス名を（そのパッケージ内で）重複して指定してしまった場合、同じものを使用するのではなくコンパイルエラーとなります。
  * @author 千葉 哲嗣
  */
-@Retention(RUNTIME)
 @Target(METHOD)
+@Retention(RUNTIME)
 public @interface SqlInterpolation {
 }
