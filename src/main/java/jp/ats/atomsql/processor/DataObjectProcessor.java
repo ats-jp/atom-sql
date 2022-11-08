@@ -29,7 +29,7 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor14;
 import javax.tools.Diagnostic.Kind;
 
-import jp.ats.atomsql.AtomSqlInitializer;
+import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.annotation.DataObject;
@@ -53,7 +53,7 @@ class DataObjectProcessor {
 
 	DataObjectProcessor(Supplier<ProcessingEnvironment> processingEnv) {
 		this.processingEnv = processingEnv;
-		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().typeFactoryClass());
+		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSql.configure().typeFactoryClass());
 		typeNameExtractor = new TypeNameExtractor(processingEnv);
 		builder = new MetadataBuilder(processingEnv, methodVisitor);
 	}

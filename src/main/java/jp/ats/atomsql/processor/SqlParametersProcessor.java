@@ -20,7 +20,7 @@ import javax.lang.model.element.VariableElement;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
-import jp.ats.atomsql.AtomSqlInitializer;
+import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.AtomSqlUtils;
@@ -52,7 +52,7 @@ class SqlParametersProcessor {
 
 	SqlParametersProcessor(Supplier<ProcessingEnvironment> processingEnv) {
 		this.processingEnv = processingEnv;
-		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().typeFactoryClass());
+		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSql.configure().typeFactoryClass());
 		extractor = new MethodExtractor(processingEnv);
 	}
 

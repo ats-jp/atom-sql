@@ -596,7 +596,7 @@ public class AtomSql {
 	}
 
 	private static void logElapsed(SqlLogger sqlLogger, long startNanos) {
-		sqlLogger.perform(log -> {
+		sqlLogger.logElapsed(log -> {
 			var elapsed = (System.nanoTime() - startNanos) / 1000000f;
 			log.info("elapsed: " + new BigDecimal(elapsed).setScale(2, RoundingMode.DOWN) + "ms");
 		});

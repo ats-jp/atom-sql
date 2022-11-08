@@ -13,10 +13,16 @@ abstract class SqlLogger {
 
 	abstract void perform(Consumer<Log> consumer);
 
+	abstract void logElapsed(Consumer<Log> consumer);
+
 	static final SqlLogger disabled = new SqlLogger() {
 
 		@Override
 		void perform(Consumer<Log> consumer) {
+		}
+
+		@Override
+		void logElapsed(Consumer<Log> consumer) {
 		}
 	};
 
@@ -26,6 +32,11 @@ abstract class SqlLogger {
 			@Override
 			void perform(Consumer<Log> consumer) {
 				AtomSql.log.info("------ @" + NoSqlLog.class.getSimpleName() + " ------ " + noSqlLog);
+			}
+
+			@Override
+			void logElapsed(Consumer<Log> consumer) {
+				log(consumer);
 			}
 		};
 	}
@@ -38,7 +49,16 @@ abstract class SqlLogger {
 
 		@Override
 		void perform(Consumer<Log> consumer) {
-			if (AtomSql.configure().enableLog()) consumer.accept(AtomSql.log);
+			log(consumer);
 		}
+
+		@Override
+		void logElapsed(Consumer<Log> consumer) {
+			log(consumer);
+		}
+	}
+
+	private static void log(Consumer<Log> consumer) {
+		if (AtomSql.configure().enableLog()) consumer.accept(AtomSql.log);
 	}
 }

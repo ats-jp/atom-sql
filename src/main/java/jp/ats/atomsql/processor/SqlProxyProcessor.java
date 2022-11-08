@@ -33,7 +33,6 @@ import javax.tools.StandardLocation;
 
 import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.AtomSql;
-import jp.ats.atomsql.AtomSqlInitializer;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.Constants;
@@ -76,7 +75,7 @@ class SqlProxyProcessor {
 
 	public SqlProxyProcessor(Supplier<ProcessingEnvironment> processingEnv) {
 		this.processingEnv = processingEnv;
-		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSqlInitializer.configure().typeFactoryClass());
+		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSql.configure().typeFactoryClass());
 		typeNameExtractor = new TypeNameExtractor(processingEnv);
 		extractor = new MethodExtractor(processingEnv);
 		builder = new MetadataBuilder(processingEnv, methodVisitor);

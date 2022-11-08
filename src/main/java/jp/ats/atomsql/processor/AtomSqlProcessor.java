@@ -11,7 +11,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 
-import jp.ats.atomsql.AtomSqlInitializer;
+import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlInterpolation;
 import jp.ats.atomsql.annotation.SqlParameters;
@@ -30,7 +30,7 @@ import jp.ats.atomsql.annotation.SqlProxy;
 public class AtomSqlProcessor extends AbstractProcessor {
 
 	static {
-		AtomSqlInitializer.initializeIfUninitialized();
+		AtomSql.initializeIfUninitialized();
 	}
 
 	private final SqlProxyProcessor sqlProxyAnnotationProcessor;
