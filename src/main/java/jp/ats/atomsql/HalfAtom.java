@@ -64,4 +64,15 @@ public class HalfAtom<T, I> {
 
 		return atom.put(map);
 	}
+
+	/**
+	 * 自動生成された変数展開用クラス I をもとにSQL文の変数展開を部分的に行います。<br>
+	 * 展開された新しいインスタンスにさらに{@link #put(Consumer)}を行い完全に展開する必要があります。
+	 * @see HalfAtom#put(Consumer)
+	 * @param consumer 変数展開用クラスのインスタンスを受け取る{@link Consumer}
+	 * @return 部分的に展開された新しい{@link HalfAtom}
+	 */
+	public HalfAtom<T, I> update(Consumer<I> consumer) {
+		return new HalfAtom<>(put(consumer), sqlInterpolationClass);
+	}
 }

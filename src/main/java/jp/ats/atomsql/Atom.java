@@ -110,6 +110,16 @@ public class Atom<T> {
 	 */
 	public static final Atom<?> R = RIGHT_PAREN;
 
+	/**
+	 * AND
+	 */
+	public static final Atom<?> AND = newInstance("AND");
+
+	/**
+	 * OR
+	 */
+	public static final Atom<?> OR = newInstance("OR");
+
 	private final AtomSql atomSql;
 
 	private final Supplier<SqlProxyHelper> helperSupplier;
