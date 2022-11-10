@@ -72,7 +72,7 @@ public class HalfAtom<T, I> {
 	 * @param consumer 変数展開用クラスのインスタンスを受け取る{@link Consumer}
 	 * @return 部分的に展開された新しい{@link HalfAtom}
 	 */
-	public HalfAtom<T, I> update(Consumer<I> consumer) {
+	public HalfAtom<T, I> renew(Consumer<I> consumer) {
 		return new HalfAtom<>(put(consumer), sqlInterpolationClass);
 	}
 }
