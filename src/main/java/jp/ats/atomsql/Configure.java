@@ -2,6 +2,7 @@ package jp.ats.atomsql;
 
 import java.util.regex.Pattern;
 
+import jp.ats.atomsql.annotation.NoSqlLog;
 import jp.ats.atomsql.annotation.Qualifier;
 
 /**
@@ -25,6 +26,14 @@ public interface Configure {
 	 * @return フィルタパターン
 	 */
 	Pattern logStackTracePattern();
+
+	/**
+	 * ignore-no-sql-log<br>
+	 * アノテーション{@link NoSqlLog}が付与されていても、それを無視してSQLログを出力するかどうか<br>
+	 * 無視してSQLのログ出力を行う場合、true
+	 * @return {@link NoSqlLog}を無視するか
+	 */
+	boolean ignoreNoSqlLog();
 
 	/**
 	 * use-qualifier<br>

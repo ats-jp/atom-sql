@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import jp.ats.atomsql.annotation.NoSqlLog;
 import jp.ats.atomsql.annotation.Qualifier;
 
 /**
@@ -28,6 +29,13 @@ public class PropertiesConfigure implements Configure {
 	 * パターンにマッチしたものがログに出力される
 	 */
 	private final Pattern logStackTracePattern;
+
+	/**
+	 * ignore-no-sql-log<br>
+	 * アノテーション{@link NoSqlLog}が付与されていても、それを無視してSQLログを出力するかどうか<br>
+	 * 無視してSQLのログ出力を行う場合、true
+	 */
+	private final boolean ignoreNoSqlLog;
 
 	/**
 	 * use-qualifier<br>
@@ -66,6 +74,8 @@ public class PropertiesConfigure implements Configure {
 
 		logStackTracePattern = Pattern.compile(config.getProperty("log-stacktrace-pattern", ".+"));
 
+		ignoreNoSqlLog = Boolean.valueOf(config.getProperty("ignore-no-sql-log", "false"));
+
 		usesQualifier = Boolean.valueOf(config.getProperty("use-qualifier", "false"));
 
 		typeFactoryClass = config.getProperty("type-factory-class", null);
@@ -81,6 +91,11 @@ public class PropertiesConfigure implements Configure {
 	@Override
 	public Pattern logStackTracePattern() {
 		return logStackTracePattern;
+	}
+
+	@Override
+	public boolean ignoreNoSqlLog() {
+		return ignoreNoSqlLog;
 	}
 
 	@Override

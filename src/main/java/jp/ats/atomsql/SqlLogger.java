@@ -11,6 +11,8 @@ import jp.ats.atomsql.annotation.NoSqlLog;
  */
 abstract class SqlLogger {
 
+	private static String noSqlLogClassName = NoSqlLog.class.getSimpleName();
+
 	abstract void perform(Consumer<Log> consumer);
 
 	abstract void logElapsed(Consumer<Log> consumer);
@@ -27,11 +29,12 @@ abstract class SqlLogger {
 	};
 
 	static SqlLogger noSqlLogInstance(String noSqlLog) {
+
 		return new SqlLogger() {
 
 			@Override
 			void perform(Consumer<Log> consumer) {
-				AtomSql.log.info("------ @" + NoSqlLog.class.getSimpleName() + " ------ " + noSqlLog);
+				AtomSql.log.info("------ @" + noSqlLogClassName + " ------ " + noSqlLog);
 			}
 
 			@Override
