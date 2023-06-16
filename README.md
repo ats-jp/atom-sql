@@ -89,7 +89,7 @@ public class SampleInfo {
 
     public final String name;
 
-    public Optional<String> note;
+    public final Optional<String> note;
 
     public SampleInfo(ResultSet rs) throws SQLException {
         id = rs.getLong("id");
