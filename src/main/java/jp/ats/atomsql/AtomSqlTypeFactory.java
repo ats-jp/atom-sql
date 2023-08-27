@@ -58,7 +58,9 @@ public interface AtomSqlTypeFactory {
 	 * @return {@link AtomSqlTypeFactory}
 	 */
 	public static AtomSqlTypeFactory newInstance(String className) {
-		if (className == null || className.isBlank()) return DefaultAtomSqlTypeFactory.instance;
+		if (className == null || className.isBlank() || className.equals(DefaultAtomSqlTypeFactory.class.getName()))
+			return DefaultAtomSqlTypeFactory.instance;
+
 		try {
 			return (AtomSqlTypeFactory) Class.forName(
 				className,
