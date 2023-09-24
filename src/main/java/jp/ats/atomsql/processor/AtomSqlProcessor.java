@@ -25,7 +25,7 @@ import jp.ats.atomsql.annotation.SqlProxy;
 	"jp.ats.atomsql.annotation.SqlParameters",
 	"jp.ats.atomsql.annotation.DataObject",
 	"jp.ats.atomsql.annotation.SqlInterpolation", })
-@SupportedSourceVersion(SourceVersion.RELEASE_16)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 @SuppressWarnings("javadoc")
 public class AtomSqlProcessor extends AbstractProcessor {
 
