@@ -16,4 +16,12 @@ import jp.ats.atomsql.AtomSql;
 @Target({ TYPE, METHOD })
 @Retention(RUNTIME)
 public @interface NoSqlLog {
+
+	/**
+	 * 経過時間のログ出力を行うかどうかを表すフラグです。<br>
+	 * falseの場合、対象となるSQLのみログ出力を行わない場合と同等の動作となります。<br>
+	 * デフォルトはtrueです。
+	 * @return 行う場合、true
+	 */
+	boolean logElapseTime() default true;
 }

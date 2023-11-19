@@ -28,13 +28,13 @@ abstract class SqlLogger {
 		}
 	};
 
-	static SqlLogger noSqlLogInstance(String noSqlLog) {
+	static SqlLogger noSqlLogInstance(String noSqlLogSign) {
 
 		return new SqlLogger() {
 
 			@Override
 			void perform(Consumer<Log> consumer) {
-				AtomSql.log.info("------ @" + noSqlLogClassName + " ------ " + noSqlLog);
+				AtomSql.log.info("------ @" + noSqlLogClassName + " ------ " + noSqlLogSign);
 			}
 
 			@Override

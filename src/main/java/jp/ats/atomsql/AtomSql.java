@@ -283,8 +283,6 @@ public class AtomSql {
 			//アノテーションSqlProxyが見つかりません
 			throw new IllegalArgumentException("Annotation " + SqlProxy.class.getSimpleName() + " is not found");
 
-		var noSqlLogOnClass = proxyInterface.isAnnotationPresent(NoSqlLog.class);
-
 		@SuppressWarnings("unchecked")
 		T instance = (T) Proxy.newProxyInstance(
 			Thread.currentThread().getContextClassLoader(),
@@ -328,10 +326,23 @@ public class AtomSql {
 
 				SqlLogger mySqlLogger;
 				if (conf.enableLog()) {
-					var noSqlLogOnMethod = method.isAnnotationPresent(NoSqlLog.class);
+					NoSqlLog noSqlLog;
+					String noSqlLogSign;
+					if ((noSqlLog = proxyInterface.getAnnotation(NoSqlLog.class)) != null) {
+						noSqlLogSign = proxyInterface.toString();
+					} else if ((noSqlLog = method.getAnnotation(NoSqlLog.class)) != null) {
+						noSqlLogSign = method.toString();
+					} else {
+						noSqlLog = null;
+						noSqlLogSign = null;
+					}
 
-					if (!conf.ignoreNoSqlLog() && (noSqlLogOnClass || noSqlLogOnMethod)) {
-						mySqlLogger = SqlLogger.noSqlLogInstance(noSqlLogOnMethod ? method.toString() : proxyInterface.toString());
+					if (!conf.ignoreNoSqlLog() && noSqlLog != null) {
+						if (noSqlLog.logElapseTime()) {
+							mySqlLogger = SqlLogger.noSqlLogInstance(noSqlLogSign);
+						} else {
+							mySqlLogger = SqlLogger.disabled;
+						}
 					} else {
 						mySqlLogger = sqlLogger;
 					}
