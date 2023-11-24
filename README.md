@@ -541,6 +541,7 @@ SqlProxyのSQL実施メソッドに`@SqlInterpolation`アノテーションを�
 // HalfAtomの第二型パラメーターにSqlParametersと同様に任意のクラス名を記述することで
 // Atom SQLがそのクラスを同一パッケージ内に生成する
 @Sql("SELECT /*${selectClause}*/ FROM sample /*${whereClause}*/")
+@SqlInterpolation
 public HalfAtom<SampleInfo, SampleInterpolation> main();
 
 // ここで生成されるAtomは単なるパーツなので、型パラメーターは ? でよい
