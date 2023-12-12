@@ -1,6 +1,6 @@
 package jp.ats.atomsql.annotation;
 
-import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
@@ -12,14 +12,14 @@ import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.NonThreadSafeException;
 
 /**
- * {@link SqlProxy}が付与されたクラスのメソッドにこのアノテーションを付与した場合、{@link AtomSqlType}のなかでこのアノテーションが付与された型を使用することが可能になります。<br>
+ * {@link AtomSqlType}の実装クラスのうち、このアノテーションが付与されている場合、その型は(内部の値の変更が可能である等の理由で)スレッドセーフではないことを表しています。<br>
  * 実行は{@link AtomSql#tryNonThreadSafe(Runnable)}か{@link AtomSql#tryNonThreadSafe(Supplier)}内でのみ可能です。
  * @see NonThreadSafeException
  * @see AtomSql#tryNonThreadSafe(Runnable)
  * @see AtomSql#tryNonThreadSafe(Supplier)
  * @author 千葉 哲嗣
  */
-@Target(METHOD)
+@Target(TYPE)
 @Retention(RUNTIME)
 public @interface NonThreadSafe {
 }

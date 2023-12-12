@@ -40,9 +40,4 @@ public class P_LONG implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.LONG.instance;
 	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return false;
-	}
 }

@@ -46,9 +46,4 @@ public class INTEGER implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return false;
-	}
 }

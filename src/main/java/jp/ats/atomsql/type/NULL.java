@@ -47,9 +47,4 @@ public class NULL implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		throw new UnsupportedOperationException();
 	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return false;
-	}
 }

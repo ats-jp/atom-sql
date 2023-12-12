@@ -40,9 +40,4 @@ public class P_DOUBLE implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.DOUBLE.instance;
 	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return false;
-	}
 }

@@ -46,9 +46,4 @@ public class FLOAT implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return false;
-	}
 }

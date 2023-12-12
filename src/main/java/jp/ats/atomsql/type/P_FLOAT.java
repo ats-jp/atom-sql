@@ -40,9 +40,4 @@ public class P_FLOAT implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.FLOAT.instance;
 	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return false;
-	}
 }

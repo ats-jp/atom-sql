@@ -48,9 +48,4 @@ public class TIME implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return false;
-	}
 }

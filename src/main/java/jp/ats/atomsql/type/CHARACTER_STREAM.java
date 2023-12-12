@@ -8,10 +8,12 @@ import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.CharacterStream;
+import jp.ats.atomsql.annotation.NonThreadSafe;
 
 /**
  * {@link CharacterStream}
  */
+@NonThreadSafe
 public class CHARACTER_STREAM implements AtomSqlType {
 
 	/**
@@ -46,10 +48,5 @@ public class CHARACTER_STREAM implements AtomSqlType {
 	@Override
 	public AtomSqlType toTypeArgument() {
 		return this;
-	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return true;
 	}
 }

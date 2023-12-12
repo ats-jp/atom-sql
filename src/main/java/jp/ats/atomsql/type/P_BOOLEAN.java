@@ -40,9 +40,4 @@ public class P_BOOLEAN implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.BOOLEAN.instance;
 	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return false;
-	}
 }

@@ -217,11 +217,11 @@ class SqlParametersProcessor {
 
 			var typeArgument = annotatedTypeArgument.or(
 				() -> f.typeArgumentHint.map(typeFactory::typeArgumentOf))
-				.map(t -> "<" + t.typeArgumentExpression() + ">")
+				.map(t -> "<" + t.typeExpression() + ">")
 				.orElse("");
 
 			var field = "public "
-				+ annotatedHintType.orElseGet(() -> f.typeHint.map(typeFactory::typeOf).orElse(OBJECT.instance)).type().getName()
+				+ annotatedHintType.orElseGet(() -> f.typeHint.map(typeFactory::typeOf).orElse(OBJECT.instance)).typeExpression()
 				+ typeArgument
 				+ " "
 				+ f.placeholder

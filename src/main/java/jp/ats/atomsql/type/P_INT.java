@@ -40,9 +40,4 @@ public class P_INT implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.INTEGER.instance;
 	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return false;
-	}
 }

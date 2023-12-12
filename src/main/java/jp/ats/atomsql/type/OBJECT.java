@@ -7,10 +7,12 @@ import java.sql.SQLException;
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.AtomSqlTypeFactory;
+import jp.ats.atomsql.annotation.NonThreadSafe;
 
 /**
  * {@link Object}
  */
+@NonThreadSafe
 public class OBJECT implements AtomSqlType {
 
 	/**
@@ -44,10 +46,5 @@ public class OBJECT implements AtomSqlType {
 	@Override
 	public AtomSqlType toTypeArgument() {
 		return this;
-	}
-
-	@Override
-	public boolean nonThreadSafe() {
-		return true;
 	}
 }

@@ -7,10 +7,12 @@ import java.sql.SQLException;
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.AtomSqlTypeFactory;
+import jp.ats.atomsql.annotation.NonThreadSafe;
 
 /**
  * byte[]
  */
+@NonThreadSafe
 public class BYTE_ARRAY implements AtomSqlType {
 
 	/**
@@ -47,7 +49,7 @@ public class BYTE_ARRAY implements AtomSqlType {
 	}
 
 	@Override
-	public boolean nonThreadSafe() {
-		return true;
+	public String typeExpression() {
+		return "byte[]";
 	}
 }

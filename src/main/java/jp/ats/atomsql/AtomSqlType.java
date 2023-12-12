@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import jp.ats.atomsql.annotation.NonThreadSafe;
 import jp.ats.atomsql.annotation.TypeHint;
 import jp.ats.atomsql.type.BIG_DECIMAL;
 import jp.ats.atomsql.type.BINARY_STREAM;
@@ -246,7 +247,9 @@ public interface AtomSqlType {
 	 * この型がスレッドセーフではないかを返します。
 	 * @return nonThreadSafeの場合、true
 	 */
-	boolean nonThreadSafe();
+	default boolean nonThreadSafe() {
+		return getClass().getAnnotation(NonThreadSafe.class) != null;
+	}
 
 	/**
 	 * SQL内で使用するプレースホルダ文字列表現を返します。
@@ -258,10 +261,10 @@ public interface AtomSqlType {
 	}
 
 	/**
-	 * この型が{@link CSV}の型パラメーターとして使用される場合の文字列表現を返します。
+	 * この型の文字列表現を返します。
 	 * @return 型パラメーター文字列表現
 	 */
-	default String typeArgumentExpression() {
+	default String typeExpression() {
 		return type().getName();
 	}
 }
