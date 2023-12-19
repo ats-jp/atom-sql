@@ -17,8 +17,7 @@ public class P_DOUBLE implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new P_DOUBLE();
 
-	private P_DOUBLE() {
-	}
+	private P_DOUBLE() {}
 
 	@Override
 	public Class<?> type() {

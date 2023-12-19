@@ -20,8 +20,7 @@ public class DATE implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new DATE();
 
-	private DATE() {
-	}
+	private DATE() {}
 
 	@Override
 	public Class<?> type() {

@@ -20,5 +20,4 @@ import jp.ats.atomsql.HalfAtom;
  */
 @Target(METHOD)
 @Retention(RUNTIME)
-public @interface SqlInterpolation {
-}
+public @interface SqlInterpolation {}

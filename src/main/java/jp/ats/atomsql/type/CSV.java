@@ -23,8 +23,7 @@ public class CSV implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new CSV();
 
-	private CSV() {
-	}
+	private CSV() {}
 
 	@Override
 	public Class<?> type() {

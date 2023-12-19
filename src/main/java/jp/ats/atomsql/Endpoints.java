@@ -69,6 +69,5 @@ public class Endpoints {
 	 * @param endpoint {@link Endpoint}
 	 * @param primary プライマリBeanかどうか
 	 */
-	public static record Entry(String name, Endpoint endpoint, boolean primary) {
-	}
+	public static record Entry(String name, Endpoint endpoint, boolean primary) {}
 }

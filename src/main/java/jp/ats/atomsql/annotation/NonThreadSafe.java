@@ -21,5 +21,4 @@ import jp.ats.atomsql.NonThreadSafeException;
  */
 @Target(TYPE)
 @Retention(RUNTIME)
-public @interface NonThreadSafe {
-}
+public @interface NonThreadSafe {}

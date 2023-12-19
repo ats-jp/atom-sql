@@ -18,8 +18,7 @@ public class NULL implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new NULL();
 
-	private NULL() {
-	}
+	private NULL() {}
 
 	@Override
 	public Class<?> type() {

@@ -18,8 +18,7 @@ public class STRING implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new STRING();
 
-	private STRING() {
-	}
+	private STRING() {}
 
 	@Override
 	public Class<?> type() {

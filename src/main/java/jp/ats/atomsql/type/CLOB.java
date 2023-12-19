@@ -21,8 +21,7 @@ public class CLOB implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new CLOB();
 
-	private CLOB() {
-	}
+	private CLOB() {}
 
 	@Override
 	public Class<?> type() {

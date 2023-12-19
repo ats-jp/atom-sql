@@ -18,8 +18,7 @@ public class INTEGER implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new INTEGER();
 
-	private INTEGER() {
-	}
+	private INTEGER() {}
 
 	@Override
 	public Class<?> type() {

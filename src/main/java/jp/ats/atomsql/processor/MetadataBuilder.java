@@ -30,8 +30,7 @@ class MetadataBuilder {
 
 	private final MethodVisitor visitor;
 
-	static class MethodVisitor extends SimpleElementVisitor14<Void, List<MethodInfo>> {
-	}
+	static class MethodVisitor extends SimpleElementVisitor14<Void, List<MethodInfo>> {}
 
 	MetadataBuilder(Supplier<ProcessingEnvironment> envSupplier, MethodVisitor visitor) {
 		this.envSupplier = envSupplier;

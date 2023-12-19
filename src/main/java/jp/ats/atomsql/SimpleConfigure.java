@@ -21,5 +21,4 @@ public record SimpleConfigure(
 	boolean ignoreNoSqlLog,
 	boolean usesQualifier,
 	String typeFactoryClass,
-	int batchThreshold) implements Configure {
-}
+	int batchThreshold) implements Configure {}

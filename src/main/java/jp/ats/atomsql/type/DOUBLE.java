@@ -18,8 +18,7 @@ public class DOUBLE implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new DOUBLE();
 
-	private DOUBLE() {
-	}
+	private DOUBLE() {}
 
 	@Override
 	public Class<?> type() {

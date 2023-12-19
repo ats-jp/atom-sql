@@ -73,8 +73,7 @@ public class ProcessorUtils {
 	 * @param packageName 
 	 * @param binaryClassName 
 	 */
-	public static record PackageNameAndBinaryClassName(String packageName, String binaryClassName) {
-	}
+	public static record PackageNameAndBinaryClassName(String packageName, String binaryClassName) {}
 
 	/**
 	 * 内部使用
@@ -146,8 +145,7 @@ public class ProcessorUtils {
 
 		static final TypeConverter instance = new TypeConverter();
 
-		private TypeConverter() {
-		}
+		private TypeConverter() {}
 
 		@Override
 		protected TypeElement defaultAction(Element e, Void p) {

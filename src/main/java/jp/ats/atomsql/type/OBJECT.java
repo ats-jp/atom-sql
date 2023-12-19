@@ -20,8 +20,7 @@ public class OBJECT implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new OBJECT();
 
-	private OBJECT() {
-	}
+	private OBJECT() {}
 
 	@Override
 	public Class<?> type() {

@@ -15,5 +15,4 @@ import jp.ats.atomsql.AtomSql;
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface AtomSqlSupplier {
-}
+public @interface AtomSqlSupplier {}

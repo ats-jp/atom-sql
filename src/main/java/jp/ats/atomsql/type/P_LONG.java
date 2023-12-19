@@ -17,8 +17,7 @@ public class P_LONG implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new P_LONG();
 
-	private P_LONG() {
-	}
+	private P_LONG() {}
 
 	@Override
 	public Class<?> type() {

@@ -19,8 +19,7 @@ public class BIG_DECIMAL implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new BIG_DECIMAL();
 
-	private BIG_DECIMAL() {
-	}
+	private BIG_DECIMAL() {}
 
 	@Override
 	public Class<?> type() {

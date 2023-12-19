@@ -18,8 +18,7 @@ public class LONG implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new LONG();
 
-	private LONG() {
-	}
+	private LONG() {}
 
 	@Override
 	public Class<?> type() {

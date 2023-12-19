@@ -21,8 +21,7 @@ public class BINARY_STREAM implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new BINARY_STREAM();
 
-	private BINARY_STREAM() {
-	}
+	private BINARY_STREAM() {}
 
 	@Override
 	public Class<?> type() {

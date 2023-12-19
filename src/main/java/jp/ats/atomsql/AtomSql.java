@@ -118,8 +118,7 @@ public class AtomSql {
 		private static record Resource(
 			SqlProxyHelper helper,
 			Consumer<Integer> resultConsumer,
-			Optional<StackTraceElement[]> stackTrace) {
-		}
+			Optional<StackTraceElement[]> stackTrace) {}
 
 		private final Map<String, Map<String, List<Resource>>> allResources = new HashMap<>();
 

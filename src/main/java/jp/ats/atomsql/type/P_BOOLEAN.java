@@ -17,8 +17,7 @@ public class P_BOOLEAN implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new P_BOOLEAN();
 
-	private P_BOOLEAN() {
-	}
+	private P_BOOLEAN() {}
 
 	@Override
 	public Class<?> type() {

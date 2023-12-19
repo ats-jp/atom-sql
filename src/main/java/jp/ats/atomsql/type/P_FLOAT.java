@@ -17,8 +17,7 @@ public class P_FLOAT implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new P_FLOAT();
 
-	private P_FLOAT() {
-	}
+	private P_FLOAT() {}
 
 	@Override
 	public Class<?> type() {

@@ -17,8 +17,7 @@ public class P_INT implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new P_INT();
 
-	private P_INT() {
-	}
+	private P_INT() {}
 
 	@Override
 	public Class<?> type() {

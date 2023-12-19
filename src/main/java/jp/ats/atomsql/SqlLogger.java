@@ -20,12 +20,10 @@ abstract class SqlLogger {
 	static final SqlLogger disabled = new SqlLogger() {
 
 		@Override
-		void perform(Consumer<Log> consumer) {
-		}
+		void perform(Consumer<Log> consumer) {}
 
 		@Override
-		void logElapsed(Consumer<Log> consumer) {
-		}
+		void logElapsed(Consumer<Log> consumer) {}
 	};
 
 	static SqlLogger noSqlLogInstance(String noSqlLogSign) {

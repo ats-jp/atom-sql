@@ -193,8 +193,7 @@ public class Sandbox {
 
 	private static record Pair(
 		PreparedStatement statement,
-		PreparedStatementInvocationHandler handler) {
-	}
+		PreparedStatementInvocationHandler handler) {}
 
 	private static PreparedStatement preparedStatement() {
 		var handler = new PreparedStatementInvocationHandler();
@@ -238,6 +237,5 @@ public class Sandbox {
 		}
 	}
 
-	private static record Argument(Method method, Object[] args) {
-	}
+	private static record Argument(Method method, Object[] args) {}
 }

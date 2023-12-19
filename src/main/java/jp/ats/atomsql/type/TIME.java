@@ -20,8 +20,7 @@ public class TIME implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new TIME();
 
-	private TIME() {
-	}
+	private TIME() {}
 
 	@Override
 	public Class<?> type() {

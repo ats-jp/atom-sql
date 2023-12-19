@@ -21,8 +21,7 @@ public class CHARACTER_STREAM implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new CHARACTER_STREAM();
 
-	private CHARACTER_STREAM() {
-	}
+	private CHARACTER_STREAM() {}
 
 	@Override
 	public Class<?> type() {

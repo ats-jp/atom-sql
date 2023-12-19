@@ -20,8 +20,7 @@ public class BYTE_ARRAY implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new BYTE_ARRAY();
 
-	private BYTE_ARRAY() {
-	}
+	private BYTE_ARRAY() {}
 
 	@Override
 	public Class<?> type() {

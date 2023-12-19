@@ -21,8 +21,7 @@ public class BLOB implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new BLOB();
 
-	private BLOB() {
-	}
+	private BLOB() {}
 
 	@Override
 	public Class<?> type() {

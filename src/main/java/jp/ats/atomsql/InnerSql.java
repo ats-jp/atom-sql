@@ -60,8 +60,7 @@ class InnerSql {
 		}
 
 		@Override
-		public void placeholder(Consumer<Placeholder> consumer) {
-		}
+		public void placeholder(Consumer<Placeholder> consumer) {}
 
 		@Override
 		public void appendTo(StringBuilder builder) {

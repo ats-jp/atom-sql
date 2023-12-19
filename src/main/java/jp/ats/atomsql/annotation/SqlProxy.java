@@ -32,5 +32,4 @@ import jp.ats.atomsql.AtomSql;
  */
 @Target(TYPE)
 @Retention(RUNTIME)
-public @interface SqlProxy {
-}
+public @interface SqlProxy {}

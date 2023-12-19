@@ -18,8 +18,7 @@ public class FLOAT implements AtomSqlType {
 	 */
 	public static final AtomSqlType instance = new FLOAT();
 
-	private FLOAT() {
-	}
+	private FLOAT() {}
 
 	@Override
 	public Class<?> type() {
