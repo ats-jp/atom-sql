@@ -159,7 +159,7 @@ class SqlProxyProcessor {
 		@Override
 		public ReturnTypeCheckerResult visitPrimitive(PrimitiveType t, ExecutableElement p) {
 			return switch (t.getKind()) {
-			case INT -> ReturnTypeCheckerResult.defaultValue;
+			case INT, VOID -> ReturnTypeCheckerResult.defaultValue;
 			default -> defaultAction(t, p);
 			};
 		}

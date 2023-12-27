@@ -6,7 +6,6 @@ import java.sql.SQLException;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
-import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * null
@@ -26,7 +25,7 @@ public class NULL implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
+	public int bind(int index, PreparedStatement statement, Object value) {
 		try {
 			// nullの場合はsetObject(i, null)
 			// DBによってはエラーとなる可能性があるため、その場合はsetNull(int, int)の使用を検討する

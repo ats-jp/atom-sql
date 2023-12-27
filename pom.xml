@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>jp.ats</groupId>
 	<artifactId>atom-sql</artifactId>
-	<version>0.4.19</version>
+	<version>0.5.0</version>
 	<name>Atom SQL</name>
 	<description>A JDBC wrapper with SQL injection resistant</description>
 
@@ -24,13 +24,6 @@
 		<maven.compiler.release>17</maven.compiler.release>
 		<github.global.server>github-ats-jp</github.global.server>
 	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>1.7.36</version>
-		</dependency>
-	</dependencies>
 	<build>
 		<resources>
 			<resource>

@@ -1,10 +1,9 @@
 package jp.ats.atomsql;
 
+import java.lang.System.Logger;
 import java.sql.PreparedStatement;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
-import org.apache.commons.logging.Log;
 
 /**
  * JdbcTemplateのもつ豊富な機能のうち、Atom SQLで使用する機能のみを操作可能にするためのインターフェイスです。
@@ -41,12 +40,12 @@ public interface Endpoint {
 	/**
 	 * SQLログ出力を行う設定にしている場合、実装に合わせたSQL文をログ出力します。
 	 * @see Configure#enableLog
-	 * @param log {@link Log}
+	 * @param logger {@link Logger}
 	 * @param originalSql プレースホルダ変換前のSQL
 	 * @param sql プレースホルダ変換後のSQL
 	 * @param ps プレースホルダ返還後SQLセット済みの{@link PreparedStatement}
 	 */
-	void logSql(Log log, String originalSql, String sql, PreparedStatement ps);
+	void logSql(Logger logger, String originalSql, String sql, PreparedStatement ps);
 
 	/**
 	 * {@link ConnectionProxy}を使用して行う処理を実施します。

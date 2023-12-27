@@ -6,7 +6,6 @@ import java.sql.SQLException;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
-import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * {@link Long}
@@ -26,7 +25,7 @@ public class LONG implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
+	public int bind(int index, PreparedStatement statement, Object value) {
 		try {
 			statement.setLong(index, (long) value);
 			return index + 1;

@@ -1,5 +1,7 @@
 package jp.ats.atomsql;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,8 +13,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import org.apache.commons.logging.Log;
 
 /**
  * JDBCを使用した{@link Endpoint}の簡易実装クラスです。
@@ -90,8 +90,8 @@ public class JdbcEndpoint implements Endpoint {
 	}
 
 	@Override
-	public void logSql(Log log, String originalSql, String sql, PreparedStatement ps) {
-		log.info("sql:" + Constants.NEW_LINE + ps.toString());
+	public void logSql(Logger logger, String originalSql, String sql, PreparedStatement ps) {
+		logger.log(Level.INFO, "sql:" + Constants.NEW_LINE + ps.toString());
 	}
 
 	@Override

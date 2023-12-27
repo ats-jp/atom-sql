@@ -5,7 +5,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import jp.ats.atomsql.AtomSqlType;
-import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * long
@@ -25,7 +24,7 @@ public class P_LONG implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
+	public int bind(int index, PreparedStatement statement, Object value) {
 		//ラッパー型が使用される
 		throw new UnsupportedOperationException();
 	}

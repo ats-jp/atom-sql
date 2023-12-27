@@ -222,10 +222,9 @@ public interface AtomSqlType {
 	 * @param index
 	 * @param statement
 	 * @param value
-	 * @param factory {@link AtomSqlTypeFactory}
 	 * @return 次index
 	 */
-	int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory);
+	int bind(int index, PreparedStatement statement, Object value);
 
 	/**
 	 * この型に合ったメソッドで{@link ResultSet}から値を取得します。

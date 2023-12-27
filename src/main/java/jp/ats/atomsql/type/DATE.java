@@ -8,7 +8,6 @@ import java.time.LocalDate;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
-import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * {@link LocalDate}
@@ -28,7 +27,7 @@ public class DATE implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
+	public int bind(int index, PreparedStatement statement, Object value) {
 		try {
 			statement.setDate(index, Date.valueOf((LocalDate) value));
 			return index + 1;

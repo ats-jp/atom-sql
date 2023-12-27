@@ -5,7 +5,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import jp.ats.atomsql.AtomSqlType;
-import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * int
@@ -25,7 +24,7 @@ public class P_INT implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
+	public int bind(int index, PreparedStatement statement, Object value) {
 		//ラッパー型が使用される
 		throw new UnsupportedOperationException();
 	}

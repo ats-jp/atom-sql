@@ -6,7 +6,6 @@ import java.sql.SQLException;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
-import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * {@link Float}
@@ -26,7 +25,7 @@ public class FLOAT implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
+	public int bind(int index, PreparedStatement statement, Object value) {
 		try {
 			statement.setFloat(index, (float) value);
 			return index + 1;

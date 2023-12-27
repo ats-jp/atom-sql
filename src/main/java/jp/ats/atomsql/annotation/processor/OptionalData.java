@@ -1,4 +1,4 @@
-package jp.ats.atomsql.processor.annotation;
+package jp.ats.atomsql.annotation.processor;
 
 import java.util.Optional;
 

@@ -6,7 +6,6 @@ import java.sql.SQLException;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
-import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.CharacterStream;
 import jp.ats.atomsql.annotation.NonThreadSafe;
 
@@ -29,7 +28,7 @@ public class CHARACTER_STREAM implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
+	public int bind(int index, PreparedStatement statement, Object value) {
 		var stream = (CharacterStream) value;
 		try {
 			statement.setCharacterStream(index, stream.input, stream.length);

@@ -10,6 +10,7 @@ import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.Csv;
 import jp.ats.atomsql.NonThreadSafeException;
 import jp.ats.atomsql.annotation.DataObject;
+import jp.ats.atomsql.internal.AtomSqlTypeFactoryThreadLocal;
 
 /**
  * Comma Separated Values<br>
@@ -31,15 +32,17 @@ public class CSV implements AtomSqlType {
 	}
 
 	@Override
-	public int bind(int index, PreparedStatement statement, Object value, AtomSqlTypeFactory factory) {
+	public int bind(int index, PreparedStatement statement, Object value) {
 		var values = ((Csv<?>) value).values();
 		var size = values.size();
 		IntStream.range(0, size).forEach(i -> {
 			var v = values.get(i);
 
+			var factory = AtomSqlTypeFactoryThreadLocal.typeFactory();
+
 			check(factory, v);
 
-			factory.selectForPreparedStatement(v).bind(index + i, statement, v, factory);
+			factory.selectForPreparedStatement(v).bind(index + i, statement, v);
 		});
 
 		return index + size;

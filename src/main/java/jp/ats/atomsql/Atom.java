@@ -1,5 +1,6 @@
 package jp.ats.atomsql;
 
+import java.lang.System.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
@@ -11,8 +12,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
-import org.apache.commons.logging.Log;
 
 import jp.ats.atomsql.AtomSql.SqlProxyHelper;
 import jp.ats.atomsql.annotation.DataObject;
@@ -185,7 +184,7 @@ public class Atom<T> {
 			}
 
 			@Override
-			public void logSql(Log log, String originalSql, String sql, PreparedStatement ps) {
+			public void logSql(Logger logger, String originalSql, String sql, PreparedStatement ps) {
 				throw new IllegalAtomException();
 			}
 

@@ -1,6 +1,8 @@
 package jp.ats.atomsql;
 
 import java.io.IOException;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
@@ -30,9 +32,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import jp.ats.atomsql.InnerSql.Element;
 import jp.ats.atomsql.InnerSql.Placeholder;
 import jp.ats.atomsql.InnerSql.Text;
@@ -45,8 +44,9 @@ import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlFile;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
-import jp.ats.atomsql.processor.annotation.Methods;
-import jp.ats.atomsql.processor.annotation.OptionalDatas;
+import jp.ats.atomsql.annotation.processor.Methods;
+import jp.ats.atomsql.annotation.processor.OptionalDatas;
+import jp.ats.atomsql.internal.AtomSqlTypeFactoryThreadLocal;
 
 /**
  * Atom SQLの実行時の処理のほとんどを行うコアクラスです。<br>
@@ -97,7 +97,7 @@ public class AtomSql {
 		return AtomSqlInitializer.configure();
 	}
 
-	static final Log log = LogFactory.getLog(AtomSql.class);
+	static final Logger logger = System.getLogger(AtomSql.class.getName());
 
 	private final AtomSqlTypeFactory typeFactory;
 
@@ -171,7 +171,7 @@ public class AtomSql {
 					public int getBatchSize() {
 						int size = resources.size();
 
-						sqlLogger.perform(log -> log.info("batch size: " + size));
+						sqlLogger.perform(logger -> logger.log(Level.INFO, "batch size: " + size));
 
 						return size;
 					}
@@ -232,7 +232,7 @@ public class AtomSql {
 			}
 
 			@Override
-			public void logSql(Log log, String originalSql, String sql, PreparedStatement ps) {
+			public void logSql(Logger logger, String originalSql, String sql, PreparedStatement ps) {
 				throw new UnsupportedOperationException();
 			}
 
@@ -286,132 +286,134 @@ public class AtomSql {
 		T instance = (T) Proxy.newProxyInstance(
 			Thread.currentThread().getContextClassLoader(),
 			new Class<?>[] { proxyInterface },
-			(proxy, method, args) -> {
-				if (method.isDefault()) return InvocationHandler.invokeDefault(proxy, method, args);
+			(proxy, method, args) -> invokeMethod(proxy, method, args));
 
-				if (method.isAnnotationPresent(AtomSqlSupplier.class)) return AtomSql.this;
+		return instance;
+	}
 
-				var proxyClass = proxy.getClass().getInterfaces()[0];
+	private Object invokeMethod(Object proxy, Method method, Object[] args) throws Throwable {
+		if (method.isDefault()) return InvocationHandler.invokeDefault(proxy, method, args);
 
-				//メソッドに付与されたアノテーション > クラスに付与されたアノテーション
-				var nameAnnotation = qualifier(method).or(() -> qualifier(proxyClass));
+		if (method.isAnnotationPresent(AtomSqlSupplier.class)) return AtomSql.this;
 
-				var proxyClassName = proxyClass.getName();
+		var proxyInterface = proxy.getClass().getInterfaces()[0];
 
-				var methods = Class.forName(
-					proxyClassName + Constants.METADATA_CLASS_SUFFIX,
-					true,
-					Thread.currentThread().getContextClassLoader()).getAnnotation(Methods.class);
+		//メソッドに付与されたアノテーション > クラスに付与されたアノテーション
+		var nameAnnotation = qualifier(method).or(() -> qualifier(proxyInterface));
 
-				var methodName = method.getName();
+		var proxyName = proxyInterface.getName();
 
-				var find = Arrays.stream(methods.value())
-					.filter(
-						m -> m.name().equals(methodName) && Arrays.equals(method.getParameterTypes(), m.parameterTypes()))
-					.findFirst()
-					.get();
+		var methods = Class.forName(
+			proxyName + Constants.METADATA_CLASS_SUFFIX,
+			true,
+			Thread.currentThread().getContextClassLoader()).getAnnotation(Methods.class);
 
-				var sqlProxySupplierAnnotation = method.getAnnotation(SqlProxySupplier.class);
-				if (sqlProxySupplierAnnotation != null) return of(find.sqlProxy());
+		var methodName = method.getName();
 
-				var parameterTypes = find.parameterTypes();
+		var find = Arrays.stream(methods.value())
+			.filter(
+				m -> m.name().equals(methodName) && Arrays.equals(method.getParameterTypes(), m.parameterTypes()))
+			.findFirst()
+			.get();
 
-				var confidentialSql = method.getAnnotation(ConfidentialSql.class);
-				var confidentials = confidentialSql == null ? null : confidentialSql.value();
+		var sqlProxySupplierAnnotation = method.getAnnotation(SqlProxySupplier.class);
+		if (sqlProxySupplierAnnotation != null) return of(find.sqlProxy());
 
-				var sql = loadSql(proxyClass, method).trim();
+		var parameterTypes = find.parameterTypes();
 
-				var conf = configure();
+		var confidentialSql = method.getAnnotation(ConfidentialSql.class);
+		var confidentials = confidentialSql == null ? null : confidentialSql.value();
 
-				SqlLogger mySqlLogger;
-				if (conf.enableLog()) {
-					NoSqlLog noSqlLog;
-					String noSqlLogSign;
-					if ((noSqlLog = proxyInterface.getAnnotation(NoSqlLog.class)) != null) {
-						noSqlLogSign = proxyInterface.toString();
-					} else if ((noSqlLog = method.getAnnotation(NoSqlLog.class)) != null) {
-						noSqlLogSign = method.toString();
-					} else {
-						noSqlLog = null;
-						noSqlLogSign = null;
-					}
+		var sql = loadSql(proxyInterface, method).trim();
 
-					if (!conf.ignoreNoSqlLog() && noSqlLog != null) {
-						if (noSqlLog.logElapseTime()) {
-							mySqlLogger = SqlLogger.noSqlLogInstance(noSqlLogSign);
-						} else {
-							mySqlLogger = SqlLogger.disabled;
-						}
-					} else {
-						mySqlLogger = sqlLogger;
-					}
+		var conf = configure();
+
+		SqlLogger mySqlLogger;
+		if (conf.enableLog()) {
+			NoSqlLog noSqlLog;
+			String noSqlLogSign;
+			if ((noSqlLog = proxyInterface.getAnnotation(NoSqlLog.class)) != null) {
+				noSqlLogSign = proxyInterface.toString();
+			} else if ((noSqlLog = method.getAnnotation(NoSqlLog.class)) != null) {
+				noSqlLogSign = method.toString();
+			} else {
+				noSqlLog = null;
+				noSqlLogSign = null;
+			}
+
+			if (!conf.ignoreNoSqlLog() && noSqlLog != null) {
+				if (noSqlLog.logElapseTime()) {
+					mySqlLogger = SqlLogger.noSqlLogInstance(noSqlLogSign);
 				} else {
 					mySqlLogger = SqlLogger.disabled;
 				}
+			} else {
+				mySqlLogger = sqlLogger;
+			}
+		} else {
+			mySqlLogger = SqlLogger.disabled;
+		}
 
-				SqlProxyHelper helper;
-				var entry = nameAnnotation.map(a -> endpoints.get(a.value())).orElseGet(() -> endpoints.get());
-				if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
-					var sqlParametersClass = find.sqlParameters();
-					var sqlParameters = sqlParametersClass.getConstructor().newInstance();
+		SqlProxyHelper helper;
+		var entry = nameAnnotation.map(a -> endpoints.get(a.value())).orElseGet(() -> endpoints.get());
+		if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
+			var sqlParametersClass = find.sqlParameters();
+			var sqlParameters = sqlParametersClass.getConstructor().newInstance();
 
-					Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameters });
+			Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameters });
 
-					var names = new LinkedList<String>();
-					var values = new LinkedList<Object>();
-					Arrays.stream(sqlParametersClass.getFields()).forEach(f -> {
-						names.add(f.getName());
-						try {
-							values.add(f.get(sqlParameters));
-						} catch (IllegalAccessException e) {
-							throw new IllegalStateException(e);
-						}
-					});
-
-					helper = new SqlProxyHelper(
-						sql,
-						entry,
-						confidentials,
-						names.toArray(String[]::new),
-						find.dataObject(),
-						values.toArray(Object[]::new),
-						typeFactory,
-						mySqlLogger);
-				} else {
-					helper = new SqlProxyHelper(
-						sql,
-						entry,
-						confidentials,
-						find.parameters(),
-						find.dataObject(),
-						args,
-						typeFactory,
-						mySqlLogger);
-				}
-
-				var atom = new Atom<Object>(AtomSql.this, helper, true);
-
-				var returnType = method.getReturnType();
-
-				if (returnType.equals(Atom.class)) {
-					return atom;
-				} else if (returnType.equals(Stream.class)) {
-					return atom.stream();
-				} else if (returnType.equals(List.class)) {
-					return atom.list();
-				} else if (returnType.equals(Optional.class)) {
-					return atom.get();
-				} else if (returnType.equals(int.class)) {
-					return atom.update();
-				} else if (returnType.equals(HalfAtom.class)) {
-					return new HalfAtom<>(atom, find.sqlInterpolation());
-				} else {
-					//不正な戻り値の型
-					throw new IllegalStateException("Incorrect return type: " + returnType);
+			var names = new LinkedList<String>();
+			var values = new LinkedList<Object>();
+			Arrays.stream(sqlParametersClass.getFields()).forEach(f -> {
+				names.add(f.getName());
+				try {
+					values.add(f.get(sqlParameters));
+				} catch (IllegalAccessException e) {
+					throw new IllegalStateException(e);
 				}
 			});
 
-		return instance;
+			helper = new SqlProxyHelper(
+				sql,
+				entry,
+				confidentials,
+				names.toArray(String[]::new),
+				find.dataObject(),
+				values.toArray(Object[]::new),
+				typeFactory,
+				mySqlLogger);
+		} else {
+			helper = new SqlProxyHelper(
+				sql,
+				entry,
+				confidentials,
+				find.parameters(),
+				find.dataObject(),
+				args,
+				typeFactory,
+				mySqlLogger);
+		}
+
+		var atom = new Atom<Object>(AtomSql.this, helper, true);
+
+		var returnType = method.getReturnType();
+
+		if (returnType.equals(Atom.class)) {
+			return atom;
+		} else if (returnType.equals(Stream.class)) {
+			return atom.stream();
+		} else if (returnType.equals(List.class)) {
+			return atom.list();
+		} else if (returnType.equals(Optional.class)) {
+			return atom.get();
+		} else if (returnType.equals(int.class) || returnType.equals(void.class)) {
+			return atom.update();
+		} else if (returnType.equals(HalfAtom.class)) {
+			return new HalfAtom<>(atom, find.sqlInterpolation());
+		} else {
+			//不正な戻り値の型
+			throw new IllegalStateException("Incorrect return type: " + returnType);
+		}
 	}
 
 	/**
@@ -506,7 +508,7 @@ public class AtomSql {
 			try {
 				s.close();
 			} catch (Throwable t) {
-				log.warn("Error occured while Stream closing", t);
+				logger.log(Level.WARNING, "Error occured while Stream closing", t);
 			}
 		});
 	}
@@ -609,9 +611,9 @@ public class AtomSql {
 	}
 
 	private static void logElapsed(SqlLogger sqlLogger, long startNanos) {
-		sqlLogger.logElapsed(log -> {
+		sqlLogger.logElapsed(logger -> {
 			var elapsed = (System.nanoTime() - startNanos) / 1000000f;
-			log.info("elapsed: " + new BigDecimal(elapsed).setScale(2, RoundingMode.DOWN) + "ms");
+			logger.log(Level.INFO, "elapsed: " + new BigDecimal(elapsed).setScale(2, RoundingMode.DOWN) + "ms");
 		});
 	}
 
@@ -871,18 +873,26 @@ public class AtomSql {
 		@Override
 		public void setValues(PreparedStatement ps, Optional<StackTraceElement[]> stackTrace) throws SQLException {
 			int[] i = { 1 };
-			sql.placeholders(p -> {
-				i[0] = p.type().bind(i[0], ps, p.value(), typeFactory);
-			});
 
-			sqlLogger.perform(log -> {
-				log.info("------ SQL START ------");
+			try {
+				//Csv内で使用するAtomSqlTypeFactoryをThreadLocal経由で渡す
+				AtomSqlTypeFactoryThreadLocal.set(typeFactory);
+
+				sql.placeholders(p -> {
+					i[0] = p.type().bind(i[0], ps, p.value());
+				});
+			} finally {
+				AtomSqlTypeFactoryThreadLocal.set(null);
+			}
+
+			sqlLogger.perform(logger -> {
+				logger.log(Level.INFO, "------ SQL START ------");
 
 				if (entry.name() != null) {
-					log.info("name: " + entry.name());
+					logger.log(Level.INFO, "name: " + entry.name());
 				}
 
-				log.info("call from:");
+				logger.log(Level.INFO, "call from:");
 				for (var element : stackTrace.get()) {
 					var elementString = element.toString();
 
@@ -890,14 +900,14 @@ public class AtomSql {
 						continue;
 
 					if (configure().logStackTracePattern().matcher(elementString).find())
-						log.info(" " + elementString);
+						logger.log(Level.INFO, " " + elementString);
 				}
 
 				var placeholders = sql.placeholders();
 
 				if (placeholders.stream().filter(p -> p.confidential()).findFirst().isPresent()) {
-					log.info("confidential sql:" + Constants.NEW_LINE + sql.originalString());
-					log.info("binding values:");
+					logger.log(Level.INFO, "confidential sql:" + Constants.NEW_LINE + sql.originalString());
+					logger.log(Level.INFO, "binding values:");
 
 					placeholders.forEach(p -> {
 						String name = p.name();
@@ -908,13 +918,13 @@ public class AtomSql {
 							value = AtomSqlUtils.toStringForBindingValue(p.value());
 						}
 
-						log.info(name + ": " + value);
+						logger.log(Level.INFO, name + ": " + value);
 					});
 				} else {
-					entry.endpoint().logSql(log, sql.originalString(), sql.string(), ps);
+					entry.endpoint().logSql(logger, sql.originalString(), sql.string(), ps);
 				}
 
-				log.info("------  SQL END  ------");
+				logger.log(Level.INFO, "------  SQL END  ------");
 			});
 		}
 	}

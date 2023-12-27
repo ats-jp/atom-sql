@@ -2,8 +2,8 @@
 
 import javax.annotation.processing.Generated;
 
-/*--?--*/import jp.ats.atomsql.processor.annotation.Method;/*--?--*/
-import jp.ats.atomsql.processor.annotation.Methods;
+import jp.ats.atomsql.annotation.processor.Method;
+import jp.ats.atomsql.annotation.processor.Methods;
 
 @Generated("[[PROCESSOR]]")
 @SuppressWarnings("javadoc")

@@ -1,5 +1,7 @@
 package jp.ats.atomsql;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -13,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
-import org.apache.commons.logging.Log;
 
 import jp.ats.atomsql.annotation.SqlProxy;
 
@@ -131,20 +131,20 @@ public class Sandbox {
 		}
 
 		@Override
-		public void logSql(Log log, String originalSql, String sql, PreparedStatement ps) {
+		public void logSql(Logger logger, String originalSql, String sql, PreparedStatement ps) {
 			var handler = pairs.get().stream().filter(p -> p.statement == ps).findFirst().get().handler;
 
-			log.info("sql:" + Constants.NEW_LINE + originalSql);
+			logger.log(Level.INFO, "sql:" + Constants.NEW_LINE + originalSql);
 
-			log.info("processed sql:" + Constants.NEW_LINE + sql);
+			logger.log(Level.INFO, "processed sql:" + Constants.NEW_LINE + sql);
 
-			log.info("binding values:");
+			logger.log(Level.INFO, "binding values:");
 
 			handler.allArgs.forEach(a -> {
 				var args = Arrays.stream(a.args)
 					.map(v -> AtomSqlUtils.toStringForBindingValue(v))
 					.toList();
-				log.info(a.method.getName() + "(" + String.join(", ", args) + ")");
+				logger.log(Level.INFO, a.method.getName() + "(" + String.join(", ", args) + ")");
 			});
 		}
 

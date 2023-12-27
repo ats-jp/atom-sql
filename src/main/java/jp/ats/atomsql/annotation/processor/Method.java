@@ -1,4 +1,4 @@
-package jp.ats.atomsql.processor.annotation;
+package jp.ats.atomsql.annotation.processor;
 
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlInterpolation;

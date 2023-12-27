@@ -33,6 +33,7 @@ public class AtomSqlUtils {
 		while ((readed = in.read(b, 0, BUFFER_SIZE)) > 0) {
 			concat = concatByteArray(concat, concat.length, b, readed);
 		}
+
 		return concat;
 	}
 

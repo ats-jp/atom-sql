@@ -1,8 +1,8 @@
 package jp.ats.atomsql;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.function.Consumer;
-
-import org.apache.commons.logging.Log;
 
 import jp.ats.atomsql.annotation.NoSqlLog;
 
@@ -13,17 +13,17 @@ abstract class SqlLogger {
 
 	private static String noSqlLogClassName = NoSqlLog.class.getSimpleName();
 
-	abstract void perform(Consumer<Log> consumer);
+	abstract void perform(Consumer<Logger> consumer);
 
-	abstract void logElapsed(Consumer<Log> consumer);
+	abstract void logElapsed(Consumer<Logger> consumer);
 
 	static final SqlLogger disabled = new SqlLogger() {
 
 		@Override
-		void perform(Consumer<Log> consumer) {}
+		void perform(Consumer<Logger> consumer) {}
 
 		@Override
-		void logElapsed(Consumer<Log> consumer) {}
+		void logElapsed(Consumer<Logger> consumer) {}
 	};
 
 	static SqlLogger noSqlLogInstance(String noSqlLogSign) {
@@ -31,12 +31,12 @@ abstract class SqlLogger {
 		return new SqlLogger() {
 
 			@Override
-			void perform(Consumer<Log> consumer) {
-				AtomSql.log.info("------ @" + noSqlLogClassName + " ------ " + noSqlLogSign);
+			void perform(Consumer<Logger> consumer) {
+				AtomSql.logger.log(Level.INFO, "------ @" + noSqlLogClassName + " ------ " + noSqlLogSign);
 			}
 
 			@Override
-			void logElapsed(Consumer<Log> consumer) {
+			void logElapsed(Consumer<Logger> consumer) {
 				log(consumer);
 			}
 		};
@@ -49,17 +49,17 @@ abstract class SqlLogger {
 	private static class SqlLoggerImpl extends SqlLogger {
 
 		@Override
-		void perform(Consumer<Log> consumer) {
+		void perform(Consumer<Logger> consumer) {
 			log(consumer);
 		}
 
 		@Override
-		void logElapsed(Consumer<Log> consumer) {
+		void logElapsed(Consumer<Logger> consumer) {
 			log(consumer);
 		}
 	}
 
-	private static void log(Consumer<Log> consumer) {
-		if (AtomSql.configure().enableLog()) consumer.accept(AtomSql.log);
+	private static void log(Consumer<Logger> consumer) {
+		if (AtomSql.configure().enableLog()) consumer.accept(AtomSql.logger);
 	}
 }

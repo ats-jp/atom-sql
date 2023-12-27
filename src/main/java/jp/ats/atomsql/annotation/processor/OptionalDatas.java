@@ -1,4 +1,4 @@
-package jp.ats.atomsql.processor.annotation;
+package jp.ats.atomsql.annotation.processor;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
