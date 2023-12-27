@@ -189,14 +189,14 @@ SQLをファイルとして管理したい等の要件が無いのであれば`@
 ### UPDATE文、INSERT文の発行
 - メソッドの作成
 UPDATE文、INSERT文を発行するためのメソッドをSqlProxy内に作成する  
-戻り値の型は`int`もしくは`jp.ats.atomsql.Atom`である必要がある  
+戻り値の型は`int`、`void`もしくは`jp.ats.atomsql.Atom`である必要がある  
 
 ```java
 @Sql("UPDATE sample SET name = 'name' WHERE id = 0")
 public int updateSample();
 
 @Sql("INSERT INTO sample (id, name) VALUES (0, 'name')")
-public int insertSample();
+public void insertSample();
 
 /**
  * SQL実行の中間状態である jp.ats.atomsql.Atom として返却
