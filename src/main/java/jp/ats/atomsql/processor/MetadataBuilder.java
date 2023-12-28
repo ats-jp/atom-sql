@@ -80,8 +80,7 @@ class MetadataBuilder {
 
 		var fileName = isPackageNameLengthZero ? className : packageName + "." + className;
 
-		if (alreadyCreatedFiles.contains(fileName))
-			return;
+		if (alreadyCreatedFiles.contains(fileName)) return;
 
 		param.put("PROCESSOR", SqlProxyProcessor.class.getName());
 
@@ -102,11 +101,11 @@ class MetadataBuilder {
 			try (var output = new BufferedOutputStream(envSupplier.get().getFiler().createSourceFile(fileName, e).openOutputStream())) {
 				output.write(template.getBytes(Constants.CHARSET));
 			}
+
+			alreadyCreatedFiles.add(fileName);
 		} catch (IOException ioe) {
 			error(ioe.getMessage(), e);
 		}
-
-		alreadyCreatedFiles.add(fileName);
 	}
 
 	private static String methodPart(MethodInfo info) {

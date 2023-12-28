@@ -87,6 +87,7 @@ class SqlProxyProcessor {
 				execute(e);
 			} catch (ProcessException pe) {
 				//スキップして次の対象へ
+				//ProcessExceptionはスキップするための例外
 			}
 		});
 
@@ -142,16 +143,11 @@ class SqlProxyProcessor {
 	private class ReturnTypeChecker extends SimpleTypeVisitor14<ReturnTypeCheckerResult, ExecutableElement> {
 
 		@Override
-		protected ReturnTypeCheckerResult defaultAction(TypeMirror e, ExecutableElement p) {
-			//リターンタイプeは使用できません
-			error("Return type [" + e + "] cannot be used", p);
-			builder.setError();
-			return ReturnTypeCheckerResult.defaultValue;
-		}
+		protected ReturnTypeCheckerResult defaultAction(TypeMirror t, ExecutableElement p) {
+			if (t.getKind() == TypeKind.VOID) return ReturnTypeCheckerResult.defaultValue;
 
-		private ReturnTypeCheckerResult errorDataObjectAnnotation(TypeMirror e, ExecutableElement p) {
-			//リターンタイプeは使用できません
-			error("Data object class [" + e + "] must be annotated @" + DataObject.class.getSimpleName(), p);
+			//リターンタイプtは使用できません
+			error("Return type [" + t + "] cannot be used", p);
 			builder.setError();
 			return ReturnTypeCheckerResult.defaultValue;
 		}
@@ -159,7 +155,7 @@ class SqlProxyProcessor {
 		@Override
 		public ReturnTypeCheckerResult visitPrimitive(PrimitiveType t, ExecutableElement p) {
 			return switch (t.getKind()) {
-			case INT, VOID -> ReturnTypeCheckerResult.defaultValue;
+			case INT -> ReturnTypeCheckerResult.defaultValue;
 			default -> defaultAction(t, p);
 			};
 		}
@@ -199,6 +195,13 @@ class SqlProxyProcessor {
 				}
 
 			return defaultAction(t, p);
+		}
+
+		private ReturnTypeCheckerResult errorDataObjectAnnotation(TypeMirror e, ExecutableElement p) {
+			//データオブジェクトクラスeは@DataObjectで注釈しなければなりません
+			error("Data object class [" + e + "] must be annotated @" + DataObject.class.getSimpleName(), p);
+			builder.setError();
+			return ReturnTypeCheckerResult.defaultValue;
 		}
 
 		//自動生成クラスがまだ作成されていない場合

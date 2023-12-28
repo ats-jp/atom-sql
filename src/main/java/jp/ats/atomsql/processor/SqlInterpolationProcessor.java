@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -29,6 +30,10 @@ import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
  * @author 千葉 哲嗣
  */
 class SqlInterpolationProcessor {
+
+	// 二重作成防止チェッカー
+	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
+	private final Set<String> alreadyCreatedFiles = new HashSet<>();
 
 	private final Supplier<ProcessingEnvironment> processingEnv;
 
@@ -83,7 +88,7 @@ class SqlInterpolationProcessor {
 
 		var returnType = executable.getReturnType();
 
-		var typeElement = ProcessorUtils.toTypeElement(ProcessorUtils.toElement(executable.getReturnType()));
+		var typeElement = ProcessorUtils.toTypeElement(ProcessorUtils.toElement(returnType));
 
 		if (!ProcessorUtils.sameClass(typeElement, HalfAtom.class)) {
 			//メソッドeは、返す型としてHalfAtomを必要とします
@@ -141,6 +146,8 @@ class SqlInterpolationProcessor {
 
 		var newClassName = packageName.isEmpty() ? generateClassName : packageName + "." + generateClassName;
 
+		if (alreadyCreatedFiles.contains(newClassName)) return;
+
 		var info = allInterpolations.get(newClassName);
 		if (info != null && (!info.enclosingClass.equals(className) || !info.method.equals(methodName))) {
 			//generateClassNameという名前は既に他で使われています
@@ -186,6 +193,8 @@ class SqlInterpolationProcessor {
 			try (var output = new BufferedOutputStream(processingEnv.get().getFiler().createSourceFile(newClassName, e).openOutputStream())) {
 				output.write(template.getBytes(Constants.CHARSET));
 			}
+
+			alreadyCreatedFiles.add(newClassName);
 		} catch (IOException ioe) {
 			error(ioe.getMessage(), e);
 		}

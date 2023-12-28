@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -39,6 +40,10 @@ import jp.ats.atomsql.type.OBJECT;
  * @author 千葉 哲嗣
  */
 class SqlParametersProcessor {
+
+	// 二重作成防止チェッカー
+	// 同一プロセス内でプロセッサのインスタンスが変わる場合はこの方法では防げないので、その場合は他の方法を検討
+	private final Set<String> alreadyCreatedFiles = new HashSet<>();
 
 	private final Supplier<ProcessingEnvironment> processingEnv;
 
@@ -105,6 +110,7 @@ class SqlParametersProcessor {
 
 	private void execute(Element e) {
 		var executable = ProcessorUtils.toExecutableElement(e);
+
 		var parameters = executable.getParameters();
 
 		if (parameters.size() != 1 || !ProcessorUtils.sameClass(toTypeElement(parameters.get(0)), Consumer.class)) {
@@ -165,6 +171,8 @@ class SqlParametersProcessor {
 		var methodName = e.getSimpleName().toString();
 
 		var newClassName = packageName.isEmpty() ? generateClassName : packageName + "." + generateClassName;
+
+		if (alreadyCreatedFiles.contains(newClassName)) return;
 
 		var info = allParameters.get(newClassName);
 		if (info != null && (!info.enclosingClass.equals(className) || !info.method.equals(methodName))) {
@@ -237,6 +245,8 @@ class SqlParametersProcessor {
 			try (var output = new BufferedOutputStream(processingEnv.get().getFiler().createSourceFile(newClassName, e).openOutputStream())) {
 				output.write(template.getBytes(Constants.CHARSET));
 			}
+
+			alreadyCreatedFiles.add(newClassName);
 		} catch (IOException ioe) {
 			error(ioe.getMessage(), e);
 		}
