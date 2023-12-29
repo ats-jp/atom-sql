@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 
 import jp.ats.atomsql.type.BIG_DECIMAL;
@@ -18,6 +19,7 @@ import jp.ats.atomsql.type.CSV;
 import jp.ats.atomsql.type.DATE;
 import jp.ats.atomsql.type.DATETIME;
 import jp.ats.atomsql.type.DOUBLE;
+import jp.ats.atomsql.type.ENUM;
 import jp.ats.atomsql.type.FLOAT;
 import jp.ats.atomsql.type.INTEGER;
 import jp.ats.atomsql.type.LONG;
@@ -102,7 +104,14 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 	public AtomSqlType select(Class<?> c) {
 		var type = typeMap.get(Objects.requireNonNull(c));
 
-		if (type == null) throw new UnknownSqlTypeException(c);
+		if (type == null) {
+			if (!c.isEnum()) throw new UnknownSqlTypeException(c);
+
+			@SuppressWarnings("unchecked")
+			var enumClass = (Class<? extends Enum<?>>) c;
+
+			return new ENUM(enumClass);
+		}
 
 		return type;
 	}
@@ -123,6 +132,8 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 
 	@Override
 	public boolean canUse(TypeElement type) {
+		if (type.getKind() == ElementKind.ENUM) return true;
+
 		var typeName = type.getQualifiedName().toString();
 		return Arrays.stream(nonPrimitiveTypes).filter(c -> typeName.equals(c.getCanonicalName())).findFirst().isPresent();
 	}

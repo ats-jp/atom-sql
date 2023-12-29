@@ -227,13 +227,21 @@ public class Sandbox {
 
 		private final Map<String, Object> map;
 
+		private Object previousValue;
+
 		private ResultSetInvocationHandler(Map<String, Object> map) {
 			this.map = map;
 		}
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-			return map.get(args[0]);
+			if (method.getName().equals("wasNull")) return previousValue == null;
+
+			var value = map.get(args[0]);
+
+			previousValue = value;
+
+			return value;
 		}
 	}
 
