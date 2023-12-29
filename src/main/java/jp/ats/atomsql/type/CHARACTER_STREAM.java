@@ -3,6 +3,7 @@ package jp.ats.atomsql.type;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
@@ -29,8 +30,11 @@ public class CHARACTER_STREAM implements AtomSqlType {
 
 	@Override
 	public int bind(int index, PreparedStatement statement, Object value) {
-		var stream = (CharacterStream) value;
+		if (value == null) return NullBinder.bind(index, statement, Types.LONGNVARCHAR);
+
 		try {
+			var stream = (CharacterStream) value;
+
 			statement.setCharacterStream(index, stream.input, stream.length);
 			return index + 1;
 		} catch (SQLException e) {

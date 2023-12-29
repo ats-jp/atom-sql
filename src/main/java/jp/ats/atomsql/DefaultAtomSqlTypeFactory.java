@@ -21,7 +21,6 @@ import jp.ats.atomsql.type.DOUBLE;
 import jp.ats.atomsql.type.FLOAT;
 import jp.ats.atomsql.type.INTEGER;
 import jp.ats.atomsql.type.LONG;
-import jp.ats.atomsql.type.NULL;
 import jp.ats.atomsql.type.OBJECT;
 import jp.ats.atomsql.type.P_BOOLEAN;
 import jp.ats.atomsql.type.P_DOUBLE;
@@ -41,7 +40,7 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 
 	private final Map<String, AtomSqlType> nameMap = new HashMap<>();
 
-	private static final AtomSqlType[] allTypes = {
+	private static final AtomSqlType[] singletonTypes = {
 		BIG_DECIMAL.instance,
 		BINARY_STREAM.instance,
 		BLOB.instance,
@@ -49,7 +48,6 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 		BYTE_ARRAY.instance,
 		CHARACTER_STREAM.instance,
 		CLOB.instance,
-		CSV.instance,
 		DATE.instance,
 		DATETIME.instance,
 		DOUBLE.instance,
@@ -90,26 +88,18 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 	public static AtomSqlTypeFactory instance = new DefaultAtomSqlTypeFactory();
 
 	private DefaultAtomSqlTypeFactory() {
-		Arrays.stream(allTypes).forEach(b -> {
+		Arrays.stream(singletonTypes).forEach(b -> {
 			typeMap.put(b.type(), b);
 			nameMap.put(b.getClass().getSimpleName(), b);
 		});
 
-		//型ヒント用にはデフォルトのNULLが必要
-		nameMap.put(NULL.class.getSimpleName(), NULL.instance);
+		CSV csv = new CSV(this);
+		typeMap.put(csv.type(), csv);
+		nameMap.put(CSV.class.getSimpleName(), csv);
 	}
 
 	@Override
-	public AtomSqlType selectForPreparedStatement(Object o) {
-		if (o == null)
-			return NULL.instance;
-
-		var type = typeMap.get(o.getClass());
-		return type == null ? OBJECT.instance : type;
-	}
-
-	@Override
-	public AtomSqlType selectForResultSet(Class<?> c) {
+	public AtomSqlType select(Class<?> c) {
 		var type = typeMap.get(Objects.requireNonNull(c));
 
 		if (type == null) throw new UnknownSqlTypeException(c);
@@ -132,16 +122,7 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 	}
 
 	@Override
-	public boolean canUseForParameter(TypeElement parameterType) {
-		return canUse(parameterType);
-	}
-
-	@Override
-	public boolean canUseForResult(TypeElement resultType) {
-		return canUse(resultType);
-	}
-
-	private boolean canUse(TypeElement type) {
+	public boolean canUse(TypeElement type) {
 		var typeName = type.getQualifiedName().toString();
 		return Arrays.stream(nonPrimitiveTypes).filter(c -> typeName.equals(c.getCanonicalName())).findFirst().isPresent();
 	}

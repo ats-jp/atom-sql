@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +45,6 @@ import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.annotation.processor.Methods;
 import jp.ats.atomsql.annotation.processor.OptionalDatas;
-import jp.ats.atomsql.internal.AtomSqlTypeFactoryThreadLocal;
 
 /**
  * Atom SQLの実行時の処理のほとんどを行うコアクラスです。<br>
@@ -364,8 +362,10 @@ public class AtomSql {
 
 			var names = new LinkedList<String>();
 			var values = new LinkedList<Object>();
+			var types = new LinkedList<Class<?>>();
 			Arrays.stream(sqlParametersClass.getFields()).forEach(f -> {
 				names.add(f.getName());
+				types.add(f.getType());
 				try {
 					values.add(f.get(sqlParameters));
 				} catch (IllegalAccessException e) {
@@ -378,6 +378,7 @@ public class AtomSql {
 				entry,
 				confidentials,
 				names.toArray(String[]::new),
+				types.toArray(Class[]::new),
 				find.dataObject(),
 				values.toArray(Object[]::new),
 				typeFactory,
@@ -388,6 +389,7 @@ public class AtomSql {
 				entry,
 				confidentials,
 				find.parameters(),
+				find.parameterTypes(),
 				find.dataObject(),
 				args,
 				typeFactory,
@@ -604,6 +606,7 @@ public class AtomSql {
 			endpoints.get(),
 			null,
 			new String[0],
+			new Class<?>[0],
 			Object.class,
 			new Object[0],
 			typeFactory,
@@ -645,6 +648,8 @@ public class AtomSql {
 		return new String(AtomSqlUtils.readBytes(url.openStream()), Constants.CHARSET);
 	}
 
+	private static record TypeAndArg(AtomSqlType type, Object arg) {}
+
 	static class SqlProxyHelper implements PreparedStatementSetter {
 
 		final InnerSql sql;
@@ -673,6 +678,7 @@ public class AtomSql {
 			Endpoints.Entry entry,
 			String[] confidentials,
 			String[] parameterNames,
+			Class<?>[] parameterClasses,
 			Class<?> dataObjectClass,
 			Object[] args,
 			AtomSqlTypeFactory typeFactory,
@@ -682,9 +688,11 @@ public class AtomSql {
 			this.typeFactory = typeFactory;
 			this.sqlLogger = sqlLogger;
 
-			Map<String, Object> argMap = new LinkedHashMap<>();
+			Map<String, TypeAndArg> map = new HashMap<>();
 			for (int i = 0; i < parameterNames.length; i++) {
-				argMap.put(parameterNames[i], args[i]);
+				map.put(
+					parameterNames[i],
+					new TypeAndArg(typeFactory.select(parameterClasses[i]), args[i]));
 			}
 
 			List<Element> elements = new LinkedList<>();
@@ -694,12 +702,12 @@ public class AtomSql {
 			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
 				elements.add(new Text(f.gap));
 
-				if (!argMap.containsKey(f.placeholder))
+				if (!map.containsKey(f.placeholder))
 					throw new PlaceholderNotFoundException(f.placeholder);
 
-				var value = argMap.get(f.placeholder);
-
-				var type = typeFactory.selectForPreparedStatement(value);
+				var typeAndArg = map.get(f.placeholder);
+				var value = typeAndArg.arg();
+				var type = typeAndArg.type();
 
 				elements.add(
 					new Placeholder(
@@ -783,7 +791,7 @@ public class AtomSql {
 					needsOptional = true;
 				}
 
-				var type = typeFactory.selectForResultSet(parameterType);
+				var type = typeFactory.select(parameterType);
 				try {
 					var value = type.get(rs, parameterName);
 					parameters[i] = needsOptional ? Optional.ofNullable(value) : value;
@@ -825,7 +833,7 @@ public class AtomSql {
 					needsOptional = true;
 				}
 
-				var type = typeFactory.selectForResultSet(fieldType);
+				var type = typeFactory.select(fieldType);
 
 				try {
 					var value = type.get(rs, fieldName);
@@ -874,16 +882,7 @@ public class AtomSql {
 		public void setValues(PreparedStatement ps, Optional<StackTraceElement[]> stackTrace) throws SQLException {
 			int[] i = { 1 };
 
-			try {
-				//Csv内で使用するAtomSqlTypeFactoryをThreadLocal経由で渡す
-				AtomSqlTypeFactoryThreadLocal.set(typeFactory);
-
-				sql.placeholders(p -> {
-					i[0] = p.type().bind(i[0], ps, p.value());
-				});
-			} finally {
-				AtomSqlTypeFactoryThreadLocal.set(null);
-			}
+			sql.placeholders(p -> i[0] = p.type().bind(i[0], ps, p.value()));
 
 			sqlLogger.perform(logger -> {
 				logger.log(Level.INFO, "------ SQL START ------");

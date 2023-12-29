@@ -33,7 +33,6 @@ import jp.ats.atomsql.annotation.TypeHint;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
 import jp.ats.atomsql.processor.MethodExtractor.SqlNotFoundException;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
-import jp.ats.atomsql.type.NULL;
 import jp.ats.atomsql.type.OBJECT;
 
 /**
@@ -216,8 +215,10 @@ class SqlParametersProcessor {
 			Optional<AtomSqlType> annotatedTypeArgument;
 			if (annotatedHint != null) {
 				annotatedHintType = Optional.of(typeFactory.typeOf(annotatedHint.type()));
-				var arg = typeFactory.typeOf(annotatedHint.typeArgument());
-				annotatedTypeArgument = arg == NULL.instance ? Optional.empty() : Optional.of(arg.toTypeArgument());
+
+				var typeArgument = annotatedHint.typeArgument();
+
+				annotatedTypeArgument = typeArgument.isEmpty() ? Optional.empty() : Optional.of(typeFactory.typeOf(annotatedHint.typeArgument()).toTypeArgument());
 			} else {
 				annotatedHintType = Optional.empty();
 				annotatedTypeArgument = Optional.empty();

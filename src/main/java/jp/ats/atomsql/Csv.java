@@ -10,6 +10,7 @@ import jp.ats.atomsql.annotation.NonThreadSafe;
 /**
  * 条件で使用されるIN等、複数のSQLパラメータを操作するためのクラスです。<br>
  * 使用可能な型は{@link AtomSqlType}で定義されているものに限ります。<br>
+ * また、値から型を判定するため、値にnullは使用できません。<br>
  * このクラスのインスタンスはスレッドセーフです。<br>
  * そのスレッドセーフを維持するため、要素として保持できるのは{@link NonThreadSafe}を付与されていない{@link AtomSqlType}に限られます。
  * @see AtomSqlType
@@ -24,7 +25,7 @@ public class Csv<T> {
 	 * @return {@link Csv}
 	 */
 	public static <T> Csv<T> of(List<T> list) {
-		return new Csv<>(list.stream());
+		return new Csv<>(list);
 	}
 
 	/**
@@ -33,7 +34,7 @@ public class Csv<T> {
 	 * @return {@link Csv}
 	 */
 	public static <T> Csv<T> of(Stream<T> stream) {
-		return new Csv<>(stream);
+		return new Csv<>(stream.toList());
 	}
 
 	/**
@@ -43,13 +44,19 @@ public class Csv<T> {
 	 */
 	@SafeVarargs
 	public static <T> Csv<T> of(T... values) {
-		return new Csv<>(Arrays.stream(values));
+		return new Csv<>(Arrays.asList(values));
 	}
 
 	private final List<T> values;
 
-	private Csv(Stream<T> stream) {
-		this.values = Collections.unmodifiableList(stream.toList());
+	private Csv(List<T> values) {
+		//値は空であってはなりません
+		if (values.size() == 0) throw new IllegalArgumentException("Values must not be empty");
+
+		//値にnullが含まれています
+		if (values.stream().filter(v -> v == null).findFirst().isPresent()) throw new NullPointerException("Values contains null");
+
+		this.values = Collections.unmodifiableList(values);
 	}
 
 	/**

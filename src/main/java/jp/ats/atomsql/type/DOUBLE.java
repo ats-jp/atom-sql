@@ -3,6 +3,7 @@ package jp.ats.atomsql.type;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
@@ -26,6 +27,8 @@ public class DOUBLE implements AtomSqlType {
 
 	@Override
 	public int bind(int index, PreparedStatement statement, Object value) {
+		if (value == null) return NullBinder.bind(index, statement, Types.DOUBLE);
+
 		try {
 			statement.setDouble(index, (double) value);
 			return index + 1;

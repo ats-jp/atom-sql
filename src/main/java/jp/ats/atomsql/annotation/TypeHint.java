@@ -24,5 +24,5 @@ public @interface TypeHint {
 	 * {@link AtomSqlType}の中で型パラメーターが存在するものを{@link #type()}で指定する場合の型引数です。
 	 * @return {@link AtomSqlType}実装クラスのクラス名
 	 */
-	String typeArgument() default "NULL";
+	String typeArgument() default "";
 }

@@ -283,9 +283,9 @@ class SqlProxyProcessor {
 				return processConsumerType(p);
 			}
 
-			if (typeFactory.canUseForParameter(type))
-				return DEFAULT_VALUE;
-			if (ProcessorUtils.sameClass(type, CSV.instance.type())) {
+			if (typeFactory.canUse(type)) return DEFAULT_VALUE;
+
+			if (ProcessorUtils.sameClass(type, new CSV(typeFactory).type())) {
 				var argumentType = t.getTypeArguments().get(0);
 				var element = ProcessorUtils.toElement(argumentType);
 				var typeElement = ProcessorUtils.toTypeElement(element);

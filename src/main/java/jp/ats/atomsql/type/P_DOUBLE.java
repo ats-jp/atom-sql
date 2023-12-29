@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
 
 /**
@@ -25,8 +26,12 @@ public class P_DOUBLE implements AtomSqlType {
 
 	@Override
 	public int bind(int index, PreparedStatement statement, Object value) {
-		//ラッパー型が使用される
-		throw new UnsupportedOperationException();
+		try {
+			statement.setDouble(index, (double) value);
+			return index + 1;
+		} catch (SQLException e) {
+			throw new AtomSqlException(e);
+		}
 	}
 
 	@Override

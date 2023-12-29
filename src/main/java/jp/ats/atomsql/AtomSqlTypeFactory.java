@@ -8,19 +8,12 @@ import javax.lang.model.element.TypeElement;
 public interface AtomSqlTypeFactory {
 
 	/**
-	 * 渡されたオブジェクトの型から対応する{@link AtomSqlType}を返します。
-	 * @param o 対象となるオブジェクト
-	 * @return {@link AtomSqlType}
-	 */
-	AtomSqlType selectForPreparedStatement(Object o);
-
-	/**
 	* 渡されたクラスから対応する{@link AtomSqlType}を返します。
 	* @param c 対象となるクラス
 	* @return {@link AtomSqlType}
 	* @throws UnknownSqlTypeException {@link AtomSqlType}に定義されていない型を使用した場合
 	*/
-	AtomSqlType selectForResultSet(Class<?> c);
+	AtomSqlType select(Class<?> c);
 
 	/**
 	 * クラス名をもとに{@link AtomSqlType}のインスタンスを返します。
@@ -39,18 +32,11 @@ public interface AtomSqlTypeFactory {
 	AtomSqlType typeArgumentOf(String name);
 
 	/**
-	 * プリミティブ型ではない型のうち、SQLにバインドする値として使用可能な型かどうかを返します。
-	 * @param parameterType {@link TypeElement}
-	 * @return SQLにバインドする値として使用可能な型の場合、true
+	 * プリミティブ型ではない型のうち、使用可能な型かどうかを返します。
+	 * @param type {@link TypeElement}
+	 * @return 使用可能な型の場合、true
 	 */
-	boolean canUseForParameter(TypeElement parameterType);
-
-	/**
-	 * プリミティブ型ではない型のうち、検索結果から取得する値として使用可能な型かどうかを返します。
-	 * @param resultType {@link TypeElement}
-	 * @return 検索結果から取得する値として使用可能な型の場合、true
-	 */
-	boolean canUseForResult(TypeElement resultType);
+	boolean canUse(TypeElement type);
 
 	/**
 	 * クラス名からインスタンスを生成します。

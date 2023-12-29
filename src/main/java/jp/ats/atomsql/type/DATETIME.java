@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDateTime;
 
 import jp.ats.atomsql.AtomSqlException;
@@ -28,6 +29,8 @@ public class DATETIME implements AtomSqlType {
 
 	@Override
 	public int bind(int index, PreparedStatement statement, Object value) {
+		if (value == null) return NullBinder.bind(index, statement, Types.TIMESTAMP);
+
 		try {
 			statement.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
 			return index + 1;

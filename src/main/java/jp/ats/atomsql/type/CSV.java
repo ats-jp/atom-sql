@@ -8,9 +8,7 @@ import java.util.stream.IntStream;
 import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.Csv;
-import jp.ats.atomsql.NonThreadSafeException;
 import jp.ats.atomsql.annotation.DataObject;
-import jp.ats.atomsql.internal.AtomSqlTypeFactoryThreadLocal;
 
 /**
  * Comma Separated Values<br>
@@ -19,12 +17,15 @@ import jp.ats.atomsql.internal.AtomSqlTypeFactoryThreadLocal;
  */
 public class CSV implements AtomSqlType {
 
-	/**
-	 * singleton
-	 */
-	public static final AtomSqlType instance = new CSV();
+	private final AtomSqlTypeFactory typeFactory;
 
-	private CSV() {}
+	/**
+	 * コンストラクタ
+	 * @param typeFactory 値の型判定用
+	 */
+	public CSV(AtomSqlTypeFactory typeFactory) {
+		this.typeFactory = typeFactory;
+	}
 
 	@Override
 	public Class<?> type() {
@@ -34,27 +35,17 @@ public class CSV implements AtomSqlType {
 	@Override
 	public int bind(int index, PreparedStatement statement, Object value) {
 		var values = ((Csv<?>) value).values();
+
+		var type = typeFactory.select(values.stream().map(v -> v.getClass()).findFirst().orElseThrow(() -> new IllegalStateException()));
+
 		var size = values.size();
 		IntStream.range(0, size).forEach(i -> {
 			var v = values.get(i);
 
-			var factory = AtomSqlTypeFactoryThreadLocal.typeFactory();
-
-			check(factory, v);
-
-			factory.selectForPreparedStatement(v).bind(index + i, statement, v);
+			type.bind(index + i, statement, v);
 		});
 
 		return index + size;
-	}
-
-	private static <T> void check(AtomSqlTypeFactory factory, Object value) {
-		//Csvの中にCsvは不可
-		if (value instanceof Csv) throw new IllegalArgumentException("Csv cannot be used for Csv elements");
-
-		var type = factory.selectForPreparedStatement(value);
-
-		if (type.nonThreadSafe()) throw new NonThreadSafeException();
 	}
 
 	@Override

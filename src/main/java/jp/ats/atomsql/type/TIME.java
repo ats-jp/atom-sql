@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
+import java.sql.Types;
 import java.time.LocalTime;
 
 import jp.ats.atomsql.AtomSqlException;
@@ -28,6 +29,8 @@ public class TIME implements AtomSqlType {
 
 	@Override
 	public int bind(int index, PreparedStatement statement, Object value) {
+		if (value == null) return NullBinder.bind(index, statement, Types.TIME);
+
 		try {
 			statement.setTime(index, Time.valueOf((LocalTime) value));
 			return index + 1;
