@@ -142,10 +142,7 @@ class SqlProxyProcessor {
 
 	private class ReturnTypeChecker extends SimpleTypeVisitor14<ReturnTypeCheckerResult, ExecutableElement> {
 
-		@Override
-		protected ReturnTypeCheckerResult defaultAction(TypeMirror t, ExecutableElement p) {
-			if (t.getKind() == TypeKind.VOID) return ReturnTypeCheckerResult.defaultValue;
-
+		private ReturnTypeCheckerResult errorAction(TypeMirror t, ExecutableElement p) {
 			//リターンタイプtは使用できません
 			error("Return type [" + t + "] cannot be used", p);
 			builder.setError();
@@ -153,10 +150,17 @@ class SqlProxyProcessor {
 		}
 
 		@Override
+		protected ReturnTypeCheckerResult defaultAction(TypeMirror t, ExecutableElement p) {
+			if (t.getKind() == TypeKind.VOID) return ReturnTypeCheckerResult.defaultValue;
+
+			return errorAction(t, p);
+		}
+
+		@Override
 		public ReturnTypeCheckerResult visitPrimitive(PrimitiveType t, ExecutableElement p) {
 			return switch (t.getKind()) {
 			case INT -> ReturnTypeCheckerResult.defaultValue;
-			default -> defaultAction(t, p);
+			default -> errorAction(t, p);
 			};
 		}
 
@@ -188,13 +192,13 @@ class SqlProxyProcessor {
 					if (ProcessorUtils.toElement(dataObjectType) == null) {
 						// <?>
 						// Stream, List, Optionalの場合は、型パラメータを指定しなければならない
-						return defaultAction(t, p);
+						return errorAction(t, p);
 					}
 
 					return errorDataObjectAnnotation(dataObjectType, p);
 				}
 
-			return defaultAction(t, p);
+			return errorAction(t, p);
 		}
 
 		private ReturnTypeCheckerResult errorDataObjectAnnotation(TypeMirror e, ExecutableElement p) {
@@ -213,7 +217,7 @@ class SqlProxyProcessor {
 				return processHalfAtomType(t, p);
 			}
 
-			return defaultAction(t, p);
+			return errorAction(t, p);
 		}
 
 		private ReturnTypeCheckerResult processHalfAtomType(DeclaredType t, ExecutableElement p) {
@@ -237,7 +241,7 @@ class SqlProxyProcessor {
 
 			var interpolationType = t.getTypeArguments().get(1);
 			if (ProcessorUtils.toElement(interpolationType) == null) {
-				return defaultAction(t, p);
+				return errorAction(t, p);
 			}
 
 			return new ReturnTypeCheckerResult(dataObjectType, interpolationType);
