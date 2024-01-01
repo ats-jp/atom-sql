@@ -32,11 +32,20 @@ public interface AtomSqlTypeFactory {
 	AtomSqlType typeArgumentOf(String name);
 
 	/**
+	 * プリミティブ型ではない型のうち、使用可能な型かどうかを返します。<br>
+	 * {@link Csv}は、パラメータとして使用可能ですが、ここでは除外されます。
+	 * @param c {@link Class}
+	 * @return 使用可能な型の場合、true
+	 */
+	boolean canUse(Class<?> c);
+
+	/**
 	 * プリミティブ型ではない型のうち、使用可能な型かどうかを返します。
+	 * {@link Csv}は、パラメータとして使用可能ですが、ここでは除外されます。
 	 * @param type {@link TypeElement}
 	 * @return 使用可能な型の場合、true
 	 */
-	boolean canUse(TypeElement type);
+	boolean canUseForProcessor(TypeElement type);
 
 	/**
 	 * クラス名からインスタンスを生成します。

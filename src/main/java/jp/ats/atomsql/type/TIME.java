@@ -46,6 +46,12 @@ public class TIME implements AtomSqlType {
 	}
 
 	@Override
+	public LocalTime get(ResultSet rs, int columnIndex) throws SQLException {
+		var value = rs.getTime(columnIndex);
+		return value == null ? null : value.toLocalTime();
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}

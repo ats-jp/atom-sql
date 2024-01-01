@@ -40,6 +40,11 @@ public class P_FLOAT implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getFloat(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.FLOAT.instance;
 	}

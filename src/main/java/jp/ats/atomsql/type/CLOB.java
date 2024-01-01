@@ -43,6 +43,11 @@ public class CLOB implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getClob(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}

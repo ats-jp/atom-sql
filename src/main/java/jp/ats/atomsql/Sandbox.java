@@ -179,11 +179,18 @@ public class Sandbox {
 			rows.add(values.clone());
 		}
 
-		private List<Map<String, Object>> convert() {
+		private List<Map<Object, Object>> convert() {
 			return rows.stream().map(r -> {
-				Map<String, Object> map = new HashMap<>();
-				for (var i = 0; i < columnNames.length; i++) {
-					map.put(columnNames[i], r[i]);
+				Map<Object, Object> map = new HashMap<>();
+
+				if (columnNames.length > 0) {
+					for (var i = 0; i < columnNames.length; i++) {
+						map.put(columnNames[i], r[i]);
+					}
+				} else {
+					for (var i = 0; i < r.length; i++) {
+						map.put(i + 1, r[i]);
+					}
 				}
 
 				return map;
@@ -225,11 +232,11 @@ public class Sandbox {
 
 	private static class ResultSetInvocationHandler implements InvocationHandler {
 
-		private final Map<String, Object> map;
+		private final Map<Object, Object> map;
 
 		private Object previousValue;
 
-		private ResultSetInvocationHandler(Map<String, Object> map) {
+		private ResultSetInvocationHandler(Map<Object, Object> map) {
 			this.map = map;
 		}
 

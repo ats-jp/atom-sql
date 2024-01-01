@@ -42,6 +42,11 @@ public class BYTE_ARRAY implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getBytes(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}

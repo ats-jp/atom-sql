@@ -40,6 +40,11 @@ public class STRING implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getString(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}

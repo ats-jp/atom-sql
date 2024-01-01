@@ -40,6 +40,11 @@ public class P_BOOLEAN implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getBoolean(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.BOOLEAN.instance;
 	}

@@ -65,16 +65,22 @@ public class ENUM implements AtomSqlType {
 
 	@Override
 	public Object get(ResultSet rs, String columnLabel) throws SQLException {
-		var val = rs.getInt(columnLabel);
+		return getInternal(rs, rs.getInt(columnLabel));
+	}
 
+	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return getInternal(rs, rs.getInt(columnIndex));
+	}
+
+	private Object getInternal(ResultSet rs, int value) throws SQLException {
 		if (rs.wasNull()) return null;
 
-		var e = enumMap.get(val);
+		var e = enumMap.get(value);
 
-		if (e == null) throw new EnumNotFoundException(enumClass, val);
+		if (e == null) throw new EnumNotFoundException(enumClass, value);
 
 		return e;
-
 	}
 
 	@Override

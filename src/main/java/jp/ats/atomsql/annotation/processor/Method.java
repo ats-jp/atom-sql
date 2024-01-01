@@ -1,6 +1,5 @@
 package jp.ats.atomsql.annotation.processor;
 
-import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlInterpolation;
 import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
@@ -35,10 +34,10 @@ public @interface Method {
 	Class<?> sqlParameters() default Object.class;
 
 	/**
-	 * 戻り値の型パラメータで示される{@link DataObject}クラス
-	 * @return 戻り値の型パラメータで示される {@link DataObject} クラス
+	 * 戻り値の型パラメータで示されるAtom SQL検索結果で使用可能なクラス化または@link DataObject}クラス
+	 * @return 戻り値の型パラメータで示されるAtom SQL検索結果で使用可能なクラス化または@link DataObject}クラス
 	 */
-	Class<?> dataObject() default Object.class;
+	Class<?> result() default Object.class;
 
 	/**
 	 * {@link SqlInterpolation}に指定されたクラス

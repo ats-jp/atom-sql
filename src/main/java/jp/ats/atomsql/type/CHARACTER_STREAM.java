@@ -44,7 +44,14 @@ public class CHARACTER_STREAM implements AtomSqlType {
 
 	@Override
 	public Object get(ResultSet rs, String columnLabel) throws SQLException {
-		return new CharacterStream(rs.getCharacterStream(columnLabel), -1);
+		var stream = rs.getCharacterStream(columnLabel);
+		return rs.wasNull() ? null : new CharacterStream(stream, -1);
+	}
+
+	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		var stream = rs.getCharacterStream(columnIndex);
+		return rs.wasNull() ? null : new CharacterStream(stream, -1);
 	}
 
 	@Override

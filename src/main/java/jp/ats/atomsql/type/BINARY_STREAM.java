@@ -43,7 +43,14 @@ public class BINARY_STREAM implements AtomSqlType {
 
 	@Override
 	public Object get(ResultSet rs, String columnLabel) throws SQLException {
-		return new BinaryStream(rs.getBinaryStream(columnLabel), -1);
+		var stream = rs.getBinaryStream(columnLabel);
+		return rs.wasNull() ? null : new BinaryStream(stream, -1);
+	}
+
+	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		var stream = rs.getBinaryStream(columnIndex);
+		return rs.wasNull() ? null : new BinaryStream(stream, -1);
 	}
 
 	@Override

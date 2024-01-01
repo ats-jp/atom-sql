@@ -46,6 +46,12 @@ public class DATE implements AtomSqlType {
 	}
 
 	@Override
+	public LocalDate get(ResultSet rs, int columnIndex) throws SQLException {
+		var value = rs.getDate(columnIndex);
+		return value == null ? null : value.toLocalDate();
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}

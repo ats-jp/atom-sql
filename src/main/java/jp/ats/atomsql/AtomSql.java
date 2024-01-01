@@ -379,7 +379,7 @@ public class AtomSql {
 				confidentials,
 				names.toArray(String[]::new),
 				types.toArray(Class[]::new),
-				find.dataObject(),
+				find.result(),
 				values.toArray(Object[]::new),
 				typeFactory,
 				mySqlLogger);
@@ -390,7 +390,7 @@ public class AtomSql {
 				confidentials,
 				find.parameters(),
 				find.parameterTypes(),
-				find.dataObject(),
+				find.result(),
 				args,
 				typeFactory,
 				mySqlLogger);
@@ -656,7 +656,7 @@ public class AtomSql {
 
 		final Endpoints.Entry entry;
 
-		private final Class<?> dataObjectClass;
+		private final Class<?> resultClass;
 
 		private final AtomSqlTypeFactory typeFactory;
 
@@ -679,12 +679,12 @@ public class AtomSql {
 			String[] confidentials,
 			String[] parameterNames,
 			Class<?>[] parameterClasses,
-			Class<?> dataObjectClass,
+			Class<?> resultClass,
 			Object[] args,
 			AtomSqlTypeFactory typeFactory,
 			SqlLogger sqlLogger) {
 			this.entry = entry;
-			this.dataObjectClass = dataObjectClass;
+			this.resultClass = resultClass;
 			this.typeFactory = typeFactory;
 			this.sqlLogger = sqlLogger;
 
@@ -727,7 +727,7 @@ public class AtomSql {
 		SqlProxyHelper(SqlProxyHelper base, Class<?> newDataObjectClass) {
 			this.sql = base.sql;
 			this.entry = base.entry;
-			this.dataObjectClass = newDataObjectClass;
+			this.resultClass = newDataObjectClass;
 			this.typeFactory = base.typeFactory;
 			this.sqlLogger = base.sqlLogger;
 		}
@@ -737,22 +737,30 @@ public class AtomSql {
 			SqlProxyHelper main) {
 			this.sql = sql;
 			this.entry = main.entry;
-			this.dataObjectClass = main.dataObjectClass;
+			this.resultClass = main.resultClass;
 			this.typeFactory = main.typeFactory;
 			this.sqlLogger = main.sqlLogger;
 		}
 
 		Object createDataObject(ResultSet rs) {
-			if (dataObjectClass == Object.class)
+			if (resultClass == Object.class)
 				throw new IllegalStateException();
 
-			if (dataObjectClass.isRecord()) {
-				return createRecordDataObject(dataObjectClass, rs);
+			if (resultClass.isRecord()) {
+				return createRecordDataObject(resultClass, rs);
+			}
+
+			if (typeFactory.canUse(resultClass)) {
+				try {
+					return typeFactory.select(resultClass).get(rs, 1);
+				} catch (SQLException e) {
+					throw new AtomSqlException(e);
+				}
 			}
 
 			Constructor<?> constructor;
 			try {
-				constructor = dataObjectClass.getConstructor(ResultSet.class);
+				constructor = resultClass.getConstructor(ResultSet.class);
 			} catch (NoSuchMethodException e) {
 				return createNoParametersConstructorDataObject(rs);
 			}
@@ -811,14 +819,14 @@ public class AtomSql {
 		private Object createNoParametersConstructorDataObject(ResultSet rs) {
 			Object object;
 			try {
-				var constructor = dataObjectClass.getConstructor();
+				var constructor = resultClass.getConstructor();
 				object = constructor.newInstance();
 			} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
 				throw new IllegalStateException(e);
 			}
 
 			var optionals = new Optionals();
-			Arrays.stream(dataObjectClass.getFields()).forEach(f -> {
+			Arrays.stream(resultClass.getFields()).forEach(f -> {
 				var modifiers = f.getModifiers();
 				//フィールドがstaticの場合は対象から除外
 				//publicではない、finalの場合は以降の処理でエラーを起こすことで使用出来ないことを通知する
@@ -866,7 +874,7 @@ public class AtomSql {
 		private OptionalDatas loadOptionalDatas() {
 			try {
 				return Class.forName(
-					dataObjectClass.getName() + Constants.DATA_OBJECT_METADATA_CLASS_SUFFIX,
+					resultClass.getName() + Constants.DATA_OBJECT_METADATA_CLASS_SUFFIX,
 					true,
 					Thread.currentThread().getContextClassLoader()).getAnnotation(OptionalDatas.class);
 			} catch (ClassNotFoundException e) {

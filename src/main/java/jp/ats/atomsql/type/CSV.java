@@ -60,6 +60,11 @@ public class CSV implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		throw new UnsupportedOperationException();
 	}

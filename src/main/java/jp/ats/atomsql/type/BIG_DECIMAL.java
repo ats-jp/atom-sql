@@ -41,6 +41,11 @@ public class BIG_DECIMAL implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getBigDecimal(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}

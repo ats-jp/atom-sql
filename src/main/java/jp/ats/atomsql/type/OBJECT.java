@@ -39,6 +39,12 @@ public class OBJECT implements AtomSqlType {
 	@Override
 	public Object get(ResultSet rs, String columnLabel) throws SQLException {
 		return rs.getObject(columnLabel);
+
+	}
+
+	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getObject(columnIndex);
 	}
 
 	@Override

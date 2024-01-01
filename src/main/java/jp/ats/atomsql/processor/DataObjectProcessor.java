@@ -273,7 +273,7 @@ class DataObjectProcessor {
 				}
 
 				var argType = ProcessorUtils.toTypeElement(ProcessorUtils.toElement(arg));
-				if (!typeFactory.canUse(argType))
+				if (!typeFactory.canUseForProcessor(argType))
 					return defaultAction(t, p);
 
 				optionals.put(p.getSimpleName(), argType);
@@ -281,7 +281,7 @@ class DataObjectProcessor {
 				return true;
 			}
 
-			if (typeFactory.canUse(type))
+			if (typeFactory.canUseForProcessor(type))
 				return true;
 
 			return defaultAction(t, p);

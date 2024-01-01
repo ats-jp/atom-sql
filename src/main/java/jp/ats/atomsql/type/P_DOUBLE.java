@@ -40,6 +40,11 @@ public class P_DOUBLE implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getDouble(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.DOUBLE.instance;
 	}

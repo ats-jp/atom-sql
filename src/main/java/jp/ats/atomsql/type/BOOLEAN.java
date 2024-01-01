@@ -39,8 +39,14 @@ public class BOOLEAN implements AtomSqlType {
 
 	@Override
 	public Object get(ResultSet rs, String columnLabel) throws SQLException {
-		var val = rs.getBoolean(columnLabel);
-		return rs.wasNull() ? null : val;
+		var value = rs.getBoolean(columnLabel);
+		return rs.wasNull() ? null : value;
+	}
+
+	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		var value = rs.getBoolean(columnIndex);
+		return rs.wasNull() ? null : value;
 	}
 
 	@Override

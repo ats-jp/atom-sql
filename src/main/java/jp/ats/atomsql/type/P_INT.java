@@ -6,6 +6,7 @@ import java.sql.SQLException;
 
 import jp.ats.atomsql.AtomSqlException;
 import jp.ats.atomsql.AtomSqlType;
+import jp.ats.atomsql.annotation.DataObject;
 
 /**
  * int
@@ -40,7 +41,37 @@ public class P_INT implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getInt(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.INTEGER.instance;
+	}
+
+	/**
+	 * 単一値取得用DataObject
+	 */
+	@DataObject
+	public static class Value {
+
+		private final int value;
+
+		/**
+		 * コンストラクタ
+		 * @param rs
+		 */
+		public Value(ResultSet rs) {
+			try {
+				value = rs.getInt(1);
+			} catch (SQLException e) {
+				throw new AtomSqlException(e);
+			}
+		}
+
+		int get() {
+			return value;
+		}
 	}
 }

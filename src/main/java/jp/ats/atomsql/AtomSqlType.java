@@ -236,6 +236,15 @@ public interface AtomSqlType {
 	Object get(ResultSet rs, String columnLabel) throws SQLException;
 
 	/**
+	 * この型に合ったメソッドで{@link ResultSet}から値を取得します。
+	 * @param rs
+	 * @param columnIndex
+	 * @return 値
+	 * @throws SQLException
+	 */
+	Object get(ResultSet rs, int columnIndex) throws SQLException;
+
+	/**
 	 * この型が型パラメータで使用される場合の代替型を返します。<br>
 	 * 主にプリミティブな型がラッパークラスの型に変換するために使用します。
 	 * @return {@link AtomSqlType}

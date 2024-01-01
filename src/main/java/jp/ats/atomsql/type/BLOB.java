@@ -43,6 +43,11 @@ public class BLOB implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getBlob(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return this;
 	}

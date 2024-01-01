@@ -2,6 +2,7 @@ package jp.ats.atomsql.processor;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -134,6 +135,15 @@ public class ProcessorUtils {
 		return e.accept(TypeConverter.instance, null);
 	}
 
+	/**
+	 * 内部使用
+	 * @param type
+	 * @return {@link TypeElement}
+	 */
+	public static TypeElement toTypeElement(TypeMirror type) {
+		return toTypeElement(toElement(type));
+	}
+
 	static String message(Exception e) {
 		var message = e.getMessage();
 		if (message == null || message.isBlank()) return e.getClass().getName();
@@ -179,7 +189,7 @@ public class ProcessorUtils {
 
 		@Override
 		protected List<? extends TypeMirror> defaultAction(TypeMirror e, Void p) {
-			return null;
+			return Collections.emptyList();
 		}
 
 		@Override

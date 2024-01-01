@@ -131,7 +131,14 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 	}
 
 	@Override
-	public boolean canUse(TypeElement type) {
+	public boolean canUse(Class<?> c) {
+		if (c.isEnum()) return true;
+
+		return Arrays.stream(nonPrimitiveTypes).filter(t -> t.equals(c)).findFirst().isPresent();
+	}
+
+	@Override
+	public boolean canUseForProcessor(TypeElement type) {
 		if (type.getKind() == ElementKind.ENUM) return true;
 
 		var typeName = type.getQualifiedName().toString();

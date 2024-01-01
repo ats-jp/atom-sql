@@ -125,8 +125,8 @@ class MetadataBuilder {
 		if (info.sqlParameters != null)
 			methodContents.add("sqlParameters = " + info.sqlParameters + ".class");
 
-		if (info.dataObject != null)
-			methodContents.add("dataObject = " + info.dataObject + ".class");
+		if (info.dataType != null)
+			methodContents.add("result = " + info.dataType + ".class");
 
 		if (info.sqlInterpolation != null)
 			methodContents.add("sqlInterpolation = " + info.sqlInterpolation + ".class");
@@ -155,7 +155,7 @@ class MetadataBuilder {
 
 		String sqlParameters;
 
-		String dataObject;
+		String dataType;
 
 		String sqlInterpolation;
 

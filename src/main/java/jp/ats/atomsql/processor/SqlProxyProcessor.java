@@ -36,7 +36,6 @@ import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.Constants;
-import jp.ats.atomsql.Csv;
 import jp.ats.atomsql.HalfAtom;
 import jp.ats.atomsql.PlaceholderFinder;
 import jp.ats.atomsql.annotation.AtomSqlSupplier;
@@ -135,7 +134,7 @@ class SqlProxyProcessor {
 		processingEnv.get().getMessager().printMessage(Kind.ERROR, message, e);
 	}
 
-	private static record ReturnTypeCheckerResult(TypeMirror dataObjectType, TypeMirror sqlInterpolationType) {
+	private static record ReturnTypeCheckerResult(TypeMirror dataType, TypeMirror sqlInterpolationType) {
 
 		private static final ReturnTypeCheckerResult defaultValue = new ReturnTypeCheckerResult(null, null);
 	}
@@ -168,42 +167,42 @@ class SqlProxyProcessor {
 		public ReturnTypeCheckerResult visitDeclared(DeclaredType t, ExecutableElement p) {
 			var type = ProcessorUtils.toTypeElement(t.asElement());
 
-			if (ProcessorUtils.sameClass(type, Atom.class)) {
-				var dataObjectType = t.getTypeArguments().get(0);
-				if (dataObjectType.accept(AnnotationExtractor.instance, null))
-					return new ReturnTypeCheckerResult(dataObjectType, null);
+			if (ProcessorUtils.sameClass(type, HalfAtom.class)) {
+				return processHalfAtomType(t, p);
+			}
 
-				if (ProcessorUtils.toElement(dataObjectType) == null) {
-					// <?>
-					// Atomの場合は、型パラメータを指定しなくてOK
-					return ReturnTypeCheckerResult.defaultValue;
+			if (ProcessorUtils.sameClass(type, List.class) || ProcessorUtils.sameClass(type, Optional.class) || ProcessorUtils.sameClass(type, Stream.class) || ProcessorUtils.sameClass(type, Atom.class)) {
+				var dataType = t.getTypeArguments().get(0);
+
+				if (dataType.accept(AnnotationExtractor.instance, null)) {
+					return new ReturnTypeCheckerResult(dataType, null);
 				}
 
-				return errorDataObjectAnnotation(dataObjectType, p);
-			} else if (ProcessorUtils.sameClass(type, HalfAtom.class)) {
-				return processHalfAtomType(t, p);
-			} else if (ProcessorUtils.sameClass(type, Stream.class)
-				|| ProcessorUtils.sameClass(type, List.class)
-				|| ProcessorUtils.sameClass(type, Optional.class)) {
-					var dataObjectType = t.getTypeArguments().get(0);
-					if (dataObjectType.accept(AnnotationExtractor.instance, null))
-						return new ReturnTypeCheckerResult(dataObjectType, null);
-
-					if (ProcessorUtils.toElement(dataObjectType) == null) {
+				if (ProcessorUtils.toElement(dataType) == null) {
+					if (ProcessorUtils.sameClass(type, Atom.class)) {
 						// <?>
-						// Stream, List, Optionalの場合は、型パラメータを指定しなければならない
-						return errorAction(t, p);
+						// Atomの場合は、型パラメータを指定しなくてOK
+						return ReturnTypeCheckerResult.defaultValue;
 					}
 
-					return errorDataObjectAnnotation(dataObjectType, p);
+					// <?>
+					// Stream, List, Optionalの場合は、型パラメータを指定しなければならない
+					return errorAction(t, p);
 				}
+
+				if (typeFactory.canUseForProcessor(ProcessorUtils.toTypeElement(dataType))) {
+					return new ReturnTypeCheckerResult(dataType, null);
+				}
+
+				return errorDataType(dataType, p);
+			}
 
 			return errorAction(t, p);
 		}
 
-		private ReturnTypeCheckerResult errorDataObjectAnnotation(TypeMirror e, ExecutableElement p) {
-			//データオブジェクトクラスeは@DataObjectで注釈しなければなりません
-			error("Data object class [" + e + "] must be annotated @" + DataObject.class.getSimpleName(), p);
+		private ReturnTypeCheckerResult errorDataType(TypeMirror e, ExecutableElement p) {
+			//データオブジェクトクラスeはAtom SQLで検索結果として使用可能なクラスか、@DataObjectで注釈されていなければなりません
+			error("Data class [" + e + "] must be available as search result in Atom SQL or annotated @" + DataObject.class.getSimpleName(), p);
 			builder.setError();
 			return ReturnTypeCheckerResult.defaultValue;
 		}
@@ -228,15 +227,14 @@ class SqlProxyProcessor {
 				return ReturnTypeCheckerResult.defaultValue;
 			}
 
-			var dataObjectType = t.getTypeArguments().get(0);
-			if (!dataObjectType.accept(AnnotationExtractor.instance, null)) {
-				if (ProcessorUtils.toElement(dataObjectType) == null) {
-					// <?>
-					// HalfAtomの場合は、結果型パラメータを指定しなくてOK
-					dataObjectType = null;
-				} else {
-					return errorDataObjectAnnotation(dataObjectType, p);
-				}
+			var dataType = t.getTypeArguments().get(0);
+
+			if (ProcessorUtils.toElement(dataType) == null) {
+				// <?>
+				// HalfAtomの場合は、結果型パラメータを指定しなくてOK
+				dataType = null;
+			} else if (!dataType.accept(AnnotationExtractor.instance, null) && !typeFactory.canUseForProcessor(ProcessorUtils.toTypeElement(dataType))) {
+				return errorDataType(dataType, p);
 			}
 
 			var interpolationType = t.getTypeArguments().get(1);
@@ -244,7 +242,7 @@ class SqlProxyProcessor {
 				return errorAction(t, p);
 			}
 
-			return new ReturnTypeCheckerResult(dataObjectType, interpolationType);
+			return new ReturnTypeCheckerResult(dataType, interpolationType);
 		}
 	}
 
@@ -287,15 +285,16 @@ class SqlProxyProcessor {
 				return processConsumerType(p);
 			}
 
-			if (typeFactory.canUse(type)) return DEFAULT_VALUE;
+			if (typeFactory.canUseForProcessor(type)) return DEFAULT_VALUE;
 
-			if (ProcessorUtils.sameClass(type, new CSV(typeFactory).type())) {
+			var csvType = new CSV(typeFactory).type();
+			if (ProcessorUtils.sameClass(type, csvType)) {
 				var argumentType = t.getTypeArguments().get(0);
 				var element = ProcessorUtils.toElement(argumentType);
 				var typeElement = ProcessorUtils.toTypeElement(element);
 
 				// この先再帰するので同タイプは先にはじく
-				if (ProcessorUtils.sameClass(typeElement, Csv.class)) {
+				if (ProcessorUtils.sameClass(typeElement, csvType)) {
 					return defaultAction(t, p);
 				}
 
@@ -466,18 +465,8 @@ class SqlProxyProcessor {
 
 			var returnTypeCheckerResult = e.getReturnType().accept(returnTypeChecker, e);
 
-			if (returnTypeCheckerResult.dataObjectType != null) {
-				var dataObjectClassName = returnTypeCheckerResult.dataObjectType.accept(typeNameExtractor, e);
-
-				var dataObjectElement = ProcessorUtils.toElement(returnTypeCheckerResult.dataObjectType);
-				if (dataObjectElement.getAnnotation(DataObject.class) == null) {
-					//dataObjectClassNameにはDataObjectのアノテーションが必要です
-					error(
-						"[" + dataObjectClassName + "] requires to be annotated with " + DataObject.class.getSimpleName(),
-						e);
-				} else {
-					info.dataObject = dataObjectClassName;
-				}
+			if (returnTypeCheckerResult.dataType != null) {
+				info.dataType = returnTypeCheckerResult.dataType.accept(typeNameExtractor, e);
 			}
 
 			if (returnTypeCheckerResult.sqlInterpolationType != null) {

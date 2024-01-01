@@ -40,6 +40,11 @@ public class P_LONG implements AtomSqlType {
 	}
 
 	@Override
+	public Object get(ResultSet rs, int columnIndex) throws SQLException {
+		return rs.getLong(columnIndex);
+	}
+
+	@Override
 	public AtomSqlType toTypeArgument() {
 		return jp.ats.atomsql.type.LONG.instance;
 	}
