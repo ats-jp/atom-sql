@@ -186,6 +186,23 @@ public List<SampleInfo> selectList();
 ※SQL文とそのコントローラーが近い方が処理を把握しやすい等のメリットがあることが考えられる  
 SQLをファイルとして管理したい等の要件が無いのであれば`@Sql`アノテーションを使用すること  
 
+- 検索結果が単一項目の値の取得  
+以下表の型は、`java.util.List`、`java.util.stream.Stream`、`java.util.Optional`、`jp.ats.atomsql.Atom`の型パラメータに直接型名を記述することで、検索結果の先頭項目をその型の値として取得することが可能  
+
+|Javaクラス|
+|:--|
+|java.math.BigDecimal|  
+|java.lang.Boolean|  
+|java.lang.Double|  
+|java.lang.Float|  
+|java.lang.Integer|  
+|java.lang.Long|  
+|java.lang.String|  
+|java.time.LocalDate|  
+|java.time.LocalTime|  
+|java.time.LocalDateTime|  
+|ユーザー定義のenum|  
+
 ### UPDATE文、INSERT文の発行
 - メソッドの作成
 UPDATE文、INSERT文を発行するためのメソッドをSqlProxy内に作成する  
@@ -235,6 +252,11 @@ public int updateSample();
 トランザクションの管理は、Atom SQLを使用するフレームワークに依存する  
 例として、Spring Frameworkであれば`@Transactional`アノテーションによりトランザクション管理を行う  
 `@Transactional`アノテーションはSqlProxyに付与するのではなく、SqlProxyを使用するクラス（例えばServiceクラス）のメソッドに付与する  
+また、`jp.ats.atomsql.AtomSql##bollowConnection`を使用することで直接コミット、ロールバックを行うことも可能  
+
+```java
+atomSql.bollowConnection(c -> c.commit());
+```
 
 - バッチ実行  
 大量の更新処理を一度に実行したい場合、JDBCに備わっているバッチ実行機能を利用することが出来る  
@@ -295,6 +317,7 @@ public int updateSample(String name, int id);
 |**DATE**|java.time.LocalDate|DATE|〇|
 |**TIME**|java.time.LocalTime|TIME|〇|
 |**DATETIME**|java.time.LocalDateTime|TIMESTAMP|〇|
+|**ENUM**|ユーザー定義のenum|INTEGER|〇|
 |**CSV<AtomSqlTypeの型>**<br>(使用可能型は後述)|jp.ats.atomsql.Csv|パラメーターの型|〇|
 
 ※P_INTとINTEGER等、プリミティブ型とラッパー型がそれぞれ使用可能であるが、使い分けとして更新などでINTEGER型のカラムにNULLをセットしたい場合はラッパー型を使用、それ以外はプリミティブ型を使用するようにすればよい  
@@ -372,6 +395,7 @@ sampleProxy.selectSample(Csv.of(1, 2, 3, 4, 5)).forEach(r -> {
 |**DATE**|java.time.LocalDate|  
 |**TIME**|java.time.LocalTime|  
 |**DATETIME**|java.time.LocalDateTime|  
+|**ENUM**|ユーザー定義のenum|  
 
 - __@SqlParameters__  
 長いSQL、項目の多いテーブルに対するINSERT文等、プレースホルダの数が多い場合、メソッドのパラメーターにすべて記述するのが煩雑になる場合がある  
@@ -440,6 +464,19 @@ public int updateSample(Consumer<SampleParameters> consumer);
 ※CSV型を使用する場合は型パラメーターを記述する必要がある  
 型パラメーターに指定可能な型は、スレッドセーフかつプリミティブではない型（前述）  
 
+※enumを使用する場合は、enumのFQCNを直接記述することが可能  
+
+```java
+@Sql("UPDATE sample SET name = :name/*STRING*/ WHERE type = :type/*your.Enum*/")
+@SqlParameters
+public int updateSample(Consumer<SampleParameters> consumer);
+
+//Csv使用の場合
+@Sql("SELECT * FROM sample WHERE type IN (:types/*CSV<your.Enum>*/)")
+@SqlParameters
+public int updateSampleWithCsv(Consumer<SampleParameters> consumer);
+```
+
 2. `@TypeHint`アノテーション  
 `@SqlParameters`のパラメーターとして`@TypeHint`を設定する  
 
@@ -457,7 +494,25 @@ CSV型を使用する場合
 ```java
 @Sql("SELECT * FROM sample WHERE id IN (:ids)")
 @SqlParameters(typeHints = {
-    @TypeHint(name = "ids", type = AtomSqlType.CSV, typeArgument=AtomSqlType.LONG),
+    @TypeHint(name = "ids", type = AtomSqlType.CSV, typeArgument = AtomSqlType.LONG),
+})
+public int updateSample(Consumer<SampleParameters> consumer);
+```
+
+※enumを使用する場合  
+
+```java
+@Sql("UPDATE sample SET name = :name WHERE type = :type")
+@SqlParameters(typeHints = {
+    @TypeHint(name = "name", type = AtomSqlType.STRING),
+    @TypeHint(name = "type", type = "your.Enum"),
+})
+public int updateSample(Consumer<SampleParameters> consumer);
+
+//Csv使用の場合
+@Sql("SELECT * FROM sample WHERE type IN (:types)")
+@SqlParameters(typeHints = {
+    @TypeHint(name = "types", type = AtomSqlType.CSV, typeArgument = "your.Enum"),
 })
 public int updateSample(Consumer<SampleParameters> consumer);
 ```

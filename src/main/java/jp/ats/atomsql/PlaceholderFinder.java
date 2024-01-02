@@ -17,7 +17,7 @@ import javax.lang.model.SourceVersion;
 @SuppressWarnings("javadoc")
 public class PlaceholderFinder {
 
-	private static final Pattern pattern = Pattern.compile(":([^\\s[\\p{Punct}&&[^_$]]]+)(?:/\\*([A-Z_]+)(?:<([A-Z_]+)>|)\\*/|)");
+	private static final Pattern pattern = Pattern.compile(":([^\\s[\\p{Punct}&&[^_$]]]+)(?:/\\*([^\\*<]+)(?:<([^\\*>]+)>|)\\*/|)");
 
 	public static String execute(String sql, Consumer<Found> placeholderConsumer) {
 		//誤検出分保管

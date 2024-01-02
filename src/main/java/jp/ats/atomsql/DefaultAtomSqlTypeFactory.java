@@ -1,5 +1,8 @@
 package jp.ats.atomsql;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -119,10 +122,26 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 	@Override
 	public AtomSqlType typeOf(String name) {
 		var type = nameMap.get(Objects.requireNonNull(name));
-		if (type == null)
-			throw new UnknownSqlTypeNameException(name);
 
-		return type;
+		if (type != null) return type;
+
+		if (Arrays.stream(name.split("\\.")).filter(DefaultAtomSqlTypeFactory::filterInvalidJavaName).findFirst().isPresent()) {
+			//Javaシンボルに使用できない文字が含まれていた場合
+			throw new UnknownSqlTypeNameException(name);
+		}
+
+		return new PROCESSOR_ENUM(name);
+	}
+
+	private static boolean filterInvalidJavaName(String name) {
+		if (!Character.isJavaIdentifierStart(name.charAt(0))) return true;
+
+		var length = name.length();
+		for (int i = 1; i < length; i++) {
+			if (!Character.isJavaIdentifierPart(name.charAt(i))) return true;
+		}
+
+		return false;
 	}
 
 	@Override
@@ -143,5 +162,44 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 
 		var typeName = type.getQualifiedName().toString();
 		return Arrays.stream(nonPrimitiveTypes).filter(c -> typeName.equals(c.getCanonicalName())).findFirst().isPresent();
+	}
+
+	private static class PROCESSOR_ENUM implements AtomSqlType {
+
+		private final String enumClass;
+
+		private PROCESSOR_ENUM(String enumClass) {
+			this.enumClass = enumClass;
+		}
+
+		@Override
+		public Class<?> type() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public int bind(int index, PreparedStatement statement, Object value) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Object get(ResultSet rs, String columnLabel) throws SQLException {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Object get(ResultSet rs, int columnIndex) throws SQLException {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public AtomSqlType toTypeArgument() {
+			return this;
+		}
+
+		@Override
+		public String typeExpression() {
+			return Enum.class.getName() + "<" + enumClass + ">";
+		}
 	}
 }

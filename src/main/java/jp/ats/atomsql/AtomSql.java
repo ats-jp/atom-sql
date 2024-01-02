@@ -365,12 +365,29 @@ public class AtomSql {
 			var types = new LinkedList<Class<?>>();
 			Arrays.stream(sqlParametersClass.getFields()).forEach(f -> {
 				names.add(f.getName());
-				types.add(f.getType());
+
+				Object value;
 				try {
-					values.add(f.get(sqlParameters));
+					value = f.get(sqlParameters);
 				} catch (IllegalAccessException e) {
 					throw new IllegalStateException(e);
 				}
+
+				var t = f.getType();
+				if (t.equals(Enum.class)) {
+					//型がEnumの場合、型パラメータに実際の型が記述されているが、この時点では取得できないので
+					//実際のオブジェクトから型を取得する
+					if (value == null) {
+						//値がnullの場合、仕方がないのでPreparedStatementにnullを設定できるようにENUMの実態のIntegerを使用する
+						types.add(Integer.class);
+					} else {
+						types.add(value.getClass());
+					}
+				} else {
+					types.add(f.getType());
+				}
+
+				values.add(value);
 			});
 
 			helper = new SqlProxyHelper(
