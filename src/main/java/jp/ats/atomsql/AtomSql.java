@@ -45,6 +45,8 @@ import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.annotation.processor.Methods;
 import jp.ats.atomsql.annotation.processor.OptionalDatas;
+import jp.ats.atomsql.type.INTEGER;
+import jp.ats.atomsql.type.NULL;
 
 /**
  * Atom SQLの実行時の処理のほとんどを行うコアクラスです。<br>
@@ -362,7 +364,7 @@ public class AtomSql {
 
 			var names = new LinkedList<String>();
 			var values = new LinkedList<Object>();
-			var types = new LinkedList<Class<?>>();
+			var types = new LinkedList<AtomSqlType>();
 			Arrays.stream(sqlParametersClass.getFields()).forEach(f -> {
 				names.add(f.getName());
 
@@ -378,21 +380,20 @@ public class AtomSql {
 					//型がEnumの場合、型パラメータに実際の型が記述されているが、この時点では取得できないので
 					//実際のオブジェクトから型を取得する
 					if (value == null) {
-						//値がnullの場合、仕方がないのでPreparedStatementにnullを設定できるようにENUMの実態のIntegerを使用する
-						types.add(Integer.class);
+						//値がnullの場合、仕方がないのでPreparedStatementにnullを設定できるようにENUMの実態のINTEGERを使用する
+						types.add(INTEGER.instance);
 					} else {
-						types.add(value.getClass());
+						types.add(typeFactory.select(value.getClass()));
 					}
 				} else if (t.equals(Object.class)) {
 					if (value == null) {
-						//値がnullの場合、仕方がないのでPreparedStatementにnullを設定できるようにObjectを使用する
-						//JDBCドライバによっては型指定なしのnullセットはできない場合があるので注意
-						types.add(Object.class);
+						//値がnullの場合、仕方がないのでPreparedStatementにnullを設定できるようにNULLをセットする
+						types.add(NULL.instance);
 					} else {
-						types.add(value.getClass());
+						types.add(typeFactory.select(value.getClass()));
 					}
 				} else {
-					types.add(f.getType());
+					types.add(typeFactory.select(f.getType()));
 				}
 
 				values.add(value);
@@ -403,18 +404,20 @@ public class AtomSql {
 				entry,
 				confidentials,
 				names.toArray(String[]::new),
-				types.toArray(Class[]::new),
+				types.toArray(AtomSqlType[]::new),
 				find.result(),
 				values.toArray(Object[]::new),
 				typeFactory,
 				mySqlLogger);
 		} else {
+			var types = Arrays.stream(find.parameterTypes()).map(c -> typeFactory.select(c)).toArray(AtomSqlType[]::new);
+
 			helper = new SqlProxyHelper(
 				sql,
 				entry,
 				confidentials,
 				find.parameters(),
-				find.parameterTypes(),
+				types,
 				find.result(),
 				args,
 				typeFactory,
@@ -631,7 +634,7 @@ public class AtomSql {
 			endpoints.get(),
 			null,
 			new String[0],
-			new Class<?>[0],
+			new AtomSqlType[0],
 			Object.class,
 			new Object[0],
 			typeFactory,
@@ -703,7 +706,7 @@ public class AtomSql {
 			Endpoints.Entry entry,
 			String[] confidentials,
 			String[] parameterNames,
-			Class<?>[] parameterClasses,
+			AtomSqlType[] parameterTypes,
 			Class<?> resultClass,
 			Object[] args,
 			AtomSqlTypeFactory typeFactory,
@@ -717,7 +720,7 @@ public class AtomSql {
 			for (int i = 0; i < parameterNames.length; i++) {
 				map.put(
 					parameterNames[i],
-					new TypeAndArg(typeFactory.select(parameterClasses[i]), args[i]));
+					new TypeAndArg(parameterTypes[i], args[i]));
 			}
 
 			List<Element> elements = new LinkedList<>();
