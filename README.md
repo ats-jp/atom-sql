@@ -187,7 +187,7 @@ public List<SampleInfo> selectList();
 SQLをファイルとして管理したい等の要件が無いのであれば`@Sql`アノテーションを使用すること  
 
 - 検索結果が単一項目の値の取得  
-以下表の型は、`java.util.List`、`java.util.stream.Stream`、`java.util.Optional`、`jp.ats.atomsql.Atom`の型パラメータに直接型名を記述することで、検索結果の先頭項目をその型の値として取得することが可能  
+以下表の型は、`java.util.List`、`java.util.stream.Stream`、`java.util.Optional`、`jp.ats.atomsql.Atom`の型パラメータに直接型名を記述することで、検索結果の先頭項目をその型の値として取得することが可能となる  
 
 |Javaクラス|
 |:--|

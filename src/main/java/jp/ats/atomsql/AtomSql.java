@@ -383,6 +383,14 @@ public class AtomSql {
 					} else {
 						types.add(value.getClass());
 					}
+				} else if (t.equals(Object.class)) {
+					if (value == null) {
+						//値がnullの場合、仕方がないのでPreparedStatementにnullを設定できるようにObjectを使用する
+						//JDBCドライバによっては型指定なしのnullセットはできない場合があるので注意
+						types.add(Object.class);
+					} else {
+						types.add(value.getClass());
+					}
 				} else {
 					types.add(f.getType());
 				}
