@@ -1,7 +1,8 @@
 package jp.ats.atomsql.annotation.processor;
 
-import jp.ats.atomsql.annotation.SqlInterpolation;
-import jp.ats.atomsql.annotation.SqlParameters;
+import java.util.function.Consumer;
+
+import jp.ats.atomsql.Prototype;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
 
 /**
@@ -28,10 +29,10 @@ public @interface Method {
 	Class<?>[] parameterTypes();
 
 	/**
-	 * {@link SqlParameters}に指定されたクラス
-	 * @return {@link SqlParameters} に指定されたクラス
+	 * メソッドの{@link Consumer}に指定されたクラス
+	 * @return メソッドの{@link Consumer}に指定されたクラス
 	 */
-	Class<?> sqlParameters() default Object.class;
+	Class<?> parametersUnfolder() default Object.class;
 
 	/**
 	 * 戻り値の型パラメータで示されるAtom SQL検索結果で使用可能なクラス化または@link DataObject}クラス
@@ -40,10 +41,10 @@ public @interface Method {
 	Class<?> result() default Object.class;
 
 	/**
-	 * {@link SqlInterpolation}に指定されたクラス
-	 * @return {@link SqlInterpolation} に指定されたクラス
+	 * {@link Prototype}に指定されたクラス
+	 * @return {@link Prototype} に指定されたクラス
 	 */
-	Class<?> sqlInterpolation() default Object.class;
+	Class<?> atomsUnfolder() default Object.class;
 
 	/**
 	 * {@link SqlProxySupplier}が付与されたメソッドの戻り値のクラス

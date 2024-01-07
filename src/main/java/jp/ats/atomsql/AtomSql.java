@@ -357,20 +357,20 @@ public class AtomSql {
 		SqlProxyHelper helper;
 		var entry = nameAnnotation.map(a -> endpoints.get(a.value())).orElseGet(() -> endpoints.get());
 		if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
-			var sqlParametersClass = find.sqlParameters();
-			var sqlParameters = sqlParametersClass.getConstructor().newInstance();
+			var parametersUnfolderClass = find.parametersUnfolder();
+			var parametersUnfolder = parametersUnfolderClass.getConstructor().newInstance();
 
-			Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { sqlParameters });
+			Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { parametersUnfolder });
 
 			var names = new LinkedList<String>();
 			var values = new LinkedList<Object>();
 			var types = new LinkedList<AtomSqlType>();
-			Arrays.stream(sqlParametersClass.getFields()).forEach(f -> {
+			Arrays.stream(parametersUnfolderClass.getFields()).forEach(f -> {
 				names.add(f.getName());
 
 				Object value;
 				try {
-					value = f.get(sqlParameters);
+					value = f.get(parametersUnfolder);
 				} catch (IllegalAccessException e) {
 					throw new IllegalStateException(e);
 				}
@@ -438,8 +438,8 @@ public class AtomSql {
 			return atom.get();
 		} else if (returnType.equals(int.class) || returnType.equals(void.class)) {
 			return atom.update();
-		} else if (returnType.equals(HalfAtom.class)) {
-			return new HalfAtom<>(atom, find.sqlInterpolation());
+		} else if (returnType.equals(Prototype.class)) {
+			return new Prototype<>(atom, find.atomsUnfolder());
 		} else {
 			//不正な戻り値の型
 			throw new IllegalStateException("Incorrect return type: " + returnType);

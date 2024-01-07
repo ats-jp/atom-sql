@@ -5,16 +5,16 @@ import java.util.regex.Pattern;
 
 import javax.lang.model.SourceVersion;
 
-import jp.ats.atomsql.annotation.SqlInterpolation;
+import jp.ats.atomsql.Atom;
 
 /**
  * 内部使用クラスです。<br>
- * SQL文から、{@link SqlInterpolation}用変数を探します。<br>
+ * SQL文から、{@link Atom}用変数を探します。<br>
  * プレースホルダは、Javaの識別子の規則に沿っている必要があります。
  * @author 千葉 哲嗣
  */
 @SuppressWarnings("javadoc")
-public class InterpolationPlaceholderFinder {
+public class AtomPlaceholderFinder {
 
 	private static final Pattern pattern = Pattern.compile("\\$\\{([^\\s[\\p{Punct}&&[^_$]]]+)\\}");
 

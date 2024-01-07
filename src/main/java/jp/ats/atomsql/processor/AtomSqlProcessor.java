@@ -13,8 +13,6 @@ import javax.lang.model.element.TypeElement;
 
 import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.annotation.DataObject;
-import jp.ats.atomsql.annotation.SqlInterpolation;
-import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
 
 /**
@@ -22,9 +20,8 @@ import jp.ats.atomsql.annotation.SqlProxy;
  */
 @SupportedAnnotationTypes({
 	"jp.ats.atomsql.annotation.SqlProxy",
-	"jp.ats.atomsql.annotation.SqlParameters",
 	"jp.ats.atomsql.annotation.DataObject",
-	"jp.ats.atomsql.annotation.SqlInterpolation", })
+})
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @SuppressWarnings("javadoc")
 public class AtomSqlProcessor extends AbstractProcessor {
@@ -35,18 +32,12 @@ public class AtomSqlProcessor extends AbstractProcessor {
 
 	private final SqlProxyProcessor sqlProxyAnnotationProcessor;
 
-	private final SqlParametersProcessor sqlParametersAnnotationProcessor;
-
 	private final DataObjectProcessor dataObjectAnnotationProcessor;
-
-	private final SqlInterpolationProcessor sqlInterpolationAnnotationProcessor;
 
 	public AtomSqlProcessor() {
 		Supplier<ProcessingEnvironment> supplier = () -> processingEnv;
 		sqlProxyAnnotationProcessor = new SqlProxyProcessor(supplier);
-		sqlParametersAnnotationProcessor = new SqlParametersProcessor(supplier);
 		dataObjectAnnotationProcessor = new DataObjectProcessor(supplier);
-		sqlInterpolationAnnotationProcessor = new SqlInterpolationProcessor(supplier);
 	}
 
 	@Override
@@ -54,12 +45,8 @@ public class AtomSqlProcessor extends AbstractProcessor {
 		annotations.forEach(a -> {
 			if (ProcessorUtils.sameClass(a, SqlProxy.class)) {
 				sqlProxyAnnotationProcessor.process(a, roundEnv);
-			} else if (ProcessorUtils.sameClass(a, SqlParameters.class)) {
-				sqlParametersAnnotationProcessor.process(a, roundEnv);
 			} else if (ProcessorUtils.sameClass(a, DataObject.class)) {
 				dataObjectAnnotationProcessor.process(a, roundEnv);
-			} else if (ProcessorUtils.sameClass(a, SqlInterpolation.class)) {
-				sqlInterpolationAnnotationProcessor.process(a, roundEnv);
 			}
 		});
 

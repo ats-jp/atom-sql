@@ -36,12 +36,10 @@ import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.AtomSqlUtils;
 import jp.ats.atomsql.Constants;
-import jp.ats.atomsql.HalfAtom;
 import jp.ats.atomsql.PlaceholderFinder;
+import jp.ats.atomsql.Prototype;
 import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.DataObject;
-import jp.ats.atomsql.annotation.SqlInterpolation;
-import jp.ats.atomsql.annotation.SqlParameters;
 import jp.ats.atomsql.annotation.SqlProxy;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
@@ -49,6 +47,7 @@ import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
 import jp.ats.atomsql.processor.MethodExtractor.SqlNotFoundException;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
+import jp.ats.atomsql.processor.UnfolderBuilder.DuplicateClassChecker;
 import jp.ats.atomsql.type.CSV;
 
 /**
@@ -68,25 +67,40 @@ class SqlProxyProcessor {
 
 	private final Set<String> sqlProxyList = new HashSet<>();
 
-	private final MethodExtractor extractor;
+	private final MethodExtractor methodExtractor;
 
-	private final MetadataBuilder builder;
+	private final MetadataBuilder metadataBuilder;
+
+	private final DuplicateClassChecker duplicateClassChecker;
+
+	private final ParametersUnfolderBuilder parametersUnfolderBuilder;
+
+	private final AtomsUnfolderBuilder atomsUnfolderBuilder;
 
 	public SqlProxyProcessor(Supplier<ProcessingEnvironment> processingEnv) {
 		this.processingEnv = processingEnv;
 		typeFactory = AtomSqlTypeFactory.newInstanceForProcessor(AtomSql.configure().typeFactoryClass());
 		typeNameExtractor = new TypeNameExtractor(processingEnv);
-		extractor = new MethodExtractor(processingEnv);
-		builder = new MetadataBuilder(processingEnv, methodVisitor);
+		methodExtractor = new MethodExtractor(processingEnv);
+		metadataBuilder = new MetadataBuilder(processingEnv, methodVisitor);
+
+		duplicateClassChecker = new DuplicateClassChecker();
+		parametersUnfolderBuilder = new ParametersUnfolderBuilder(processingEnv, duplicateClassChecker);
+		atomsUnfolderBuilder = new AtomsUnfolderBuilder(processingEnv, duplicateClassChecker);
 	}
 
 	void process(TypeElement annotation, RoundEnvironment roundEnv) {
 		roundEnv.getElementsAnnotatedWith(annotation).forEach(e -> {
+			var env = processingEnv.get();
 			try {
+				duplicateClassChecker.start(env);
+
 				execute(e);
 			} catch (ProcessException pe) {
 				//スキップして次の対象へ
 				//ProcessExceptionはスキップするための例外
+			} finally {
+				duplicateClassChecker.finish(env);
 			}
 		});
 
@@ -124,9 +138,9 @@ class SqlProxyProcessor {
 			throw new ProcessException();
 		}
 
-		builder.build(e);
+		metadataBuilder.build(e);
 
-		if (!builder.hasError())
+		if (!metadataBuilder.hasError())
 			sqlProxyList.add(processingEnv.get().getElementUtils().getBinaryName(ProcessorUtils.toTypeElement(e)).toString());
 	}
 
@@ -134,7 +148,7 @@ class SqlProxyProcessor {
 		processingEnv.get().getMessager().printMessage(Kind.ERROR, message, e);
 	}
 
-	private static record ReturnTypeCheckerResult(TypeMirror dataType, TypeMirror sqlInterpolationType) {
+	private static record ReturnTypeCheckerResult(TypeMirror dataType, TypeMirror atomsUnfolderType) {
 
 		private static final ReturnTypeCheckerResult defaultValue = new ReturnTypeCheckerResult(null, null);
 	}
@@ -144,7 +158,7 @@ class SqlProxyProcessor {
 		private ReturnTypeCheckerResult errorAction(TypeMirror t, ExecutableElement p) {
 			//リターンタイプtは使用できません
 			error("Return type [" + t + "] cannot be used", p);
-			builder.setError();
+			metadataBuilder.setError();
 			return ReturnTypeCheckerResult.defaultValue;
 		}
 
@@ -167,8 +181,9 @@ class SqlProxyProcessor {
 		public ReturnTypeCheckerResult visitDeclared(DeclaredType t, ExecutableElement p) {
 			var type = ProcessorUtils.toTypeElement(t.asElement());
 
-			if (ProcessorUtils.sameClass(type, HalfAtom.class)) {
-				return processHalfAtomType(t, p);
+			if (ProcessorUtils.sameClass(type, Prototype.class)) {
+				atomsUnfolderBuilder.execute(p);
+				return processPrototype(t, p);
 			}
 
 			if (ProcessorUtils.sameClass(type, List.class) || ProcessorUtils.sameClass(type, Optional.class) || ProcessorUtils.sameClass(type, Stream.class) || ProcessorUtils.sameClass(type, Atom.class)) {
@@ -203,7 +218,7 @@ class SqlProxyProcessor {
 		private ReturnTypeCheckerResult errorDataType(TypeMirror e, ExecutableElement p) {
 			//データオブジェクトクラスeはAtom SQLで検索結果として使用可能なクラスか、@DataObjectで注釈されていなければなりません
 			error("Data class [" + e + "] must be available as search result in Atom SQL or annotated @" + DataObject.class.getSimpleName(), p);
-			builder.setError();
+			metadataBuilder.setError();
 			return ReturnTypeCheckerResult.defaultValue;
 		}
 
@@ -212,21 +227,15 @@ class SqlProxyProcessor {
 		public ReturnTypeCheckerResult visitError(ErrorType t, ExecutableElement p) {
 			var type = ProcessorUtils.toTypeElement(t.asElement());
 
-			if (ProcessorUtils.sameClass(type, HalfAtom.class)) {
-				return processHalfAtomType(t, p);
+			if (ProcessorUtils.sameClass(type, Prototype.class)) {
+				atomsUnfolderBuilder.execute(p);
+				return processPrototype(t, p);
 			}
 
 			return errorAction(t, p);
 		}
 
-		private ReturnTypeCheckerResult processHalfAtomType(DeclaredType t, ExecutableElement p) {
-			var annotation = p.getAnnotation(SqlInterpolation.class);
-			if (annotation == null) {
-				error("Annotation @" + SqlInterpolation.class.getSimpleName() + " required", p);
-				builder.setError();
-				return ReturnTypeCheckerResult.defaultValue;
-			}
-
+		private ReturnTypeCheckerResult processPrototype(DeclaredType t, ExecutableElement p) {
 			var dataType = t.getTypeArguments().get(0);
 
 			if (ProcessorUtils.toElement(dataType) == null) {
@@ -237,12 +246,12 @@ class SqlProxyProcessor {
 				return errorDataType(dataType, p);
 			}
 
-			var interpolationType = t.getTypeArguments().get(1);
-			if (ProcessorUtils.toElement(interpolationType) == null) {
+			var atomsUnfolderType = t.getTypeArguments().get(1);
+			if (ProcessorUtils.toElement(atomsUnfolderType) == null) {
 				return errorAction(t, p);
 			}
 
-			return new ReturnTypeCheckerResult(dataType, interpolationType);
+			return new ReturnTypeCheckerResult(dataType, atomsUnfolderType);
 		}
 	}
 
@@ -258,7 +267,7 @@ class SqlProxyProcessor {
 		protected TypeMirror defaultAction(TypeMirror e, VariableElement p) {
 			//パラメータタイプeは使用できません
 			error("Parameter type [" + e + "] cannot be used", p);
-			builder.setError();
+			metadataBuilder.setError();
 			return DEFAULT_VALUE;
 		}
 
@@ -282,6 +291,7 @@ class SqlProxyProcessor {
 			TypeElement type = ProcessorUtils.toTypeElement(t.asElement());
 
 			if (ProcessorUtils.sameClass(type, Consumer.class)) {
+				parametersUnfolderBuilder.execute(method);
 				return processConsumerType(p);
 			}
 
@@ -313,6 +323,7 @@ class SqlProxyProcessor {
 			var type = ProcessorUtils.toTypeElement(t.asElement());
 
 			if (ProcessorUtils.sameClass(type, Consumer.class)) {
+				parametersUnfolderBuilder.execute(method);
 				return processConsumerType(p);
 			}
 
@@ -320,17 +331,10 @@ class SqlProxyProcessor {
 		}
 
 		private TypeMirror processConsumerType(VariableElement p) {
-			var annotation = method.getAnnotation(SqlParameters.class);
-			if (annotation == null) {
-				error("Annotation @" + SqlParameters.class.getSimpleName() + " required", p);
-				builder.setError();
-				return DEFAULT_VALUE;
-			}
-
 			var args = ProcessorUtils.getTypeArgument(p);
 			if (args.size() == 0) {
 				error("Consumer requires a type argument", p);
-				builder.setError();
+				metadataBuilder.setError();
 				return DEFAULT_VALUE;
 			}
 
@@ -361,7 +365,7 @@ class SqlProxyProcessor {
 							+ AtomSql.class.getSimpleName(),
 						e);
 
-					builder.setError();
+					metadataBuilder.setError();
 				}
 
 				if (e.getParameters().size() != 0) {
@@ -371,7 +375,7 @@ class SqlProxyProcessor {
 							+ " requires 0 parameters",
 						e);
 
-					builder.setError();
+					metadataBuilder.setError();
 				}
 
 				return DEFAULT_VALUE;
@@ -393,7 +397,7 @@ class SqlProxyProcessor {
 							+ " annotated class",
 						e);
 
-					builder.setError();
+					metadataBuilder.setError();
 
 					return DEFAULT_VALUE;
 				}
@@ -405,7 +409,7 @@ class SqlProxyProcessor {
 							+ " requires 0 parameters",
 						e);
 
-					builder.setError();
+					metadataBuilder.setError();
 
 					return DEFAULT_VALUE;
 				}
@@ -427,26 +431,26 @@ class SqlProxyProcessor {
 
 				var typeArg = parameter.asType().accept(checker, parameter);
 				if (typeArg != null) {
-					info.sqlParameters = typeArg.accept(typeNameExtractor, e);
+					info.parametersUnfolder = typeArg.accept(typeNameExtractor, e);
 				}
 			});
 
 			//チェッカーでチェックした中でエラーがあった場合
-			if (builder.hasError()) return DEFAULT_VALUE;
+			if (metadataBuilder.hasError()) return DEFAULT_VALUE;
 
 			Result result;
 			try {
 				//SQLファイルが存在するかチェックするために実行
-				result = extractor.execute(e);
+				result = methodExtractor.execute(e);
 			} catch (SqlNotFoundException | SqlFileNotFoundException ex) {
 				error(ex.getMessage(), e);
 
-				builder.setError();
+				metadataBuilder.setError();
 
 				return DEFAULT_VALUE;
 			}
 
-			if (info.sqlParameters == null) {
+			if (info.parametersUnfolder == null) {
 				//通常のメソッド引数が存在するので検査対象
 				Set<String> placeholders = new TreeSet<>();
 				PlaceholderFinder.execute(result.sql, f -> {
@@ -457,7 +461,7 @@ class SqlProxyProcessor {
 					//SQLのプレースホルダーがパラメータの名前と一致しません
 					error("SQL placeholders do not match parameter names", e);
 
-					builder.setError();
+					metadataBuilder.setError();
 
 					return DEFAULT_VALUE;
 				}
@@ -469,8 +473,8 @@ class SqlProxyProcessor {
 				info.dataType = returnTypeCheckerResult.dataType.accept(typeNameExtractor, e);
 			}
 
-			if (returnTypeCheckerResult.sqlInterpolationType != null) {
-				info.sqlInterpolation = returnTypeCheckerResult.sqlInterpolationType.accept(typeNameExtractor, e);
+			if (returnTypeCheckerResult.atomsUnfolderType != null) {
+				info.atomsUnfolder = returnTypeCheckerResult.atomsUnfolderType.accept(typeNameExtractor, e);
 			}
 
 			p.add(info);

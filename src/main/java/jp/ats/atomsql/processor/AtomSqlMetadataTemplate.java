@@ -5,7 +5,7 @@ import javax.annotation.processing.Generated;
 import jp.ats.atomsql.annotation.processor.Method;
 import jp.ats.atomsql.annotation.processor.Methods;
 
-@Generated("[[PROCESSOR]]")
+@Generated("[[GENERATED]]")
 @SuppressWarnings("javadoc")
 /*++@Methods({[[METHODS]]})++*//*--*/@Methods({ @Method(name = "", parameters = {}, parameterTypes = {} )})/*--*/
 public interface /*--*/AtomSqlMetadataTemplate/*--*//*++[[INTERFACE]]++*/ {}

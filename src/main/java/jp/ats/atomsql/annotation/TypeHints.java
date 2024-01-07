@@ -10,8 +10,8 @@ import java.util.function.Consumer;
 import jp.ats.atomsql.AtomSqlType;
 
 /**
- * SQLパラメータクラスの自動生成をアノテーションプロセッサに指示するためのアノテーションです。<br>
- * 指示は{@link Consumer}の型パラメーターとして記述します。<br>
+ * SQLパラメータクラスの自動生成をアノテーションプロセッサに指示し、{@link SqlProxy}のメソッドパラメータの短縮(折り畳み)を行うためのアノテーションです。<br>
+ * SQLパラメータクラスは、{@link Consumer}の型パラメーターとして記述されることでアノテーションプロセッサに認識されます。<br>
  * 記述可能なのはクラス名のみで、記述されたクラス名で{@link SqlProxy}と同一パッケージに、アノテーションプロセッサによりクラスが生成されます。<br>
  * 生成されたクラスには{@link SqlProxy}で指定されたSQL文から抽出されたプレースホルダが、publicなフィールドとして作成されます。<br>
  * フィールドの型は、SQL内のプレースホルダ部分に型ヒントを記述することで設定することが可能です。<br>
@@ -21,11 +21,11 @@ import jp.ats.atomsql.AtomSqlType;
  */
 @Target(METHOD)
 @Retention(RUNTIME)
-public @interface SqlParameters {
+public @interface TypeHints {
 
 	/**
 	 * SQL内に同じプレースホルダが複数回記述しなければならない等、型ヒントを記述するのが煩雑な場合に型ヒントを直接与えます。
 	 * @return　{@link TypeHint}配列
 	 */
-	TypeHint[] typeHints() default {};
+	TypeHint[] value() default {};
 }

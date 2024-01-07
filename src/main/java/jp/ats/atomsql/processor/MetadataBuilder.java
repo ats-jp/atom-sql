@@ -82,7 +82,7 @@ class MetadataBuilder {
 
 		if (alreadyCreatedFiles.contains(fileName)) return;
 
-		param.put("PROCESSOR", SqlProxyProcessor.class.getName());
+		param.put("GENERATED", SqlProxyProcessor.class.getName());
 
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("INTERFACE", className);
@@ -122,14 +122,14 @@ class MetadataBuilder {
 		methodContents.add("parameters = {" + parameters + "}");
 		methodContents.add("parameterTypes = {" + types + "}");
 
-		if (info.sqlParameters != null)
-			methodContents.add("sqlParameters = " + info.sqlParameters + ".class");
+		if (info.parametersUnfolder != null)
+			methodContents.add("parametersUnfolder = " + info.parametersUnfolder + ".class");
 
 		if (info.dataType != null)
 			methodContents.add("result = " + info.dataType + ".class");
 
-		if (info.sqlInterpolation != null)
-			methodContents.add("sqlInterpolation = " + info.sqlInterpolation + ".class");
+		if (info.atomsUnfolder != null)
+			methodContents.add("atomsUnfolder = " + info.atomsUnfolder + ".class");
 
 		if (info.sqlProxy != null)
 			methodContents.add("sqlProxy = " + info.sqlProxy + ".class");
@@ -153,11 +153,11 @@ class MetadataBuilder {
 
 		final List<String> parameterTypes = new LinkedList<>();
 
-		String sqlParameters;
+		String parametersUnfolder;
 
 		String dataType;
 
-		String sqlInterpolation;
+		String atomsUnfolder;
 
 		String sqlProxy;
 	}

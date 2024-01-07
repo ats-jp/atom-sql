@@ -2,9 +2,9 @@
 
 import javax.annotation.processing.Generated;
 
-@Generated("[[PROCESSOR]]")
+@Generated("[[GENERATED]]")
 @SuppressWarnings("javadoc")
-public class /*--*/SqlParametersTemplate/*--*//*++[[CLASS]]++*/ {
+public class /*--*/UnfolderTemplate/*--*//*++[[CLASS]]++*/ {
 
 /*++[[FIELDS]]++*/
 }

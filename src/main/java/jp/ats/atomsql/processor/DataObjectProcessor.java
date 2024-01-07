@@ -88,7 +88,7 @@ class DataObjectProcessor {
 				}
 			}
 
-			var visitor = new MyVisitor();
+			var visitor = new DataObjectVisitor();
 			List<Element> recordConstructors = new LinkedList<>();
 			elements.forEach(enc -> {
 				enc.accept(visitor, recordConstructors);
@@ -136,7 +136,7 @@ class DataObjectProcessor {
 
 		Map<String, String> param = new HashMap<>();
 
-		param.put("PROCESSOR", DataObjectProcessor.class.getName());
+		param.put("GENERATED", DataObjectProcessor.class.getName());
 
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("INTERFACE", className);
@@ -188,7 +188,7 @@ class DataObjectProcessor {
 		}
 	}
 
-	private class MyVisitor extends SimpleElementVisitor14<Boolean, List<Element>> {
+	private class DataObjectVisitor extends SimpleElementVisitor14<Boolean, List<Element>> {
 
 		private final ResultTypeChecker resultTypeChecker = new ResultTypeChecker();
 
