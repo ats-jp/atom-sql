@@ -597,7 +597,7 @@ SqlProxyのSQL実施メソッドの戻り値のの型に`Prototype`を使用す�
 // 戻り値はAtomではなくPrototypeを使用する
 // Prototypeの第二型パラメーターに任意のクラス名を記述することでAtom SQLがそのクラスを同一パッケージ内に生成する
 @Sql("SELECT /*${selectClause}*/ FROM sample /*${whereClause}*/")
-public Prototype<SampleInfo, SampleFolder> main();
+public Prototype<SampleInfo, SampleAtoms> main();
 
 // ここで生成されるAtomは単なるパーツなので、型パラメーターは ? でよい
 @Sql("COUNT(*)")
