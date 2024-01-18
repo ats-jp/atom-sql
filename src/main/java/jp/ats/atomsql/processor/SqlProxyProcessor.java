@@ -90,21 +90,24 @@ class SqlProxyProcessor {
 	}
 
 	void process(TypeElement annotation, RoundEnvironment roundEnv) {
-		roundEnv.getElementsAnnotatedWith(annotation).forEach(e -> {
-			var env = processingEnv.get();
-			try {
-				duplicateClassChecker.start(env);
-
-				execute(e);
-			} catch (ProcessException pe) {
-				//スキップして次の対象へ
-				//ProcessExceptionはスキップするための例外
-			} finally {
-				duplicateClassChecker.finish(env);
-			}
-		});
-
 		var env = processingEnv.get();
+
+		try {
+			duplicateClassChecker.start(env);
+
+			roundEnv.getElementsAnnotatedWith(annotation).forEach(e -> {
+				try {
+					execute(e);
+				} catch (ProcessException pe) {
+					//スキップして次の対象へ
+					//ProcessExceptionはスキップするための例外
+				}
+			});
+
+		} finally {
+			duplicateClassChecker.finish(env);
+		}
+
 		try {
 			//他のプロセスで作られた過去分を追加
 			if (Files.exists(ProcessorUtils.getClassOutputPath(env).resolve(Constants.PROXY_LIST))) {
