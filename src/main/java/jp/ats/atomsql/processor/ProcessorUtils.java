@@ -23,7 +23,7 @@ import jp.ats.atomsql.AtomSql;
 /**
  * @author 千葉 哲嗣
  */
-public class ProcessorUtils {
+class ProcessorUtils {
 
 	static boolean sameClass(TypeElement type, Class<?> clazz) {
 		return type.getQualifiedName().toString().equals(clazz.getCanonicalName());
@@ -57,7 +57,7 @@ public class ProcessorUtils {
 	 * @return {@link Path}
 	 * @throws IOException
 	 */
-	public static synchronized Path getClassOutputPath(ProcessingEnvironment env) throws IOException {
+	static synchronized Path getClassOutputPath(ProcessingEnvironment env) throws IOException {
 		//複数回getResource, createResourceするとエラーとなるので一度取得したパスを（コンパイル時なので）雑にキャッシュし利用する
 		if (classOutputPath != null) return classOutputPath;
 
@@ -74,7 +74,7 @@ public class ProcessorUtils {
 	 * @param packageName 
 	 * @param binaryClassName 
 	 */
-	public static record PackageNameAndBinaryClassName(String packageName, String binaryClassName) {}
+	static record PackageNameAndBinaryClassName(String packageName, String binaryClassName) {}
 
 	/**
 	 * 内部使用
@@ -82,7 +82,7 @@ public class ProcessorUtils {
 	 * @param env
 	 * @return {@link PackageNameAndBinaryClassName}
 	 */
-	public static PackageNameAndBinaryClassName getPackageNameAndBinaryClassName(Element method, ProcessingEnvironment env) {
+	static PackageNameAndBinaryClassName getPackageNameAndBinaryClassName(Element method, ProcessingEnvironment env) {
 		var clazz = method.getEnclosingElement().accept(TypeConverter.instance, null);
 
 		return new PackageNameAndBinaryClassName(
@@ -95,7 +95,7 @@ public class ProcessorUtils {
 	 * @param e
 	 * @return {@link ExecutableElement}
 	 */
-	public static ExecutableElement toExecutableElement(Element e) {
+	static ExecutableElement toExecutableElement(Element e) {
 		return e.accept(MethodExtractor.instance, null);
 	}
 
@@ -104,7 +104,7 @@ public class ProcessorUtils {
 	 * @param p
 	 * @return {@link TypeMirror}
 	 */
-	public static List<? extends TypeMirror> getTypeArgument(Element p) {
+	static List<? extends TypeMirror> getTypeArgument(Element p) {
 		return p.asType().accept(TypeArgumentsExtractor.instance, null);
 	}
 
@@ -113,7 +113,7 @@ public class ProcessorUtils {
 	 * @param p
 	 * @return {@link TypeMirror}
 	 */
-	public static List<? extends TypeMirror> getTypeArgument(TypeMirror p) {
+	static List<? extends TypeMirror> getTypeArgument(TypeMirror p) {
 		return p.accept(TypeArgumentsExtractor.instance, null);
 	}
 
@@ -122,7 +122,7 @@ public class ProcessorUtils {
 	 * @param type
 	 * @return {@link Element}
 	 */
-	public static Element toElement(TypeMirror type) {
+	static Element toElement(TypeMirror type) {
 		return type.accept(ElementConverter.instance, null);
 	}
 
@@ -131,7 +131,7 @@ public class ProcessorUtils {
 	 * @param e
 	 * @return {@link TypeElement}
 	 */
-	public static TypeElement toTypeElement(Element e) {
+	static TypeElement toTypeElement(Element e) {
 		return e.accept(TypeConverter.instance, null);
 	}
 
@@ -140,7 +140,7 @@ public class ProcessorUtils {
 	 * @param type
 	 * @return {@link TypeElement}
 	 */
-	public static TypeElement toTypeElement(TypeMirror type) {
+	static TypeElement toTypeElement(TypeMirror type) {
 		return toTypeElement(toElement(type));
 	}
 

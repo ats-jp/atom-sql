@@ -118,10 +118,9 @@ class MethodExtractor {
 
 		try {
 			resolver = (SqlFileResolver) clazz.getConstructor().newInstance();
-		} catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException
-			| InstantiationException e) {
+		} catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException | InstantiationException e) {
 			//クラスclassNameのインスタンス化の際にエラーが発生しました
-			error("An error occurred when instantiating class [" + className + "]", method);
+			error("An error occurred when instantiating class [" + clazz.getName() + "]", method);
 			throw new ProcessException();
 		}
 

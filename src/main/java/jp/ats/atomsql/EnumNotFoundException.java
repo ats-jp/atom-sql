@@ -6,14 +6,14 @@ package jp.ats.atomsql;
  */
 public class EnumNotFoundException extends RuntimeException {
 
-	private static final long serialVersionUID = -8172601891448963373L;
+	private static final long serialVersionUID = 7943269571833059820L;
 
 	/**
 	 * コンストラクタ
 	 * @param enumClass
 	 * @param value
 	 */
-	public EnumNotFoundException(Class<? extends Enum<?>> enumClass, int value) {
+	public EnumNotFoundException(Class<? extends Enum<?>> enumClass, Object value) {
 		//値 [value] が [enumClass] に見つかりません
 		super("Value [" + value + "] not found in enum [" + enumClass.getName() + "]");
 	}

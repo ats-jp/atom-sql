@@ -208,7 +208,7 @@ class SqlProxyProcessor {
 					return errorAction(t, p);
 				}
 
-				if (typeFactory.canUseForProcessor(ProcessorUtils.toTypeElement(dataType))) {
+				if (typeFactory.canUse(ProcessorUtils.toTypeElement(dataType))) {
 					return new ReturnTypeCheckerResult(dataType, null);
 				}
 
@@ -243,9 +243,9 @@ class SqlProxyProcessor {
 
 			if (ProcessorUtils.toElement(dataType) == null) {
 				// <?>
-				// HalfAtomの場合は、結果型パラメータを指定しなくてOK
+				// Prototypeの場合は、結果型パラメータを指定しなくてOK
 				dataType = null;
-			} else if (!dataType.accept(AnnotationExtractor.instance, null) && !typeFactory.canUseForProcessor(ProcessorUtils.toTypeElement(dataType))) {
+			} else if (!dataType.accept(AnnotationExtractor.instance, null) && !typeFactory.canUse(ProcessorUtils.toTypeElement(dataType))) {
 				return errorDataType(dataType, p);
 			}
 
@@ -298,23 +298,13 @@ class SqlProxyProcessor {
 				return processConsumerType(p);
 			}
 
-			if (typeFactory.canUseForProcessor(type)) return DEFAULT_VALUE;
+			if (typeFactory.canUse(type)) return DEFAULT_VALUE;
 
 			var csvType = new CSV(typeFactory).type();
 			if (ProcessorUtils.sameClass(type, csvType)) {
-				var argumentType = t.getTypeArguments().get(0);
-				var element = ProcessorUtils.toElement(argumentType);
-				var typeElement = ProcessorUtils.toTypeElement(element);
+				var argumentType = ProcessorUtils.toTypeElement(ProcessorUtils.toElement(t.getTypeArguments().get(0)));
 
-				// この先再帰するので同タイプは先にはじく
-				if (ProcessorUtils.sameClass(typeElement, csvType)) {
-					return defaultAction(t, p);
-				}
-
-				var checker = new ParameterTypeChecker(method);
-				argumentType.accept(checker, p);
-
-				return DEFAULT_VALUE;
+				if (typeFactory.canUse(argumentType)) return DEFAULT_VALUE;
 			}
 
 			return defaultAction(t, p);

@@ -108,7 +108,7 @@ class ParametersUnfolderBuilder extends UnfolderBuilder {
 
 			var typeArgument = annotatedTypeArgument.or(
 				() -> f.typeArgumentHint.map(typeFactory::typeArgumentOf))
-				.map(t -> "<" + t.typeExpression() + ">")
+				.map(t -> "<" + t.typeArgumentExpression() + ">")
 				.orElse("");
 
 			var field = "public "

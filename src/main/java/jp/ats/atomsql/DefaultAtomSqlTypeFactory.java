@@ -11,6 +11,7 @@ import java.util.Objects;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 
+import jp.ats.atomsql.annotation.StringEnum;
 import jp.ats.atomsql.type.BIG_DECIMAL;
 import jp.ats.atomsql.type.BINARY_STREAM;
 import jp.ats.atomsql.type.BLOB;
@@ -33,6 +34,7 @@ import jp.ats.atomsql.type.P_FLOAT;
 import jp.ats.atomsql.type.P_INT;
 import jp.ats.atomsql.type.P_LONG;
 import jp.ats.atomsql.type.STRING;
+import jp.ats.atomsql.type.STRING_ENUM;
 import jp.ats.atomsql.type.TIME;
 
 /**
@@ -66,25 +68,26 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 		P_INT.instance,
 		P_LONG.instance,
 		STRING.instance,
-		TIME.instance
+		TIME.instance,
 	};
 
-	private static final Class<?>[] nonPrimitiveTypes = {
-		BIG_DECIMAL.instance.type(),
-		BINARY_STREAM.instance.type(),
-		BLOB.instance.type(),
-		BOOLEAN.instance.type(),
-		BYTE_ARRAY.instance.type(),
-		CHARACTER_STREAM.instance.type(),
-		CLOB.instance.type(),
-		DOUBLE.instance.type(),
-		FLOAT.instance.type(),
-		INTEGER.instance.type(),
-		LONG.instance.type(),
-		STRING.instance.type(),
-		DATE.instance.type(),
-		TIME.instance.type(),
-		DATETIME.instance.type()
+	private static final AtomSqlType[] nonPrimitiveTypes = {
+		BIG_DECIMAL.instance,
+		BINARY_STREAM.instance,
+		BLOB.instance,
+		BOOLEAN.instance,
+		BYTE_ARRAY.instance,
+		CHARACTER_STREAM.instance,
+		CLOB.instance,
+		DATE.instance,
+		DATETIME.instance,
+		DOUBLE.instance,
+		FLOAT.instance,
+		INTEGER.instance,
+		LONG.instance,
+		OBJECT.instance,
+		STRING.instance,
+		TIME.instance,
 	};
 
 	/**
@@ -113,6 +116,8 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 			@SuppressWarnings("unchecked")
 			var enumClass = (Class<? extends Enum<?>>) c;
 
+			if (enumClass.getAnnotation(StringEnum.class) != null) return new STRING_ENUM(enumClass);
+
 			return new ENUM(enumClass);
 		}
 
@@ -130,7 +135,8 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 			throw new UnknownSqlTypeNameException(name);
 		}
 
-		return new PROCESSOR_ENUM(name);
+		//processor内で、参照できないクラスの名称から自動生成クラスのフィールドを生成するためのタイプ
+		return new ENUM_EXPRESSION_TYPE(name);
 	}
 
 	private static boolean filterInvalidJavaName(String name) {
@@ -153,22 +159,22 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 	public boolean canUse(Class<?> c) {
 		if (c.isEnum()) return true;
 
-		return Arrays.stream(nonPrimitiveTypes).filter(t -> t.equals(c)).findFirst().isPresent();
+		return Arrays.stream(nonPrimitiveTypes).map(t -> t.type()).filter(t -> t.equals(c)).findFirst().isPresent();
 	}
 
 	@Override
-	public boolean canUseForProcessor(TypeElement type) {
+	public boolean canUse(TypeElement type) {
 		if (type.getKind() == ElementKind.ENUM) return true;
 
 		var typeName = type.getQualifiedName().toString();
-		return Arrays.stream(nonPrimitiveTypes).filter(c -> typeName.equals(c.getCanonicalName())).findFirst().isPresent();
+		return Arrays.stream(nonPrimitiveTypes).map(t -> t.type()).filter(c -> typeName.equals(c.getCanonicalName())).findFirst().isPresent();
 	}
 
-	private static class PROCESSOR_ENUM implements AtomSqlType {
+	private static class ENUM_EXPRESSION_TYPE implements AtomSqlType {
 
 		private final String enumClass;
 
-		private PROCESSOR_ENUM(String enumClass) {
+		private ENUM_EXPRESSION_TYPE(String enumClass) {
 			this.enumClass = enumClass;
 		}
 
@@ -199,7 +205,14 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 
 		@Override
 		public String typeExpression() {
+			//enumClassとしてなんでも記述できないように、Enumの型パラメータとして表現することで
+			//Enumではないクラスを指定された場合コンパイルエラーを発生させる
 			return Enum.class.getName() + "<" + enumClass + ">";
+		}
+
+		@Override
+		public String typeArgumentExpression() {
+			return typeExpression();
 		}
 	}
 }

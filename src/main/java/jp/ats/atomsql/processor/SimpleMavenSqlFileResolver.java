@@ -8,6 +8,7 @@ import java.util.Map;
 /**
  * @author 千葉 哲嗣
  */
+//Class.getConstructor()でインスタンス化されるため、publicであること
 public class SimpleMavenSqlFileResolver implements SqlFileResolver {
 
 	@Override

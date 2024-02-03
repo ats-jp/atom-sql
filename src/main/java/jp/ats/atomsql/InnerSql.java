@@ -89,7 +89,8 @@ class InnerSql {
 		String expression, //置換後のプレースホルダ
 		String original, //元のプレースホルダ文字列全体（型ヒントを含む）
 		AtomSqlType type, //型
-		Object value //値
+		Object value, //値
+		AtomSqlTypeFactory typeFactory//nonThreadSafe判定用
 	) implements Element {
 
 		@Override
@@ -99,7 +100,7 @@ class InnerSql {
 
 		@Override
 		public boolean hasNonThreadSafeValue() {
-			return type.nonThreadSafe();
+			return type.nonThreadSafe(value, typeFactory);
 		}
 
 		@Override

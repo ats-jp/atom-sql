@@ -55,4 +55,10 @@ public class BYTE_ARRAY implements AtomSqlType {
 	public String typeExpression() {
 		return "byte[]";
 	}
+
+	@Override
+	public String typeArgumentExpression() {
+		//Csvの型パラメータとして使用できない
+		throw new UnsupportedOperationException();
+	}
 }

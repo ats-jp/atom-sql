@@ -10,12 +10,11 @@ import jp.ats.atomsql.AtomSqlUtils;
 /**
  * @author 千葉 哲嗣
  */
-@SuppressWarnings("javadoc")
-public class Formatter {
+class Formatter {
 
 	private static final Pattern pattern = Pattern.compile("\\[\\[([^\\]]+)\\]\\]", Pattern.MULTILINE + Pattern.DOTALL);
 
-	public static String format(String template, Map<String, String> arguments) {
+	static String format(String template, Map<String, String> arguments) {
 		var buffer = new StringBuilder();
 
 		var matcher = pattern.matcher(template);
@@ -32,12 +31,12 @@ public class Formatter {
 		return buffer.toString();
 	}
 
-	public static String convertToTemplate(String source) {
+	static String convertToTemplate(String source) {
 		source = source.replaceAll("/\\*--\\*/.+?/\\*--\\*/", "");
 		return source.replaceAll("/\\*\\+\\+(.+?)\\+\\+\\*/", "$1");
 	}
 
-	public static String readTemplate(Class<?> target, String charset) {
+	static String readTemplate(Class<?> target, String charset) {
 		try (var input = target.getResourceAsStream(target.getSimpleName() + ".java")) {
 			return new String(AtomSqlUtils.readBytes(input), charset);
 		} catch (IOException e) {
@@ -45,7 +44,7 @@ public class Formatter {
 		}
 	}
 
-	public static String erase(String source, boolean erase) {
+	static String erase(String source, boolean erase) {
 		if (erase)
 			return source.replaceAll("/\\*--\\?--\\*/.+?/\\*--\\?--\\*/", "");
 

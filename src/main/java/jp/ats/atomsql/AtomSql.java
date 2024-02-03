@@ -103,7 +103,7 @@ public class AtomSql {
 
 	private final SqlLogger sqlLogger;
 
-	private static final String packageName = AtomSql.class.getPackageName();
+	private static final String moduleName = AtomSql.class.getModule().getName();
 
 	private final ThreadLocal<BatchResources> batchResources = new ThreadLocal<>();
 
@@ -744,7 +744,8 @@ public class AtomSql {
 						type.placeholderExpression(value),
 						f.all,
 						type,
-						value));
+						value,
+						typeFactory));
 			});
 
 			elements.add(new Text(sqlRemain));
@@ -928,10 +929,14 @@ public class AtomSql {
 				}
 
 				logger.log(Level.INFO, "call from:");
+
 				for (var element : stackTrace.get()) {
 					var elementString = element.toString();
 
-					if (elementString.contains(packageName) || elementString.contains("(Unknown Source)") || elementString.contains("<generated>"))
+					if (elementString.startsWith(moduleName) //Atom SQLモジュール名に前方一致するものは、Atom SQL関連ソースとして除外する
+						|| elementString.startsWith("java.") //java.で始まるモジュール名は除外
+						|| elementString.contains("(Unknown Source)")
+						|| elementString.contains("<generated>"))
 						continue;
 
 					if (configure().logStackTracePattern().matcher(elementString).find())

@@ -13,12 +13,11 @@ import jp.ats.atomsql.Atom;
  * プレースホルダは、Javaの識別子の規則に沿っている必要があります。
  * @author 千葉 哲嗣
  */
-@SuppressWarnings("javadoc")
-public class AtomPlaceholderFinder {
+class AtomPlaceholderFinder {
 
 	private static final Pattern pattern = Pattern.compile("\\$\\{([^\\s[\\p{Punct}&&[^_$]]]+)\\}");
 
-	public static String execute(String sql, Consumer<String> variableConsumer) {
+	static String execute(String sql, Consumer<String> variableConsumer) {
 		while (true) {
 			var matcher = pattern.matcher(sql);
 

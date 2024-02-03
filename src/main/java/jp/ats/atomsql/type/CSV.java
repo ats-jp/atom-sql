@@ -68,4 +68,22 @@ public class CSV implements AtomSqlType {
 	public AtomSqlType toTypeArgument() {
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public boolean nonThreadSafe(Object value, AtomSqlTypeFactory factory) {
+		var csv = (Csv<?>) value;
+
+		if (csv.values().stream().filter(v -> isNonThreadSafe(v, typeFactory)).findFirst().isPresent()) return true;
+
+		return false;
+	}
+
+	private static boolean isNonThreadSafe(Object value, AtomSqlTypeFactory factory) {
+		var type = factory.select(value.getClass());
+
+		//Csvの値としてCsvを使用することはできません
+		if (type instanceof CSV) throw new IllegalStateException("Cannot use Csv as Csv value");
+
+		return type.nonThreadSafe(value, factory);
+	}
 }

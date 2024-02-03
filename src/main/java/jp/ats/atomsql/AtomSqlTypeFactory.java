@@ -16,16 +16,16 @@ public interface AtomSqlTypeFactory {
 	AtomSqlType select(Class<?> c);
 
 	/**
-	 * クラス名をもとに{@link AtomSqlType}のインスタンスを返します。
-	 * @param name {@link AtomSqlType}クラス名
+	 * タイプ名をもとに{@link AtomSqlType}のインスタンスを返します。
+	 * @param name {@link AtomSqlType}タイプ名
 	 * @return {@link AtomSqlType}
 	 * @throws UnknownSqlTypeNameException 対応する型が存在しない場合
 	 */
 	AtomSqlType typeOf(String name);
 
 	/**
-	 * 型パラメータとしてこのenumが使用される場合のインスタンスを返します。
-	 * @param name {@link AtomSqlType}enum名
+	 * 型パラメータとしてこのタイプ名が使用される場合のインスタンスを返します。
+	 * @param name {@link AtomSqlType}タイプ名
 	 * @return {@link AtomSqlType}
 	 * @throws UnknownSqlTypeNameException 対応する型が存在しない場合
 	 */
@@ -45,7 +45,7 @@ public interface AtomSqlTypeFactory {
 	 * @param type {@link TypeElement}
 	 * @return 使用可能な型の場合、true
 	 */
-	boolean canUseForProcessor(TypeElement type);
+	boolean canUse(TypeElement type);
 
 	/**
 	 * クラス名からインスタンスを生成します。
