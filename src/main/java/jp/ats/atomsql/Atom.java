@@ -82,6 +82,16 @@ public class Atom<T> {
 	public static final Atom<?> ORDER_BY = newInstance("ORDER BY");
 
 	/**
+	 * ASC
+	 */
+	public static final Atom<?> ASC = newInstance("ASC");
+
+	/**
+	 * DESC
+	 */
+	public static final Atom<?> DESC = newInstance("DESC");
+
+	/**
 	 * GROUP BY
 	 */
 	public static final Atom<?> GROUP_BY = newInstance("GROUP BY");
