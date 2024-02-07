@@ -933,7 +933,9 @@ public class AtomSql {
 				for (var element : stackTrace.get()) {
 					var elementString = element.toString();
 
-					if (elementString.startsWith(moduleName) //Atom SQLモジュール名に前方一致するものは、Atom SQL関連ソースとして除外する
+					//無名モジュールから呼ばれた場合、moduleNameはnull
+					//Atom SQLモジュール名に前方一致するものは、Atom SQL関連ソースとして除外する
+					if ((moduleName != null && elementString.startsWith(moduleName))
 						|| elementString.startsWith("java.") //java.で始まるモジュール名は除外
 						|| elementString.contains("(Unknown Source)")
 						|| elementString.contains("<generated>"))
