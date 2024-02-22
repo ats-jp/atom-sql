@@ -3,6 +3,7 @@ package jp.ats.atomsql;
 import java.lang.System.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,7 +20,8 @@ import jp.ats.atomsql.annotation.SqlProxy;
 
 /**
  * {@link SqlProxy}が生成する中間形態オブジェクトを表すクラスです。<br>
- * 内部にSQL文を保持しており、その実行、またSQL文が断片だった場合は断片同士の結合等を行うことが可能です。
+ * 内部にSQL文を保持しており、その実行、またSQL文が断片だった場合は断片同士の結合等を行うことが可能です。<br>
+ * 外部からの文字列を取り込まないためにシリアライズ不可
  * @author 千葉 哲嗣
  * @param <T> {@link DataObject}が付与された型
  */
@@ -496,8 +498,52 @@ public class Atom<T> {
 	 */
 	public static Atom<?> join(Atom<?> delimiter, List<Atom<?>> members) {
 		return members.size() == 0
-			? BLANK
+			? EMPTY
 			: members.get(0).joinAndConcat(delimiter, members.subList(1, members.size()).toArray(Atom<?>[]::new));
+	}
+
+	/**
+	 * 複数の{@link Atom}を、", "をはさんで文字列結合します。<br>
+	 * 結合された{@link Atom}は、他の検索可能な{@link Atom}への結合に使用してください。
+	 * @param members 結合対象
+	 * @return 結合された{@link Atom}
+	 */
+	public static Atom<?> withBlank(Atom<?>... members) {
+		return members.length == 0
+			? EMPTY
+			: members[0].joinAndConcat(BLANK, Arrays.copyOfRange(members, 1, members.length));
+	}
+
+	/**
+	 * 複数の{@link Atom}を、", "をはさんで文字列結合します。<br>
+	 * 結合された{@link Atom}は、他の検索可能な{@link Atom}への結合に使用してください。
+	 * @param members 結合対象
+	 * @return 結合された{@link Atom}
+	 */
+	public static Atom<?> withComma(Atom<?>... members) {
+		return members.length == 0
+			? EMPTY
+			: members[0].joinAndConcat(COMMA, Arrays.copyOfRange(members, 1, members.length));
+	}
+
+	/**
+	 * 複数の{@link Atom}を、", "をはさんで文字列結合します。<br>
+	 * 結合された{@link Atom}は、他の検索可能な{@link Atom}への結合に使用してください。
+	 * @param members 結合対象
+	 * @return 結合された{@link Atom}
+	 */
+	public static Atom<?> withBlank(List<Atom<?>> members) {
+		return join(BLANK, members);
+	}
+
+	/**
+	 * 複数の{@link Atom}を、", "をはさんで文字列結合します。<br>
+	 * 結合された{@link Atom}は、他の検索可能な{@link Atom}への結合に使用してください。
+	 * @param members 結合対象
+	 * @return 結合された{@link Atom}
+	 */
+	public static Atom<?> withComma(List<Atom<?>> members) {
+		return join(COMMA, members);
 	}
 
 	/**

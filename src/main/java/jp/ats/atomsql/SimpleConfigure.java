@@ -21,4 +21,13 @@ public record SimpleConfigure(
 	boolean ignoreNoSqlLog,
 	boolean usesQualifier,
 	String typeFactoryClass,
-	int batchThreshold) implements Configure {}
+	int batchThreshold) implements Configure {
+
+	/**
+	 * スタブ設定
+	 * @return スタブ設定
+	 */
+	public static Configure stub() {
+		return new SimpleConfigure(false, null, false, false, null, 0);
+	}
+}
