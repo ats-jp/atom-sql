@@ -21,6 +21,7 @@ import javax.lang.model.element.Name;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
@@ -259,6 +260,13 @@ class DataObjectProcessor {
 			case BOOLEAN, BYTE, DOUBLE, FLOAT, INT, LONG -> true;
 			default -> defaultAction(t, p);
 			};
+		}
+
+		@Override
+		public Boolean visitArray(ArrayType t, Element p) {
+			if (t.getComponentType().getKind() == TypeKind.BYTE) return true;
+
+			return defaultAction(t, p);
 		}
 
 		@Override
