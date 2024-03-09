@@ -105,11 +105,11 @@ public class AtomSql {
 
 	private static final String moduleName = AtomSql.class.getModule().getName();
 
+	private static final ThreadLocal<Map<Object, SqlProxyHelper>> nonThreadSafeHelpers = new ThreadLocal<>();
+
 	private final ThreadLocal<BatchResources> batchResources = new ThreadLocal<>();
 
 	private final ThreadLocal<List<Stream<?>>> streams = new ThreadLocal<>();
-
-	private final ThreadLocal<Map<Object, SqlProxyHelper>> nonThreadSafeHelpers = new ThreadLocal<>();
 
 	private final Endpoints endpoints;
 
@@ -559,6 +559,13 @@ public class AtomSql {
 	 * @param runnable パラメーターに{@link NonThreadSafe}が付与されている型を使用する汎用処理
 	 */
 	public void tryNonThreadSafe(Runnable runnable) {
+		//既にtryNonThreadSafeの中で呼ばれた場合
+		if (nonThreadSafeHelpers.get() != null) {
+			runnable.run();
+
+			return;
+		}
+
 		nonThreadSafeHelpers.set(new HashMap<>());
 		try {
 			runnable.run();
@@ -579,6 +586,11 @@ public class AtomSql {
 	 * @return {@link Supplier}の返却値
 	 */
 	public <T> T tryNonThreadSafe(Supplier<T> supplier) {
+		//既にtryNonThreadSafeの中で呼ばれた場合
+		if (nonThreadSafeHelpers.get() != null) {
+			return supplier.get();
+		}
+
 		nonThreadSafeHelpers.set(new HashMap<>());
 		try {
 			return supplier.get();
