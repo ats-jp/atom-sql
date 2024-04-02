@@ -7,6 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.sql.ResultSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import jp.ats.atomsql.Atom;
@@ -17,7 +18,7 @@ import jp.ats.atomsql.AtomSql;
  * {@link SqlProxy}の検索結果を取得するための<br>
  * {@link Stream}<br>
  * {@link List}<br>
- * {@Optional}<br>
+ * {@link Optional}<br>
  * {@link Atom}<br>
  * の型パラメータとして使用できるのはこのアノテーションが付与されたクラスだけであり、その他のクラスを使用した{@link SqlProxy}はコンパイルエラーとなります。<br>
  * また、このアノテーションを付与したクラスは、特定のコンストラクタが一つだけ必要となり、実装するそのコンストラクタによって、{@link AtomSql}からの検索結果データの渡され方が変化します。<br>

@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import jp.ats.atomsql.InnerSql.Element;
@@ -38,6 +39,7 @@ import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.ConfidentialSql;
 import jp.ats.atomsql.annotation.NoSqlLog;
 import jp.ats.atomsql.annotation.NonThreadSafe;
+import jp.ats.atomsql.annotation.OptionalColumn;
 import jp.ats.atomsql.annotation.Qualifier;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlFile;
@@ -788,9 +790,10 @@ public class AtomSql {
 				throw new IllegalStateException();
 
 			if (resultClass.isRecord()) {
-				return createRecordDataObject(resultClass, rs);
+				return createRecordDataObject(rs);
 			}
 
+			//検索結果が単一の値の場合
 			if (typeFactory.canUse(resultClass)) {
 				try {
 					return typeFactory.select(resultClass).get(rs, 1);
@@ -803,7 +806,7 @@ public class AtomSql {
 			try {
 				constructor = resultClass.getConstructor(ResultSet.class);
 			} catch (NoSuchMethodException e) {
-				return createNoParametersConstructorDataObject(rs);
+				return createDefaultConstructorClassDataObject(rs);
 			}
 
 			try {
@@ -813,11 +816,29 @@ public class AtomSql {
 			}
 		}
 
-		private Object createRecordDataObject(Class<?> dataObjectClass, ResultSet rs) {
+		private static Set<String> columnNamesFrom(ResultSet rs) {
+			try {
+				var metaData = rs.getMetaData();
+
+				var count = metaData.getColumnCount();
+
+				return new HashSet<>(IntStream.range(0, count).mapToObj(i -> {
+					try {
+						return metaData.getColumnName(i).toUpperCase();
+					} catch (SQLException e) {
+						throw new AtomSqlException(e);
+					}
+				}).toList());
+			} catch (SQLException e) {
+				throw new AtomSqlException(e);
+			}
+		}
+
+		private Object createRecordDataObject(ResultSet rs) {
 			Methods methods;
 			try {
 				methods = Class.forName(
-					dataObjectClass.getName() + Constants.METADATA_CLASS_SUFFIX,
+					resultClass.getName() + Constants.METADATA_CLASS_SUFFIX,
 					true,
 					Thread.currentThread().getContextClassLoader()).getAnnotation(Methods.class);
 			} catch (ClassNotFoundException e) {
@@ -828,11 +849,15 @@ public class AtomSql {
 			var parameterNames = method.parameters();
 			var parameterTypes = method.parameterTypes();
 			var parameters = new Object[parameterNames.length];
+			var optionalColumns = method.parameterOptionalColumns();
+
+			var resultSetColumns = columnNamesFrom(rs);
 
 			var optionals = new Optionals();
 			for (var i = 0; i < parameterNames.length; i++) {
 				var parameterType = parameterTypes[i];
 				var parameterName = parameterNames[i];
+				var isOptionalColumn = optionalColumns[i];
 
 				var needsOptional = false;
 				if (Optional.class.equals(parameterType)) {
@@ -842,7 +867,8 @@ public class AtomSql {
 
 				var type = typeFactory.select(parameterType);
 				try {
-					var value = type.get(rs, parameterName);
+					//OptionalColumnではなく、SELECT句にカラムがない場合、値はnull
+					var value = (!isOptionalColumn || resultSetColumns.contains(parameterName.toUpperCase())) ? type.get(rs, parameterName) : null;
 					parameters[i] = needsOptional ? Optional.ofNullable(value) : value;
 				} catch (SQLException e) {
 					throw new AtomSqlException(e);
@@ -850,14 +876,14 @@ public class AtomSql {
 			}
 
 			try {
-				var constructor = dataObjectClass.getConstructor(parameterTypes);
+				var constructor = resultClass.getConstructor(parameterTypes);
 				return constructor.newInstance(parameters);
 			} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
 				throw new IllegalStateException(e);
 			}
 		}
 
-		private Object createNoParametersConstructorDataObject(ResultSet rs) {
+		private Object createDefaultConstructorClassDataObject(ResultSet rs) {
 			Object object;
 			try {
 				var constructor = resultClass.getConstructor();
@@ -865,6 +891,8 @@ public class AtomSql {
 			} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
 				throw new IllegalStateException(e);
 			}
+
+			var resultSetColumns = columnNamesFrom(rs);
 
 			var optionals = new Optionals();
 			Arrays.stream(resultClass.getFields()).forEach(f -> {
@@ -884,8 +912,11 @@ public class AtomSql {
 
 				var type = typeFactory.select(fieldType);
 
+				var isOptionalColumn = f.getAnnotation(OptionalColumn.class) != null;
+
 				try {
-					var value = type.get(rs, fieldName);
+					//OptionalColumnではなく、SELECT句にカラムがない場合、値はnull
+					var value = (!isOptionalColumn || resultSetColumns.contains(fieldName.toUpperCase())) ? type.get(rs, fieldName) : null;
 					f.set(object, needsOptional ? Optional.ofNullable(value) : value);
 				} catch (SQLException e) {
 					throw new AtomSqlException(e);

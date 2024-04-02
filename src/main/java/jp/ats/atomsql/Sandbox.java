@@ -7,9 +7,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -181,7 +182,7 @@ public class Sandbox {
 
 		private List<Map<Object, Object>> convert() {
 			return rows.stream().map(r -> {
-				Map<Object, Object> map = new HashMap<>();
+				Map<Object, Object> map = new LinkedHashMap<>();
 
 				if (columnNames.length > 0) {
 					for (var i = 0; i < columnNames.length; i++) {
@@ -242,13 +243,47 @@ public class Sandbox {
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-			if (method.getName().equals("wasNull")) return previousValue == null;
+			var name = method.getName();
 
-			var value = map.get(args[0]);
+			if (name.equals("wasNull")) return previousValue == null;
+
+			if (name.equals("getMetaData")) {
+				var handler = new ResultSetMetaDataInvocationHandler(new LinkedList<>(map.keySet()));
+				return Proxy.newProxyInstance(
+					Sandbox.class.getClassLoader(),
+					new Class<?>[] { ResultSetMetaData.class },
+					handler);
+			}
+
+			Object key = args[0];
+
+			if (!map.containsKey(key)) throw new SQLException(key.toString());
+
+			var value = map.get(key);
 
 			previousValue = value;
 
 			return value;
+		}
+	}
+
+	private static class ResultSetMetaDataInvocationHandler implements InvocationHandler {
+
+		private final List<Object> keys;
+
+		private ResultSetMetaDataInvocationHandler(List<Object> keys) {
+			this.keys = keys;
+		}
+
+		@Override
+		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+			var name = method.getName();
+
+			return switch (name) {
+			case "getColumnCount" -> keys.size();
+			case "getColumnName" -> keys.get(Integer.parseInt(args[0].toString()));
+			default -> throw new IllegalStateException();
+			};
 		}
 	}
 

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -115,12 +114,19 @@ class MetadataBuilder {
 
 		var types = String.join(
 			", ",
-			info.parameterTypes.stream().map(t -> t + ".class").collect(Collectors.toList()));
+			info.parameterTypes.stream().map(t -> t + ".class").toList());
 
 		var methodContents = new LinkedList<String>();
 		methodContents.add("name = \"" + info.name + "\"");
 		methodContents.add("parameters = {" + parameters + "}");
 		methodContents.add("parameterTypes = {" + types + "}");
+
+		if (info.parameterOptionalColumns.size() > 0) {
+			var flags = String.join(
+				", ",
+				info.parameterOptionalColumns.stream().map(f -> f.toString()).toList());
+			methodContents.add("parameterOptionalColumns = {" + flags + "}");
+		}
 
 		if (info.parametersUnfolder != null)
 			methodContents.add("parametersUnfolder = " + info.parametersUnfolder + ".class");
@@ -152,6 +158,8 @@ class MetadataBuilder {
 		final List<String> parameterNames = new LinkedList<>();
 
 		final List<String> parameterTypes = new LinkedList<>();
+
+		final List<Boolean> parameterOptionalColumns = new LinkedList<>();
 
 		String parametersUnfolder;
 

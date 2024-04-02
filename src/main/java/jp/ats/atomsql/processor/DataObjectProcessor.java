@@ -34,6 +34,7 @@ import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.annotation.DataObject;
+import jp.ats.atomsql.annotation.OptionalColumn;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 
@@ -333,6 +334,7 @@ class DataObjectProcessor {
 			parameters.forEach(parameter -> {
 				info.parameterNames.add(parameter.getSimpleName().toString());
 				info.parameterTypes.add(parameter.asType().accept(typeNameExtractor, e));
+				info.parameterOptionalColumns.add(parameter.getAnnotation(OptionalColumn.class) != null);
 			});
 
 			p.add(info);

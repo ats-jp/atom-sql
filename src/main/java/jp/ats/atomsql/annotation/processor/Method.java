@@ -3,6 +3,8 @@ package jp.ats.atomsql.annotation.processor;
 import java.util.function.Consumer;
 
 import jp.ats.atomsql.Prototype;
+import jp.ats.atomsql.annotation.DataObject;
+import jp.ats.atomsql.annotation.OptionalColumn;
 import jp.ats.atomsql.annotation.SqlProxySupplier;
 
 /**
@@ -29,14 +31,20 @@ public @interface Method {
 	Class<?>[] parameterTypes();
 
 	/**
+	 * メソッドの引数が{@link OptionalColumn}アノテーションを持つか
+	 * @return メソッドの引数が{@link OptionalColumn}アノテーションを持つか
+	 */
+	boolean[] parameterOptionalColumns() default {};
+
+	/**
 	 * メソッドの{@link Consumer}に指定されたクラス
 	 * @return メソッドの{@link Consumer}に指定されたクラス
 	 */
 	Class<?> parametersUnfolder() default Object.class;
 
 	/**
-	 * 戻り値の型パラメータで示されるAtom SQL検索結果で使用可能なクラス化または@link DataObject}クラス
-	 * @return 戻り値の型パラメータで示されるAtom SQL検索結果で使用可能なクラス化または@link DataObject}クラス
+	 * 戻り値の型パラメータで示されるAtom SQL検索結果で使用可能なクラス化または{@link DataObject}クラス
+	 * @return 戻り値の型パラメータで示されるAtom SQL検索結果で使用可能なクラス、または{@link DataObject}クラス
 	 */
 	Class<?> result() default Object.class;
 
