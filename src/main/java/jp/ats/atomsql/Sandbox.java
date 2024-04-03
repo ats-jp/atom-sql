@@ -281,7 +281,7 @@ public class Sandbox {
 
 			return switch (name) {
 			case "getColumnCount" -> keys.size();
-			case "getColumnName" -> keys.get(Integer.parseInt(args[0].toString()));
+			case "getColumnName" -> keys.get(Integer.parseInt(args[0].toString()) - 1);
 			default -> throw new IllegalStateException();
 			};
 		}

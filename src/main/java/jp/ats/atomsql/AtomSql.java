@@ -822,7 +822,7 @@ public class AtomSql {
 
 				var count = metaData.getColumnCount();
 
-				return new HashSet<>(IntStream.range(0, count).mapToObj(i -> {
+				return new HashSet<>(IntStream.range(1, count + 1).mapToObj(i -> {
 					try {
 						return metaData.getColumnName(i).toUpperCase();
 					} catch (SQLException e) {
