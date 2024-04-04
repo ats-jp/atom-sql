@@ -16,6 +16,7 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import javax.tools.Diagnostic.Kind;
 
 import jp.ats.atomsql.Constants;
+import jp.ats.atomsql.annotation.processor.Method;
 
 class MetadataBuilder {
 
@@ -85,6 +86,9 @@ class MetadataBuilder {
 
 		param.put("PACKAGE", packageName.isEmpty() ? "" : ("package " + packageName + ";"));
 		param.put("INTERFACE", className);
+
+		//unused警告を出さないために、メソッドが0件の場合はアノテーションのimportを消す
+		param.put("IMPORT_METHOD_CLASS", infos.size() > 0 ? ("import " + Method.class.getName() + ";") : "");
 
 		var methodPart = String.join(
 			", ",
