@@ -559,13 +559,13 @@ SQL内の任意の箇所に変数を記述し、そこに他のAtomを挿入す�
 @Sql("SELECT /*${0}*/ FROM sample /*${1}*/")
 public Atom<SampleInfo> main();
 
-// ここで生成されるAtomは単なるパーツなので、型パラメーターは ? でよい
+// ここで生成されるAtomは単なるパーツなので、型パラメーターは ? 、または Void でよい
 @Sql("COUNT(*)")
 public Atom<?> selectCount();
 
-// ここで生成されるAtomは単なるパーツなので、型パラメーターは ? でよい
+// ここで生成されるAtomは単なるパーツなので、型パラメーターは ? 、または Void でよい
 @Sql("WHERE id = :id")
-public Atom<?> where(int id);
+public Atom<Void> where(int id);
 ```
 
 使用
@@ -575,7 +575,8 @@ var main = sampleProxy.main();
 
 var select = sampleProxy.selectCount();
 
-var where = sampleProxy.where(1);
+// Atom 自体をOptional等の結果として使用する場合、空パラメーターが ? ではコンパイルエラーとなるケースがあるので、その場合は Void を使用する
+var where = optionalValue.map(v -> sampleProxy.where(1)).oeElseGet(() -> sampleProxy.where(2));
 
 // selectは${0}、whereは${1}に展開される
 main.put(select, where).list().forEach(r -> {

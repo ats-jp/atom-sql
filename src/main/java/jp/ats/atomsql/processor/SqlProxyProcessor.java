@@ -189,7 +189,7 @@ class SqlProxyProcessor {
 				return processPrototype(t, p);
 			}
 
-			if (ProcessorUtils.sameClass(type, List.class) || ProcessorUtils.sameClass(type, Optional.class) || ProcessorUtils.sameClass(type, Stream.class) || ProcessorUtils.sameClass(type, Atom.class)) {
+			if (ProcessorUtils.sameClass(type, List.class) || ProcessorUtils.sameClass(type, Optional.class) || ProcessorUtils.sameClass(type, Stream.class)) {
 				var dataType = t.getTypeArguments().get(0);
 
 				if (dataType.accept(AnnotationExtractor.instance, null)) {
@@ -197,18 +197,36 @@ class SqlProxyProcessor {
 				}
 
 				if (ProcessorUtils.toElement(dataType) == null) {
-					if (ProcessorUtils.sameClass(type, Atom.class)) {
-						// <?>
-						// Atomの場合は、型パラメータを指定しなくてOK
-						return ReturnTypeCheckerResult.defaultValue;
-					}
-
 					// <?>
 					// Stream, List, Optionalの場合は、型パラメータを指定しなければならない
 					return errorAction(t, p);
 				}
 
 				if (typeFactory.canUse(ProcessorUtils.toTypeElement(dataType))) {
+					return new ReturnTypeCheckerResult(dataType, null);
+				}
+
+				return errorDataType(dataType, p);
+			}
+
+			if (ProcessorUtils.sameClass(type, Atom.class)) {
+				var dataType = t.getTypeArguments().get(0);
+
+				if (dataType.accept(AnnotationExtractor.instance, null)) {
+					return new ReturnTypeCheckerResult(dataType, null);
+				}
+
+				if (ProcessorUtils.toElement(dataType) == null) {
+					// <?>
+					// Atomの場合は、型パラメータを指定しなくてOK
+					return ReturnTypeCheckerResult.defaultValue;
+				}
+
+				var typeElement = ProcessorUtils.toTypeElement(dataType);
+				// Atomの場合は、VoidでもOK
+				//<?>が使用できないケースでの使用を想定
+				//Atom<?>だと、Optional等で扱えないケースがあるため
+				if (ProcessorUtils.sameClass(typeElement, Void.class) || typeFactory.canUse(typeElement)) {
 					return new ReturnTypeCheckerResult(dataType, null);
 				}
 
