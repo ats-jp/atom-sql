@@ -326,7 +326,7 @@ public class AtomSql {
 		var confidentialSql = method.getAnnotation(ConfidentialSql.class);
 		var confidentials = confidentialSql == null ? null : confidentialSql.value();
 
-		var sql = loadSql(proxyInterface, method).trim();
+		var sql = loadSql(proxyInterface, method);
 
 		var conf = configure();
 

@@ -27,7 +27,7 @@ public interface SqlFileResolver {
 		throws IOException, SqlFileNotFoundException;
 
 	/**
-	 *{@Sql}が付与されていないメソッドにSQLファイルが存在しない場合に発生する例外
+	 *{@SqlFile}が付与されているメソッドにSQLファイルが存在しない場合に発生する例外
 	 */
 	public class SqlFileNotFoundException extends Exception {
 

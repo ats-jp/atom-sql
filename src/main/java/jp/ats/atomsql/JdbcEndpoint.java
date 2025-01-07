@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
@@ -29,19 +30,21 @@ public class JdbcEndpoint implements Endpoint {
 	 * @param supplier {@link Connection}の供給元
 	 */
 	public JdbcEndpoint(Supplier<Connection> supplier) {
-		this.supplier = supplier;
+		this.supplier = Objects.requireNonNull(supplier);
 	}
 
 	@Override
 	public int[] batchUpdate(String sql, BatchPreparedStatementSetter bpss) {
-		try (var ps = connection().prepareStatement(Constants.NEW_LINE + sql)) {
-			var size = bpss.getBatchSize();
-			for (var i = 0; i < size; i++) {
-				bpss.setValues(ps, i);
-				ps.addBatch();
-			}
+		try (var conn = connection()) {
+			try (var ps = conn.prepareStatement(Constants.NEW_LINE + sql)) {
+				var size = bpss.getBatchSize();
+				for (var i = 0; i < size; i++) {
+					bpss.setValues(ps, i);
+					ps.addBatch();
+				}
 
-			return ps.executeBatch();
+				return ps.executeBatch();
+			}
 		} catch (SQLException e) {
 			throw new AtomSqlException(e);
 		}
@@ -50,7 +53,9 @@ public class JdbcEndpoint implements Endpoint {
 	@Override
 	public <T> Stream<T> queryForStream(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
 		try {
-			var ps = connection().prepareStatement(Constants.NEW_LINE + sql);
+			var conn = connection();
+
+			var ps = conn.prepareStatement(Constants.NEW_LINE + sql);
 			ps.closeOnCompletion();
 
 			pss.setValues(ps);
@@ -69,6 +74,12 @@ public class JdbcEndpoint implements Endpoint {
 					rs.close();
 				} catch (SQLException e) {
 					throw new AtomSqlException(e);
+				} finally {
+					try {
+						conn.close();
+					} catch (SQLException e) {
+						throw new AtomSqlException(e);
+					}
 				}
 			});
 
@@ -80,10 +91,12 @@ public class JdbcEndpoint implements Endpoint {
 
 	@Override
 	public int update(String sql, PreparedStatementSetter pss) {
-		try (var ps = connection().prepareStatement(Constants.NEW_LINE + sql)) {
-			pss.setValues(ps);
+		try (var conn = connection()) {
+			try (var ps = conn.prepareStatement(Constants.NEW_LINE + sql)) {
+				pss.setValues(ps);
 
-			return ps.executeUpdate();
+				return ps.executeUpdate();
+			}
 		} catch (SQLException e) {
 			throw new AtomSqlException(e);
 		}
@@ -96,11 +109,12 @@ public class JdbcEndpoint implements Endpoint {
 
 	@Override
 	public void bollowConnection(Consumer<ConnectionProxy> consumer) {
-		try {
-			var con = supplier.get();
-			connection.set(con);
+		try (var conn = supplier.get()) {
+			connection.set(conn);
 
-			consumer.accept(new SimpleConnectionProxy(con));
+			consumer.accept(new SimpleConnectionProxy(conn));
+		} catch (SQLException e) {
+			throw new AtomSqlException(e);
 		} finally {
 			connection.remove();
 		}

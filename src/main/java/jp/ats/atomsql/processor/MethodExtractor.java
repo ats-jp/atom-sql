@@ -3,6 +3,7 @@ package jp.ats.atomsql.processor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -24,7 +25,7 @@ class MethodExtractor {
 	private SqlFileResolver resolver;
 
 	MethodExtractor(Supplier<ProcessingEnvironment> envSupplier) {
-		this.envSupplier = envSupplier;
+		this.envSupplier = Objects.requireNonNull(envSupplier);
 	}
 
 	static class Result {

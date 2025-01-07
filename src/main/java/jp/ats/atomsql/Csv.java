@@ -65,4 +65,9 @@ public class Csv<T> {
 	public List<T> values() {
 		return values;
 	}
+
+	@Override
+	public String toString() {
+		return values.toString();
+	}
 }
