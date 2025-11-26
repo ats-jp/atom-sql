@@ -24,7 +24,7 @@ class AtomsUnfolderBuilder extends UnfolderBuilder {
 		var typeElement = ProcessorUtils.toTypeElement(ProcessorUtils.toElement(returnType));
 
 		if (!ProcessorUtils.sameClass(typeElement, Prototype.class)) {
-			//メソッドeは、返す型としてHalfAtomを必要とします
+			//メソッドeは、返す型としてPrototypeを必要とします
 			error(
 				"Method ["
 					+ method.getSimpleName()
@@ -47,7 +47,7 @@ class AtomsUnfolderBuilder extends UnfolderBuilder {
 
 		var element = ProcessorUtils.toElement(typeArg);
 		if (element == null) {
-			//AtomInterpolator<DataObject, ?>とされた場合
+			//Prototype<DataObject, ?>とされた場合
 			error(Prototype.class.getSimpleName() + " requires two type arguments", method);
 
 			return ExtractResult.fail;

@@ -10,14 +10,32 @@ import javax.lang.model.SourceVersion;
 
 /**
  * 内部使用クラスです。<br>
- * SQL文から、プレースホルダを探します。<br>
- * プレースホルダは、Javaの識別子の規則に沿っている必要があります。
+ * SQL文から、カラム名を探します。<br>
+ * カラム名はJavaの識別子として使用されるので、識別子の規則に沿っている必要があります。
  * @author 千葉 哲嗣
  */
 @SuppressWarnings("javadoc")
-public class PlaceholderFinder {
+public class ColumnFinder {
 
-	private static final Pattern pattern = Pattern.compile(":([^\\s[\\p{Punct}&&[^_$]]]+)(?:/\\*([^\\*<]+)(?:<([^\\*>]+)>|)\\*/|)");
+	private static final Pattern pattern = Pattern.compile(
+		//:placeholderを排除するため、あえて:を含める
+		"([^\\s[\\p{Punct}&&[^_:]]]+)(/\\*([^\\*]+)\\*/)",
+		Pattern.CASE_INSENSITIVE);
+
+	/**
+	 * SQLからカラムの型ヒントを除去します。
+	 * @param sql 元のSQL
+	 * @return 型ヒント除去後のSQL
+	 */
+	static String normalize(String sql) {
+		var list = new LinkedList<String>();
+		list.add(execute(sql, f -> {
+			list.add(f.gap);
+			list.add(f.column);
+		}));
+
+		return String.join("", list);
+	}
 
 	public static String execute(String sql, Consumer<Found> placeholderConsumer) {
 		//誤検出分保管
@@ -36,7 +54,8 @@ public class PlaceholderFinder {
 
 			sql = sql.substring(matcher.end());
 
-			if (!SourceVersion.isIdentifier(matched)
+			if (matched.contains(":") //:placeHolder形式のものを除外、もちろん途中に:があってもNG
+				|| !SourceVersion.isIdentifier(matched)
 				|| SourceVersion.isKeyword(matched)
 				|| AtomSqlUtils.isRestrictedKeyword(matched)) {
 				pseudoMatches.add(gap);
@@ -55,13 +74,9 @@ public class PlaceholderFinder {
 
 			found.gap = gap;
 
-			found.all = matchedAll;
+			found.column = matched;
 
-			found.placeholder = matched;
-
-			found.typeHint = Optional.ofNullable(matcher.group(2));
-
-			found.typeArgumentHint = Optional.ofNullable(matcher.group(3));
+			found.typeHint = Optional.ofNullable(matcher.group(3));
 
 			placeholderConsumer.accept(found);
 		}
@@ -79,12 +94,8 @@ public class PlaceholderFinder {
 
 		public String gap;
 
-		public String all;
-
-		public String placeholder;
+		public String column;
 
 		public Optional<String> typeHint;
-
-		public Optional<String> typeArgumentHint;
 	}
 }

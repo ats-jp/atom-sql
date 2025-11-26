@@ -1,12 +1,8 @@
 package jp.ats.atomsql.processor;
 
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -16,11 +12,8 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
 import jp.ats.atomsql.AtomSql;
-import jp.ats.atomsql.AtomSqlType;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.PlaceholderFinder;
-import jp.ats.atomsql.annotation.TypeHint;
-import jp.ats.atomsql.annotation.TypeHints;
 import jp.ats.atomsql.type.OBJECT;
 
 class ParametersUnfolderBuilder extends UnfolderBuilder {
@@ -74,15 +67,6 @@ class ParametersUnfolderBuilder extends UnfolderBuilder {
 
 	@Override
 	List<String> fields(ExecutableElement method, String sql) {
-		Map<String, TypeHint> annotatedHints = new HashMap<>();
-
-		var typeHints = method.getAnnotation(TypeHints.class);
-		if (typeHints != null) {
-			Arrays.stream(typeHints.value()).forEach(h -> {
-				annotatedHints.put(h.name(), h);
-			});
-		}
-
 		var dubplicateChecker = new HashSet<String>();
 		var fields = new LinkedList<String>();
 		PlaceholderFinder.execute(sql, f -> {
@@ -91,28 +75,13 @@ class ParametersUnfolderBuilder extends UnfolderBuilder {
 
 			dubplicateChecker.add(f.placeholder);
 
-			var annotatedHint = annotatedHints.get(f.placeholder);
-
-			Optional<AtomSqlType> annotatedHintType;
-			Optional<AtomSqlType> annotatedTypeArgument;
-			if (annotatedHint != null) {
-				annotatedHintType = Optional.of(typeFactory.typeOf(annotatedHint.type()));
-
-				var typeArgument = annotatedHint.typeArgument();
-
-				annotatedTypeArgument = typeArgument.isEmpty() ? Optional.empty() : Optional.of(typeFactory.typeOf(annotatedHint.typeArgument()).toTypeArgument());
-			} else {
-				annotatedHintType = Optional.empty();
-				annotatedTypeArgument = Optional.empty();
-			}
-
-			var typeArgument = annotatedTypeArgument.or(
-				() -> f.typeArgumentHint.map(typeFactory::typeArgumentOf))
+			var typeArgument = f.typeArgumentHint
+				.map(typeFactory::typeArgumentOf)
 				.map(t -> "<" + t.typeArgumentExpression() + ">")
 				.orElse("");
 
 			var field = "public "
-				+ annotatedHintType.orElseGet(() -> f.typeHint.map(typeFactory::typeOf).orElse(OBJECT.instance)).typeExpression()
+				+ f.typeHint.map(typeFactory::typeOf).orElse(OBJECT.instance).typeExpression()
 				+ typeArgument
 				+ " "
 				+ f.placeholder

@@ -35,12 +35,10 @@ import jp.ats.atomsql.AtomSqlType;
  * 生成されたクラスには{@link SqlProxy}で指定されたSQL文から抽出されたプレースホルダが、publicなフィールドとして作成されます。<br>
  * フィールドの型は、SQL内のプレースホルダ部分に型ヒントを記述することで設定することが可能です。<br>
  * 型ヒントの記述方法は":placeholder/*TYPE_HINT*&#047;"となり、TYPE_HINTには{@link AtomSqlType}で定義された列挙の名称のみが使用可能です。（フィールドをStringとしたい場合、型ヒントにSTRINGを記述）<br>
- * また、型ヒントをSQL内に記述したくない場合は、{@link TypeHints}を使用することで、そのパラメータとして型ヒントを設定することが可能となります。<br>
  * SQLパラメータクラスのクラス名を（そのパッケージ内で）重複して指定してしまった場合、同じものを使用するのではなくコンパイルエラーとなります。<br>
  * <br>
  * Proxyインターフェイスではdefaultメソッドを定義し使用することが可能ですが、注意点としてその場合Proxyインターフェイスをpublicにする必要があります。
  * @author 千葉 哲嗣
- * @see TypeHints
  */
 @Target(TYPE)
 @Retention(RUNTIME)

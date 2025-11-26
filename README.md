@@ -446,17 +446,14 @@ sampleProxy.updateSample(p -> {
 - パラメーター折り畳み時の型ヒント  
 パラメーター折り畳み機能をそのまま使用した場合、フィールドは全てObject型となる  
 実行時バインドした値の型により実際に使用される型が決定するためエラーとはならないが、Object型にはどのようなクラスの値もセットできてしまうため、型を指定し制約を強くした方が安全  
-そのための機能として型ヒントの指定機能があり、以下の2つの方法で型ヒントの指定を行うことが出来る  
-
-1. インライン型ヒント  
-SQL内に型のヒントを直接記述する  
+そのための機能として型ヒントの指定機能がある  
 
 ```java
 @Sql("UPDATE sample SET name = :name/*STRING*/ WHERE id = :id/*P_LONG*/")
 public int updateSample(Consumer<SampleParameters> consumer);
 ```
 
-※同一のプレースホルダを複数使用している場合はどこか一か所に型ヒントを記述すればよい  
+※同一のプレースホルダを複数使用している場合は最初に出現する一か所に型ヒントを記述する必要がある  
 
 CSV型を使用する場合  
 
@@ -478,48 +475,6 @@ public int updateSample(Consumer<SampleParameters> consumer);
 @Sql("SELECT * FROM sample WHERE type IN (:types/*CSV<your.Enum>*/)")
 public int updateSampleWithCsv(Consumer<SampleParameters> consumer);
 ```
-
-2. `@TypeHints`、`@TypeHint`アノテーション  
-該当メソッドに`@TypeHints`を付与、そのパラメーターとして`@TypeHint`を設定する  
-
-```java
-@Sql("UPDATE sample SET name = :name WHERE id = :id")
-@TypeHints({
-    @TypeHint(name = "name", type = AtomSqlType.STRING),
-    @TypeHint(name = "id", type = AtomSqlType.P_LONG),
-})
-public int updateSample(Consumer<SampleParameters> consumer);
-```
-
-CSV型を使用する場合  
-
-```java
-@Sql("SELECT * FROM sample WHERE id IN (:ids)")
-@TypeHints({
-    @TypeHint(name = "ids", type = AtomSqlType.CSV, typeArgument = AtomSqlType.LONG),
-})
-public int updateSample(Consumer<SampleParameters> consumer);
-```
-
-※enumを使用する場合  
-
-```java
-@Sql("UPDATE sample SET name = :name WHERE type = :type")
-@TypeHints({
-    @TypeHint(name = "name", type = AtomSqlType.STRING),
-    @TypeHint(name = "type", type = "your.Enum"),
-})
-public int updateSample(Consumer<SampleParameters> consumer);
-
-//Csv使用の場合
-@Sql("SELECT * FROM sample WHERE type IN (:types)")
-@TypeHints({
-    @TypeHint(name = "types", type = AtomSqlType.CSV, typeArgument = "your.Enum"),
-})
-public int updateSample(Consumer<SampleParameters> consumer);
-```
-
-※インライン型ヒントはSQLの見通しが悪くなりがちなので、そのような場合は`@TypeHints`、`@TypeHint`アノテーションを使用する  
 
 ※型ヒントはあくまでヒントであり、SQL内のプレースホルダ全てに型ヒントが設定されていなくてもコンパイルエラーとはならないので指定漏れには注意が必要  
 
@@ -589,7 +544,7 @@ main.put(select, where).list().forEach(r -> {
 メソッド`Atom#put(Map<Atom>)`を使用して変数展開を行うことも可能だが、次に紹介する`Prototype`を使用する方が記述が簡単になるため、メソッド`Atom#put(Map<Atom>)`の使用方法の説明は割愛する  
 
 - __Prototype__  
-SqlProxyのSQL実施メソッドの戻り値のの型に`Prototype`を使用することで、SQL内に記述した変数をフィールドとして持つクラスをAtom SQLが自動生成する  
+SqlProxyのSQL実施メソッドの戻り値の型に`Prototype`を使用することで、SQL内に記述した変数をフィールドとして持つクラスをAtom SQLが自動生成する  
 
 定義
 
@@ -647,7 +602,7 @@ atom.get();
 
 // INSERT, UPDATE等更新を実施し、変更された件数を取得する
 // このAtomを作り出すメソッドの戻り型はAtom<?>でOK
-atom.update();
+atom.execute();
 ```
 
 - SQL編集用定数  

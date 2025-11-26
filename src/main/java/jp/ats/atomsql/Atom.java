@@ -399,7 +399,7 @@ public class Atom<T> {
 	 * DDL、バッチ実行の場合、結果は常に0となります。
 	 * @return 更新処理の場合、その結果件数
 	 */
-	public int update() {
+	public int execute() {
 		var helper = helper();
 
 		var resources = atomSql.batchResources();
@@ -425,7 +425,7 @@ public class Atom<T> {
 	 * @see AtomSql#tryBatch(Runnable)
 	 * @see AtomSql#tryBatch(Supplier)
 	 */
-	public void update(Consumer<Integer> resultConsumer) {
+	public void execute(Consumer<Integer> resultConsumer) {
 		var helper = helper();
 
 		var resources = atomSql.batchResources();

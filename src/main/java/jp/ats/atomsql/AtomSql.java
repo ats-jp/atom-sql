@@ -439,7 +439,7 @@ public class AtomSql {
 		} else if (returnType.equals(Optional.class)) {
 			return atom.get();
 		} else if (returnType.equals(int.class) || returnType.equals(void.class)) {
-			return atom.update();
+			return atom.execute();
 		} else if (returnType.equals(Prototype.class)) {
 			return new Prototype<>(atom, find.atomsUnfolder());
 		} else {
@@ -740,6 +740,8 @@ public class AtomSql {
 			List<Element> elements = new LinkedList<>();
 
 			var confidentialSet = confidentials(confidentials, parameterNames);
+
+			sql = ColumnFinder.normalize(sql);
 
 			var sqlRemain = PlaceholderFinder.execute(sql, f -> {
 				elements.add(new Text(f.gap));

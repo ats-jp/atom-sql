@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -20,6 +21,14 @@ public class AtomSqlUtils {
 	private static final byte[] BYTE_EMPTY_ARRAY = {};
 
 	private static final int BUFFER_SIZE = 8192;
+
+	//制限付きキーワード
+	private static final Set<String> RESTRICTED_KEYWORDS = Set.of(
+		"var",
+		"yield",
+		"record",
+		"sealed",
+		"permits");
 
 	public static String extractSimpleClassName(String className, String packageName) {
 		var packageNameLength = packageName.length();
@@ -45,6 +54,10 @@ public class AtomSqlUtils {
 		}
 
 		return result;
+	}
+
+	public static boolean isRestrictedKeyword(String word) {
+		return RESTRICTED_KEYWORDS.contains(word);
 	}
 
 	private static List<Class<?>> loadProxyClasses(URL url) throws IOException {
