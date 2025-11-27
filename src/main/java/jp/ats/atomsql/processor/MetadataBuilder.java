@@ -65,7 +65,7 @@ class MetadataBuilder {
 			return;
 		}
 
-		var template = Formatter.readTemplate(AtomSqlMetadataTemplate.class, "UTF-8");
+		var template = Formatter.readTemplate(AtomSqlMetadata_Template.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);
 
 		Map<String, String> param = new HashMap<>();

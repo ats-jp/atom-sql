@@ -133,7 +133,7 @@ class DataObjectProcessor {
 
 		var fileName = isPackageNameLengthZero ? className : packageName + "." + className;
 
-		var template = Formatter.readTemplate(AtomSqlDataObjectMetadataTemplate.class, "UTF-8");
+		var template = Formatter.readTemplate(AtomSqlDataObjectMetadata_Template.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);
 
 		Map<String, String> param = new HashMap<>();

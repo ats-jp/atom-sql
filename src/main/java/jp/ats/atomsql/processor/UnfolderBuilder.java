@@ -150,7 +150,7 @@ abstract class UnfolderBuilder {
 
 		checker.put(newClassName, new MethodInfo(newClassName, className, methodName));
 
-		var template = Formatter.readTemplate(UnfolderTemplate.class, "UTF-8");
+		var template = Formatter.readTemplate(Unfolder_Template.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);
 
 		Map<String, String> param = new HashMap<>();

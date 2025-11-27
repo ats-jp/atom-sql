@@ -75,7 +75,7 @@ class SqlProxyProcessor {
 
 	private final ParametersUnfolderBuilder parametersUnfolderBuilder;
 
-	private final AtomsUnfolderBuilder atomsUnfolderBuilder;
+	private final PrototypeUnfolderBuilder prototypeUnfolderBuilder;
 
 	public SqlProxyProcessor(Supplier<ProcessingEnvironment> processingEnv) {
 		this.processingEnv = processingEnv;
@@ -86,7 +86,7 @@ class SqlProxyProcessor {
 
 		duplicateClassChecker = new DuplicateClassChecker();
 		parametersUnfolderBuilder = new ParametersUnfolderBuilder(processingEnv, duplicateClassChecker);
-		atomsUnfolderBuilder = new AtomsUnfolderBuilder(processingEnv, duplicateClassChecker);
+		prototypeUnfolderBuilder = new PrototypeUnfolderBuilder(processingEnv, duplicateClassChecker);
 	}
 
 	void process(TypeElement annotation, RoundEnvironment roundEnv) {
@@ -185,7 +185,7 @@ class SqlProxyProcessor {
 			var type = ProcessorUtils.toTypeElement(t.asElement());
 
 			if (ProcessorUtils.sameClass(type, Prototype.class)) {
-				atomsUnfolderBuilder.execute(p);
+				prototypeUnfolderBuilder.execute(p);
 				return processPrototype(t, p);
 			}
 
@@ -249,7 +249,7 @@ class SqlProxyProcessor {
 			var type = ProcessorUtils.toTypeElement(t.asElement());
 
 			if (ProcessorUtils.sameClass(type, Prototype.class)) {
-				atomsUnfolderBuilder.execute(p);
+				prototypeUnfolderBuilder.execute(p);
 				return processPrototype(t, p);
 			}
 

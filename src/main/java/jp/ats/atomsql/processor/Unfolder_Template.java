@@ -4,7 +4,7 @@ import javax.annotation.processing.Generated;
 
 @Generated("[[GENERATED]]")
 @SuppressWarnings("javadoc")
-public class /*--*/UnfolderTemplate/*--*//*++[[CLASS]]++*/ {
+public class /*--*/Unfolder_Template/*--*//*++[[CLASS]]++*/ {
 
 /*++[[FIELDS]]++*/
 }

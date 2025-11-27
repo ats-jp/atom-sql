@@ -8,4 +8,4 @@ import jp.ats.atomsql.annotation.processor.Methods;
 @Generated("[[GENERATED]]")
 @SuppressWarnings("javadoc")
 /*++@Methods({[[METHODS]]})++*//*--*/@Methods({ @Method(name = "", parameters = {}, parameterTypes = {}) })/*--*/
-public interface /*--*/AtomSqlMetadataTemplate/*--*//*++[[INTERFACE]]++*/ {}
+public interface /*--*/AtomSqlMetadata_Template/*--*//*++[[INTERFACE]]++*/ {}

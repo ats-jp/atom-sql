@@ -11,9 +11,9 @@ import javax.lang.model.element.ExecutableElement;
 import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.Prototype;
 
-class AtomsUnfolderBuilder extends UnfolderBuilder {
+class PrototypeUnfolderBuilder extends UnfolderBuilder {
 
-	AtomsUnfolderBuilder(Supplier<ProcessingEnvironment> processingEnv, DuplicateClassChecker checker) {
+	PrototypeUnfolderBuilder(Supplier<ProcessingEnvironment> processingEnv, DuplicateClassChecker checker) {
 		super(processingEnv, checker);
 	}
 
