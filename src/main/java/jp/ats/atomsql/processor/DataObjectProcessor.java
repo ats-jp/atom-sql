@@ -133,7 +133,7 @@ class DataObjectProcessor {
 
 		var fileName = isPackageNameLengthZero ? className : packageName + "." + className;
 
-		var template = Formatter.readTemplate(AtomSqlDataObjectMetadata_Template.class, "UTF-8");
+		var template = Formatter.readTemplate(DataObjectMetadata_Template.class, "UTF-8");
 		template = Formatter.convertToTemplate(template);
 
 		Map<String, String> param = new HashMap<>();
@@ -282,7 +282,7 @@ class DataObjectProcessor {
 				}
 
 				var argType = ProcessorUtils.toTypeElement(ProcessorUtils.toElement(arg));
-				if (!typeFactory.canUse(argType))
+				if (!ProcessorUtils.canUse(argType, typeFactory))
 					return defaultAction(t, p);
 
 				optionals.put(p.getSimpleName(), argType);
@@ -290,7 +290,7 @@ class DataObjectProcessor {
 				return true;
 			}
 
-			if (typeFactory.canUse(type))
+			if (ProcessorUtils.canUse(type, typeFactory))
 				return true;
 
 			return defaultAction(t, p);

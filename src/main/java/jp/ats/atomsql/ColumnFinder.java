@@ -6,8 +6,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-import javax.lang.model.SourceVersion;
-
 /**
  * 内部使用クラスです。<br>
  * SQL文から、カラム名を探します。<br>
@@ -55,9 +53,7 @@ public class ColumnFinder {
 			sql = sql.substring(matcher.end());
 
 			if (matched.contains(":") //:placeHolder形式のものを除外、もちろん途中に:があってもNG
-				|| !SourceVersion.isIdentifier(matched)
-				|| SourceVersion.isKeyword(matched)
-				|| AtomSqlUtils.isRestrictedKeyword(matched)) {
+				|| !AtomSqlUtils.isSafeJavaIdentifier(matched)) {
 				pseudoMatches.add(gap);
 				pseudoMatches.add(matchedAll);
 				continue;

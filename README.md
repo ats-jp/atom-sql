@@ -459,7 +459,7 @@ CSV型を使用する場合
 
 ```java
 @Sql("SELECT * FROM sample WHERE id IN (:ids/*CSV<LONG>*/)")
-public int updateSample(Consumer<SampleParameters> consumer);
+public List<SampleInfo> selectSample(Consumer<SampleParameters> consumer);
 ```
 
 ※CSV型を使用する場合は型パラメーターを記述する必要がある  
@@ -473,7 +473,7 @@ public int updateSample(Consumer<SampleParameters> consumer);
 
 //Csv使用の場合
 @Sql("SELECT * FROM sample WHERE type IN (:types/*CSV<your.Enum>*/)")
-public int updateSampleWithCsv(Consumer<SampleParameters> consumer);
+public List<SampleInfo> selectSampleWithCsv(Consumer<SampleParameters> consumer);
 ```
 
 ※型ヒントはあくまでヒントであり、SQL内のプレースホルダ全てに型ヒントが設定されていなくてもコンパイルエラーとはならないので指定漏れには注意が必要  
@@ -541,19 +541,19 @@ main.put(select, where).list().forEach(r -> {
 
   - 任意の文字列を使用した変数展開  
 変数に任意の文字列を記述する方式  
-メソッド`Atom#put(Map<Atom>)`を使用して変数展開を行うことも可能だが、次に紹介する`Prototype`を使用する方が記述が簡単になるため、メソッド`Atom#put(Map<Atom>)`の使用方法の説明は割愛する  
+メソッド`Atom#put(Map<Atom>)`を使用して変数展開を行うことも可能だが、次に紹介する`Protoatom`を使用する方が記述が簡単になるため、メソッド`Atom#put(Map<Atom>)`の使用方法の説明は割愛する  
 
-- __Prototype__  
-SqlProxyのSQL実施メソッドの戻り値の型に`Prototype`を使用することで、SQL内に記述した変数をフィールドとして持つクラスをAtom SQLが自動生成する  
+- __Protoatom__  
+SqlProxyのSQL実施メソッドの戻り値の型に`Protoatom`を使用することで、SQL内に記述した変数をフィールドとして持つクラスをAtom SQLが自動生成する  
 
 定義
 
 ```java
 // このAtomがメインとなって検索を実施するため、検索結果の入れ物クラスを型パラメーターに記述
-// 戻り値はAtomではなくPrototypeを使用する
-// Prototypeの第二型パラメーターに任意のクラス名を記述することでAtom SQLがそのクラスを同一パッケージ内に生成する
+// 戻り値はAtomではなくProtoatomを使用する
+// Protoatomの第二型パラメーターに任意のクラス名を記述することでAtom SQLがそのクラスを同一パッケージ内に生成する
 @Sql("SELECT /*${selectClause}*/ FROM sample /*${whereClause}*/")
-public Prototype<SampleInfo, SampleAtoms> main();
+public Protoatom<SampleInfo, SampleAtoms> main();
 
 // ここで生成されるAtomは単なるパーツなので、型パラメーターは ? でよい
 @Sql("COUNT(*)")

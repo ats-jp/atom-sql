@@ -2,9 +2,11 @@ package jp.ats.atomsql.processor;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -13,6 +15,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import javax.annotation.processing.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
@@ -35,19 +38,19 @@ import jp.ats.atomsql.Atom;
 import jp.ats.atomsql.AtomSql;
 import jp.ats.atomsql.AtomSqlTypeFactory;
 import jp.ats.atomsql.AtomSqlUtils;
+import jp.ats.atomsql.ColumnFinder;
+import jp.ats.atomsql.ColumnFinder.Found;
 import jp.ats.atomsql.Constants;
 import jp.ats.atomsql.PlaceholderFinder;
-import jp.ats.atomsql.Prototype;
-import jp.ats.atomsql.annotation.AtomSqlSupplier;
+import jp.ats.atomsql.Protoatom;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.SqlProxy;
-import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodInfo;
 import jp.ats.atomsql.processor.MetadataBuilder.MethodVisitor;
 import jp.ats.atomsql.processor.MethodExtractor.Result;
 import jp.ats.atomsql.processor.MethodExtractor.SqlNotFoundException;
+import jp.ats.atomsql.processor.SourceBuilder.DuplicateClassChecker;
 import jp.ats.atomsql.processor.SqlFileResolver.SqlFileNotFoundException;
-import jp.ats.atomsql.processor.UnfolderBuilder.DuplicateClassChecker;
 import jp.ats.atomsql.type.CSV;
 
 /**
@@ -63,8 +66,6 @@ class SqlProxyProcessor {
 
 	private final SqlProxyAnnotationProcessorMethodVisitor methodVisitor = new SqlProxyAnnotationProcessorMethodVisitor();
 
-	private final ReturnTypeChecker returnTypeChecker = new ReturnTypeChecker();
-
 	private final Set<String> sqlProxyList = new HashSet<>();
 
 	private final MethodExtractor methodExtractor;
@@ -75,7 +76,9 @@ class SqlProxyProcessor {
 
 	private final ParametersUnfolderBuilder parametersUnfolderBuilder;
 
-	private final PrototypeUnfolderBuilder prototypeUnfolderBuilder;
+	private final ProtoatomUnfolderBuilder protoatomUnfolderBuilder;
+
+	private final DataObjectBuilder dataObjectBuilder;
 
 	public SqlProxyProcessor(Supplier<ProcessingEnvironment> processingEnv) {
 		this.processingEnv = processingEnv;
@@ -86,7 +89,8 @@ class SqlProxyProcessor {
 
 		duplicateClassChecker = new DuplicateClassChecker();
 		parametersUnfolderBuilder = new ParametersUnfolderBuilder(processingEnv, duplicateClassChecker);
-		prototypeUnfolderBuilder = new PrototypeUnfolderBuilder(processingEnv, duplicateClassChecker);
+		protoatomUnfolderBuilder = new ProtoatomUnfolderBuilder(processingEnv, duplicateClassChecker);
+		dataObjectBuilder = new DataObjectBuilder(processingEnv, duplicateClassChecker);
 	}
 
 	void process(TypeElement annotation, RoundEnvironment roundEnv) {
@@ -151,12 +155,24 @@ class SqlProxyProcessor {
 		processingEnv.get().getMessager().printMessage(Kind.ERROR, message, e);
 	}
 
-	private static record ReturnTypeCheckerResult(TypeMirror dataType, TypeMirror atomsUnfolderType) {
+	private static record ReturnTypeCheckerResult(boolean retry, TypeMirror dataType, TypeMirror protoatomUnfolderType) {
 
-		private static final ReturnTypeCheckerResult defaultValue = new ReturnTypeCheckerResult(null, null);
+		private static final ReturnTypeCheckerResult defaultValue = new ReturnTypeCheckerResult(false, null, null);
+
+		private static final ReturnTypeCheckerResult retryNotice = new ReturnTypeCheckerResult(true, null, null);
+
+		private static ReturnTypeCheckerResult newInstance(TypeMirror dataType, TypeMirror protoatomUnfolderType) {
+			return new ReturnTypeCheckerResult(false, dataType, protoatomUnfolderType);
+		}
 	}
 
 	private class ReturnTypeChecker extends SimpleTypeVisitor14<ReturnTypeCheckerResult, ExecutableElement> {
+
+		private final boolean needsDataObjectBuild;
+
+		private ReturnTypeChecker(boolean needsDataObjectBuild) {
+			this.needsDataObjectBuild = needsDataObjectBuild;
+		}
 
 		private ReturnTypeCheckerResult errorAction(TypeMirror t, ExecutableElement p) {
 			//リターンタイプtは使用できません
@@ -180,20 +196,35 @@ class SqlProxyProcessor {
 			};
 		}
 
+		private boolean isGeneratedDataObject(TypeMirror t) {
+			return typeElement(t).map(e -> {
+				var annotation = e.getAnnotation(Generated.class);
+
+				if (annotation == null) return false;
+
+				var value = annotation.value();
+
+				if (value == null || value.length != 1) return false;
+
+				return DataObjectBuilder.class.getName().equals(value[0]);
+			}).orElse(false);
+		}
+
 		@Override
 		public ReturnTypeCheckerResult visitDeclared(DeclaredType t, ExecutableElement p) {
 			var type = ProcessorUtils.toTypeElement(t.asElement());
 
-			if (ProcessorUtils.sameClass(type, Prototype.class)) {
-				prototypeUnfolderBuilder.execute(p);
-				return processPrototype(t, p);
-			}
-
-			if (ProcessorUtils.sameClass(type, List.class) || ProcessorUtils.sameClass(type, Optional.class) || ProcessorUtils.sameClass(type, Stream.class)) {
+			if (ProcessorUtils.sameClass(type, List.class)
+				|| ProcessorUtils.sameClass(type, Optional.class)
+				|| ProcessorUtils.sameClass(type, Stream.class)) {
 				var dataType = t.getTypeArguments().get(0);
 
-				if (dataType.accept(AnnotationExtractor.instance, null)) {
-					return new ReturnTypeCheckerResult(dataType, null);
+				if (needsDataObjectBuild && isGeneratedDataObject(dataType)) {
+					dataObjectBuilder.execute(p);
+				}
+
+				if (isAnnotated(dataType, DataObject.class)) {
+					return ReturnTypeCheckerResult.newInstance(dataType, null);
 				}
 
 				if (ProcessorUtils.toElement(dataType) == null) {
@@ -202,8 +233,8 @@ class SqlProxyProcessor {
 					return errorAction(t, p);
 				}
 
-				if (typeFactory.canUse(ProcessorUtils.toTypeElement(dataType))) {
-					return new ReturnTypeCheckerResult(dataType, null);
+				if (ProcessorUtils.canUse(ProcessorUtils.toTypeElement(dataType), typeFactory)) {
+					return ReturnTypeCheckerResult.newInstance(dataType, null);
 				}
 
 				return errorDataType(dataType, p);
@@ -212,8 +243,12 @@ class SqlProxyProcessor {
 			if (ProcessorUtils.sameClass(type, Atom.class)) {
 				var dataType = t.getTypeArguments().get(0);
 
-				if (dataType.accept(AnnotationExtractor.instance, null)) {
-					return new ReturnTypeCheckerResult(dataType, null);
+				if (needsDataObjectBuild && isGeneratedDataObject(dataType)) {
+					dataObjectBuilder.execute(p);
+				}
+
+				if (isAnnotated(dataType, DataObject.class)) {
+					return ReturnTypeCheckerResult.newInstance(dataType, null);
 				}
 
 				if (ProcessorUtils.toElement(dataType) == null) {
@@ -226,11 +261,22 @@ class SqlProxyProcessor {
 				// Atomの場合は、VoidでもOK
 				//<?>が使用できないケースでの使用を想定
 				//Atom<?>だと、Optional等で扱えないケースがあるため
-				if (ProcessorUtils.sameClass(typeElement, Void.class) || typeFactory.canUse(typeElement)) {
-					return new ReturnTypeCheckerResult(dataType, null);
+				if (ProcessorUtils.sameClass(typeElement, Void.class)
+					|| ProcessorUtils.canUse(typeElement, typeFactory)) {
+					return ReturnTypeCheckerResult.newInstance(dataType, null);
 				}
 
 				return errorDataType(dataType, p);
+			}
+
+			if (ProcessorUtils.sameClass(type, Protoatom.class)) {
+				if (needsDataObjectBuild && isGeneratedDataObject(t.getTypeArguments().get(0))) {
+					dataObjectBuilder.execute(p);
+				}
+
+				protoatomUnfolderBuilder.execute(p);
+
+				return processProtoatom(t, p);
 			}
 
 			return errorAction(t, p);
@@ -248,31 +294,49 @@ class SqlProxyProcessor {
 		public ReturnTypeCheckerResult visitError(ErrorType t, ExecutableElement p) {
 			var type = ProcessorUtils.toTypeElement(t.asElement());
 
-			if (ProcessorUtils.sameClass(type, Prototype.class)) {
-				prototypeUnfolderBuilder.execute(p);
-				return processPrototype(t, p);
+			if (needsDataObjectBuild) {
+				if (ProcessorUtils.sameClass(type, List.class)
+					|| ProcessorUtils.sameClass(type, Optional.class)
+					|| ProcessorUtils.sameClass(type, Stream.class)
+					|| ProcessorUtils.sameClass(type, Atom.class)) {
+					dataObjectBuilder.execute(p);
+
+					return ReturnTypeCheckerResult.retryNotice;
+				}
+			}
+
+			if (ProcessorUtils.sameClass(type, Protoatom.class)) {
+				protoatomUnfolderBuilder.execute(p);
+
+				if (needsDataObjectBuild) {
+					dataObjectBuilder.execute(p);
+
+					return ReturnTypeCheckerResult.retryNotice;
+				}
+
+				return processProtoatom(t, p);
 			}
 
 			return errorAction(t, p);
 		}
 
-		private ReturnTypeCheckerResult processPrototype(DeclaredType t, ExecutableElement p) {
+		private ReturnTypeCheckerResult processProtoatom(DeclaredType t, ExecutableElement p) {
 			var dataType = t.getTypeArguments().get(0);
 
 			if (ProcessorUtils.toElement(dataType) == null) {
 				// <?>
-				// Prototypeの場合は、結果型パラメータを指定しなくてOK
+				// Protoatomの場合は、結果型パラメータを指定しなくてOK
 				dataType = null;
-			} else if (!dataType.accept(AnnotationExtractor.instance, null) && !typeFactory.canUse(ProcessorUtils.toTypeElement(dataType))) {
+			} else if (!isAnnotated(dataType, DataObject.class) && !ProcessorUtils.canUse(ProcessorUtils.toTypeElement(dataType), typeFactory)) {
 				return errorDataType(dataType, p);
 			}
 
-			var atomsUnfolderType = t.getTypeArguments().get(1);
-			if (ProcessorUtils.toElement(atomsUnfolderType) == null) {
+			var protoatomUnfolderType = t.getTypeArguments().get(1);
+			if (ProcessorUtils.toElement(protoatomUnfolderType) == null) {
 				return errorAction(t, p);
 			}
 
-			return new ReturnTypeCheckerResult(dataType, atomsUnfolderType);
+			return ReturnTypeCheckerResult.newInstance(dataType, protoatomUnfolderType);
 		}
 	}
 
@@ -316,13 +380,13 @@ class SqlProxyProcessor {
 				return processConsumerType(p);
 			}
 
-			if (typeFactory.canUse(type)) return DEFAULT_VALUE;
+			if (ProcessorUtils.canUse(type, typeFactory)) return DEFAULT_VALUE;
 
 			var csvType = new CSV(typeFactory).type();
 			if (ProcessorUtils.sameClass(type, csvType)) {
 				var argumentType = ProcessorUtils.toTypeElement(ProcessorUtils.toElement(t.getTypeArguments().get(0)));
 
-				if (typeFactory.canUse(argumentType)) return DEFAULT_VALUE;
+				if (ProcessorUtils.canUse(argumentType, typeFactory)) return DEFAULT_VALUE;
 			}
 
 			return defaultAction(t, p);
@@ -353,8 +417,12 @@ class SqlProxyProcessor {
 		}
 	}
 
-	private static TypeElement returnTypeOf(ExecutableElement e) {
-		return ProcessorUtils.toTypeElement(ProcessorUtils.toElement(e.getReturnType()));
+	private static Optional<TypeElement> typeElement(TypeMirror type) {
+		return Optional.ofNullable(ProcessorUtils.toElement(type)).map(ProcessorUtils::toTypeElement);
+	}
+
+	private static <A extends Annotation> boolean isAnnotated(TypeMirror type, Class<A> annotation) {
+		return typeElement(type).map(e -> e.getAnnotation(annotation) != null).orElse(false);
 	}
 
 	private class SqlProxyAnnotationProcessorMethodVisitor extends MethodVisitor {
@@ -367,69 +435,9 @@ class SqlProxyProcessor {
 				return DEFAULT_VALUE;
 			}
 
-			if (e.getAnnotation(AtomSqlSupplier.class) != null) {
-				if (!ProcessorUtils.sameClass(returnTypeOf(e), AtomSql.class)) {
-					error(
-						"Annotation "
-							+ AtomSqlSupplier.class.getSimpleName()
-							+ " requires returning "
-							+ AtomSql.class.getSimpleName(),
-						e);
-
-					metadataBuilder.setError();
-				}
-
-				if (e.getParameters().size() != 0) {
-					error(
-						"Annotation "
-							+ AtomSqlSupplier.class.getSimpleName()
-							+ " requires 0 parameters",
-						e);
-
-					metadataBuilder.setError();
-				}
-
-				return DEFAULT_VALUE;
-			}
-
 			var info = new MethodInfo();
 
 			info.name = e.getSimpleName().toString();
-
-			if (e.getAnnotation(SqlProxySupplier.class) != null) {
-				var returnType = returnTypeOf(e);
-
-				if (returnType.getAnnotation(SqlProxy.class) == null) {
-					error(
-						"Annotation "
-							+ SqlProxySupplier.class.getSimpleName()
-							+ " requires returning "
-							+ SqlProxy.class.getSimpleName()
-							+ " annotated class",
-						e);
-
-					metadataBuilder.setError();
-
-					return DEFAULT_VALUE;
-				}
-
-				if (e.getParameters().size() != 0) {
-					error(
-						"Annotation "
-							+ SqlProxySupplier.class.getSimpleName()
-							+ " requires 0 parameters",
-						e);
-
-					metadataBuilder.setError();
-
-					return DEFAULT_VALUE;
-				}
-
-				info.sqlProxy = returnType.getQualifiedName().toString();
-				p.add(info);
-
-				return DEFAULT_VALUE;
-			}
 
 			var parameters = e.getParameters();
 
@@ -448,6 +456,32 @@ class SqlProxyProcessor {
 
 			//チェッカーでチェックした中でエラーがあった場合
 			if (metadataBuilder.hasError()) return DEFAULT_VALUE;
+
+			var returnType = e.getReturnType();
+
+			if (typeElement(returnType).map(ProcessorUtils::toTypeElement).map(returnTypeElement -> {
+				if (ProcessorUtils.sameClass(returnTypeElement, AtomSql.class)) {
+					if (e.getParameters().size() != 0) {
+						error("Return type [" + AtomSql.class.getSimpleName() + "] requires 0 parameters", e);
+
+						metadataBuilder.setError();
+					}
+
+					return true;
+				}
+
+				if (returnTypeElement.getAnnotation(SqlProxy.class) != null) {
+					if (e.getParameters().size() != 0) {
+						error("Return type annotated [" + SqlProxy.class.getSimpleName() + "] requires 0 parameters", e);
+
+						metadataBuilder.setError();
+					}
+
+					return true;
+				}
+
+				return false;
+			}).orElse(false)) return DEFAULT_VALUE;
 
 			Result result;
 			try {
@@ -478,34 +512,27 @@ class SqlProxyProcessor {
 				}
 			}
 
-			var returnTypeCheckerResult = e.getReturnType().accept(returnTypeChecker, e);
+			var columns = new LinkedList<Found>();
+			ColumnFinder.execute(result.sql, columns::add);
+
+			var returnTypeChecker = new ReturnTypeChecker(!columns.isEmpty());
+
+			var returnTypeCheckerResult = returnType.accept(returnTypeChecker, e);
+			if (returnTypeCheckerResult.retry) {
+				returnTypeCheckerResult = e.getReturnType().accept(returnTypeChecker, e);
+			}
 
 			if (returnTypeCheckerResult.dataType != null) {
 				info.dataType = returnTypeCheckerResult.dataType.accept(typeNameExtractor, e);
 			}
 
-			if (returnTypeCheckerResult.atomsUnfolderType != null) {
-				info.atomsUnfolder = returnTypeCheckerResult.atomsUnfolderType.accept(typeNameExtractor, e);
+			if (returnTypeCheckerResult.protoatomUnfolderType != null) {
+				info.protoatomUnfolder = returnTypeCheckerResult.protoatomUnfolderType.accept(typeNameExtractor, e);
 			}
 
 			p.add(info);
 
 			return DEFAULT_VALUE;
-		}
-	}
-
-	private static class AnnotationExtractor extends SimpleTypeVisitor14<Boolean, ExecutableElement> {
-
-		private static final AnnotationExtractor instance = new AnnotationExtractor();
-
-		@Override
-		protected Boolean defaultAction(TypeMirror e, ExecutableElement p) {
-			return false;
-		}
-
-		@Override
-		public Boolean visitDeclared(DeclaredType t, ExecutableElement p) {
-			return t.asElement().getAnnotation(DataObject.class) != null;
 		}
 	}
 }

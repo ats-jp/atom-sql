@@ -8,9 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.TypeElement;
-
 import jp.ats.atomsql.annotation.StringEnum;
 import jp.ats.atomsql.type.BIG_DECIMAL;
 import jp.ats.atomsql.type.BINARY_STREAM;
@@ -130,24 +127,13 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 
 		if (type != null) return type;
 
-		if (Arrays.stream(name.split("\\.")).filter(DefaultAtomSqlTypeFactory::filterInvalidJavaName).findFirst().isPresent()) {
+		if (Arrays.stream(name.split("\\.")).filter(w -> !AtomSqlUtils.isSafeJavaIdentifier(w)).findFirst().isPresent()) {
 			//Javaシンボルに使用できない文字が含まれていた場合
 			throw new UnknownSqlTypeNameException(name);
 		}
 
 		//processor内で、参照できないクラスの名称から自動生成クラスのフィールドを生成するためのタイプ
 		return new ENUM_EXPRESSION_TYPE(name);
-	}
-
-	private static boolean filterInvalidJavaName(String name) {
-		if (!Character.isJavaIdentifierStart(name.charAt(0))) return true;
-
-		var length = name.length();
-		for (int i = 1; i < length; i++) {
-			if (!Character.isJavaIdentifierPart(name.charAt(i))) return true;
-		}
-
-		return false;
 	}
 
 	@Override
@@ -163,11 +149,8 @@ public class DefaultAtomSqlTypeFactory implements AtomSqlTypeFactory {
 	}
 
 	@Override
-	public boolean canUse(TypeElement type) {
-		if (type.getKind() == ElementKind.ENUM) return true;
-
-		var typeName = type.getQualifiedName().toString();
-		return Arrays.stream(nonPrimitiveTypes).map(t -> t.type()).filter(c -> typeName.equals(c.getCanonicalName())).findFirst().isPresent();
+	public AtomSqlType[] nonPrimitiveTypes() {
+		return nonPrimitiveTypes.clone();
 	}
 
 	private static class ENUM_EXPRESSION_TYPE implements AtomSqlType {

@@ -1,7 +1,5 @@
 package jp.ats.atomsql;
 
-import javax.lang.model.element.TypeElement;
-
 /**
  * @author 千葉 哲嗣
  */
@@ -40,12 +38,10 @@ public interface AtomSqlTypeFactory {
 	boolean canUse(Class<?> c);
 
 	/**
-	 * プリミティブ型ではない型のうち、使用可能な型かどうかを返します。
-	 * {@link Csv}は、パラメータとして使用可能ですが、ここでは除外されます。
-	 * @param type {@link TypeElement}
-	 * @return 使用可能な型の場合、true
+	 * プリミティブ型ではない型のうち、使用可能な型を返します。
+	 * @return 使用可能な型の配列
 	 */
-	boolean canUse(TypeElement type);
+	AtomSqlType[] nonPrimitiveTypes();
 
 	/**
 	 * クラス名からインスタンスを生成します。

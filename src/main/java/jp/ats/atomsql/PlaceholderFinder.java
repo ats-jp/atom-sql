@@ -6,8 +6,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-import javax.lang.model.SourceVersion;
-
 /**
  * 内部使用クラスです。<br>
  * SQL文から、プレースホルダを探します。<br>
@@ -36,9 +34,7 @@ public class PlaceholderFinder {
 
 			sql = sql.substring(matcher.end());
 
-			if (!SourceVersion.isIdentifier(matched)
-				|| SourceVersion.isKeyword(matched)
-				|| AtomSqlUtils.isRestrictedKeyword(matched)) {
+			if (!AtomSqlUtils.isSafeJavaIdentifier(matched)) {
 				pseudoMatches.add(gap);
 				pseudoMatches.add(matchedAll);
 				continue;

@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.lang.model.SourceVersion;
+
 /**
  * 内部使用ユーティリティクラスです。
  * @author 千葉 哲嗣
@@ -56,7 +58,17 @@ public class AtomSqlUtils {
 		return result;
 	}
 
-	public static boolean isRestrictedKeyword(String word) {
+	/**
+	 * @param word 判定対象文字列
+	 * @return Javaのキーワード、制限付きキーワードではない識別子の場合true
+	 */
+	public static boolean isSafeJavaIdentifier(String word) {
+		return SourceVersion.isIdentifier(word)
+			&& !SourceVersion.isKeyword(word)
+			&& !AtomSqlUtils.isRestrictedKeyword(word);
+	}
+
+	private static boolean isRestrictedKeyword(String word) {
 		return RESTRICTED_KEYWORDS.contains(word);
 	}
 

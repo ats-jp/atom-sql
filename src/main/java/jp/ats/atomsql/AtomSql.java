@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 import jp.ats.atomsql.InnerSql.Element;
 import jp.ats.atomsql.InnerSql.Placeholder;
 import jp.ats.atomsql.InnerSql.Text;
-import jp.ats.atomsql.annotation.AtomSqlSupplier;
 import jp.ats.atomsql.annotation.ConfidentialSql;
 import jp.ats.atomsql.annotation.NoSqlLog;
 import jp.ats.atomsql.annotation.NonThreadSafe;
@@ -44,7 +43,6 @@ import jp.ats.atomsql.annotation.Qualifier;
 import jp.ats.atomsql.annotation.Sql;
 import jp.ats.atomsql.annotation.SqlFile;
 import jp.ats.atomsql.annotation.SqlProxy;
-import jp.ats.atomsql.annotation.SqlProxySupplier;
 import jp.ats.atomsql.annotation.processor.Methods;
 import jp.ats.atomsql.annotation.processor.OptionalDatas;
 import jp.ats.atomsql.type.INTEGER;
@@ -296,7 +294,11 @@ public class AtomSql {
 	private Object invokeMethod(Object proxy, Method method, Object[] args) throws Throwable {
 		if (method.isDefault()) return InvocationHandler.invokeDefault(proxy, method, args);
 
-		if (method.isAnnotationPresent(AtomSqlSupplier.class)) return AtomSql.this;
+		var returnType = method.getReturnType();
+
+		if (returnType.equals(AtomSql.class)) return AtomSql.this;
+
+		if (returnType.isAnnotationPresent(SqlProxy.class)) return of(returnType);
 
 		var proxyInterface = proxy.getClass().getInterfaces()[0];
 
@@ -312,16 +314,13 @@ public class AtomSql {
 
 		var methodName = method.getName();
 
-		var find = Arrays.stream(methods.value())
+		var metadata = Arrays.stream(methods.value())
 			.filter(
 				m -> m.name().equals(methodName) && Arrays.equals(method.getParameterTypes(), m.parameterTypes()))
 			.findFirst()
 			.get();
 
-		var sqlProxySupplierAnnotation = method.getAnnotation(SqlProxySupplier.class);
-		if (sqlProxySupplierAnnotation != null) return of(find.sqlProxy());
-
-		var parameterTypes = find.parameterTypes();
+		var parameterTypes = metadata.parameterTypes();
 
 		var confidentialSql = method.getAnnotation(ConfidentialSql.class);
 		var confidentials = confidentialSql == null ? null : confidentialSql.value();
@@ -359,7 +358,7 @@ public class AtomSql {
 		SqlProxyHelper helper;
 		var entry = nameAnnotation.map(a -> endpoints.get(a.value())).orElseGet(() -> endpoints.get());
 		if (parameterTypes.length == 1 && parameterTypes[0].equals(Consumer.class)) {
-			var parametersUnfolderClass = find.parametersUnfolder();
+			var parametersUnfolderClass = metadata.parametersUnfolder();
 			var parametersUnfolder = parametersUnfolderClass.getConstructor().newInstance();
 
 			Consumer.class.getMethod("accept", Object.class).invoke(args[0], new Object[] { parametersUnfolder });
@@ -407,28 +406,26 @@ public class AtomSql {
 				confidentials,
 				names.toArray(String[]::new),
 				types.toArray(AtomSqlType[]::new),
-				find.result(),
+				metadata.result(),
 				values.toArray(Object[]::new),
 				typeFactory,
 				mySqlLogger);
 		} else {
-			var types = Arrays.stream(find.parameterTypes()).map(c -> typeFactory.select(c)).toArray(AtomSqlType[]::new);
+			var types = Arrays.stream(metadata.parameterTypes()).map(c -> typeFactory.select(c)).toArray(AtomSqlType[]::new);
 
 			helper = new SqlProxyHelper(
 				sql,
 				entry,
 				confidentials,
-				find.parameters(),
+				metadata.parameters(),
 				types,
-				find.result(),
+				metadata.result(),
 				args,
 				typeFactory,
 				mySqlLogger);
 		}
 
 		var atom = new Atom<Object>(AtomSql.this, helper, true);
-
-		var returnType = method.getReturnType();
 
 		if (returnType.equals(Atom.class)) {
 			return atom;
@@ -440,8 +437,8 @@ public class AtomSql {
 			return atom.get();
 		} else if (returnType.equals(int.class) || returnType.equals(void.class)) {
 			return atom.execute();
-		} else if (returnType.equals(Prototype.class)) {
-			return new Prototype<>(atom, find.atomsUnfolder());
+		} else if (returnType.equals(Protoatom.class)) {
+			return new Protoatom<>(atom, metadata.protoatomUnfolder());
 		} else {
 			//不正な戻り値の型
 			throw new IllegalStateException("Incorrect return type: " + returnType);

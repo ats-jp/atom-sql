@@ -138,11 +138,8 @@ class MetadataBuilder {
 		if (info.dataType != null)
 			methodContents.add("result = " + info.dataType + ".class");
 
-		if (info.atomsUnfolder != null)
-			methodContents.add("atomsUnfolder = " + info.atomsUnfolder + ".class");
-
-		if (info.sqlProxy != null)
-			methodContents.add("sqlProxy = " + info.sqlProxy + ".class");
+		if (info.protoatomUnfolder != null)
+			methodContents.add("protoatomUnfolder = " + info.protoatomUnfolder + ".class");
 
 		return "@Method(" + String.join(", ", methodContents) + ")";
 	}
@@ -169,8 +166,6 @@ class MetadataBuilder {
 
 		String dataType;
 
-		String atomsUnfolder;
-
-		String sqlProxy;
+		String protoatomUnfolder;
 	}
 }

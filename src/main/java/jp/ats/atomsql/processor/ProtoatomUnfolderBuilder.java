@@ -9,11 +9,11 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 
 import jp.ats.atomsql.Atom;
-import jp.ats.atomsql.Prototype;
+import jp.ats.atomsql.Protoatom;
 
-class PrototypeUnfolderBuilder extends UnfolderBuilder {
+class ProtoatomUnfolderBuilder extends UnfolderBuilder {
 
-	PrototypeUnfolderBuilder(Supplier<ProcessingEnvironment> processingEnv, DuplicateClassChecker checker) {
+	ProtoatomUnfolderBuilder(Supplier<ProcessingEnvironment> processingEnv, DuplicateClassChecker checker) {
 		super(processingEnv, checker);
 	}
 
@@ -23,13 +23,13 @@ class PrototypeUnfolderBuilder extends UnfolderBuilder {
 
 		var typeElement = ProcessorUtils.toTypeElement(ProcessorUtils.toElement(returnType));
 
-		if (!ProcessorUtils.sameClass(typeElement, Prototype.class)) {
-			//メソッドeは、返す型としてPrototypeを必要とします
+		if (!ProcessorUtils.sameClass(typeElement, Protoatom.class)) {
+			//メソッドeは、返す型としてProtoatomを必要とします
 			error(
 				"Method ["
 					+ method.getSimpleName()
 					+ "] requires returning "
-					+ Prototype.class.getSimpleName(),
+					+ Protoatom.class.getSimpleName(),
 				method);
 
 			return ExtractResult.fail;
@@ -38,7 +38,7 @@ class PrototypeUnfolderBuilder extends UnfolderBuilder {
 		var args = ProcessorUtils.getTypeArgument(returnType);
 
 		if (args.size() != 2) {
-			error(Prototype.class.getSimpleName() + " requires two type arguments", method);
+			error(Protoatom.class.getSimpleName() + " requires two type arguments", method);
 
 			return ExtractResult.fail;
 		}
@@ -47,8 +47,8 @@ class PrototypeUnfolderBuilder extends UnfolderBuilder {
 
 		var element = ProcessorUtils.toElement(typeArg);
 		if (element == null) {
-			//Prototype<DataObject, ?>とされた場合
-			error(Prototype.class.getSimpleName() + " requires two type arguments", method);
+			//Protoatom<DataObject, ?>とされた場合
+			error(Protoatom.class.getSimpleName() + " requires unfolder type arguments", method);
 
 			return ExtractResult.fail;
 		}
@@ -60,7 +60,7 @@ class PrototypeUnfolderBuilder extends UnfolderBuilder {
 	List<String> fields(ExecutableElement method, String sql) {
 		var dubplicateChecker = new HashSet<String>();
 		var fields = new LinkedList<String>();
-		AtomPlaceholderFinder.execute(sql, variable -> {
+		AtomVariableFinder.execute(sql, variable -> {
 			//重複は除外
 			if (dubplicateChecker.contains(variable)) return;
 
@@ -76,5 +76,4 @@ class PrototypeUnfolderBuilder extends UnfolderBuilder {
 
 		return fields;
 	}
-
 }

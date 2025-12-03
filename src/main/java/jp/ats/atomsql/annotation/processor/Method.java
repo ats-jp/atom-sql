@@ -2,10 +2,9 @@ package jp.ats.atomsql.annotation.processor;
 
 import java.util.function.Consumer;
 
-import jp.ats.atomsql.Prototype;
+import jp.ats.atomsql.Protoatom;
 import jp.ats.atomsql.annotation.DataObject;
 import jp.ats.atomsql.annotation.OptionalColumn;
-import jp.ats.atomsql.annotation.SqlProxySupplier;
 
 /**
  * @author 千葉 哲嗣
@@ -49,14 +48,8 @@ public @interface Method {
 	Class<?> result() default Object.class;
 
 	/**
-	 * {@link Prototype}に指定されたクラス
-	 * @return {@link Prototype} に指定されたクラス
+	 * {@link Protoatom}に指定されたクラス
+	 * @return {@link Protoatom} に指定されたクラス
 	 */
-	Class<?> atomsUnfolder() default Object.class;
-
-	/**
-	 * {@link SqlProxySupplier}が付与されたメソッドの戻り値のクラス
-	 * @return {@link SqlProxySupplier}が付与されたメソッドの戻り値のクラス
-	 */
-	Class<?> sqlProxy() default Object.class;
+	Class<?> protoatomUnfolder() default Object.class;
 }

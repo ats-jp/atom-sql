@@ -8,4 +8,4 @@ import jp.ats.atomsql.annotation.processor.OptionalDatas;
 @Generated("[[GENERATED]]")
 @SuppressWarnings("javadoc")
 /*++@OptionalDatas({[[OPTIONAL_DATAS]]})++*//*--*/@OptionalDatas({ @OptionalData(name = "", type = Object.class )})/*--*/
-public interface /*--*/AtomSqlDataObjectMetadata_Template/*--*//*++[[INTERFACE]]++*/ {}
+public interface /*--*/DataObjectMetadata_Template/*--*//*++[[INTERFACE]]++*/ {}

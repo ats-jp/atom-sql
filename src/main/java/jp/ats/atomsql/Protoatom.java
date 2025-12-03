@@ -22,13 +22,13 @@ import jp.ats.atomsql.annotation.SqlProxy;
  * @param <T> {@link DataObject}が付与された型
  * @param <A> 自動生成される変数展開用クラス
  */
-public class Prototype<T, A> {
+public class Protoatom<T, A> {
 
 	private final Atom<T> atom;
 
 	private final Class<?> atomsUnfolderClass;
 
-	Prototype(Atom<T> atom, Class<?> atomsUnfolderClass) {
+	Protoatom(Atom<T> atom, Class<?> atomsUnfolderClass) {
 		this.atom = atom;
 		this.atomsUnfolderClass = atomsUnfolderClass;
 	}
@@ -73,11 +73,11 @@ public class Prototype<T, A> {
 	/**
 	 * 自動生成された変数展開用クラス I をもとにSQL文の変数展開を部分的に行います。<br>
 	 * 展開された新しいインスタンスにさらに{@link #put(Consumer)}を行い完全に展開する必要があります。
-	 * @see Prototype#put(Consumer)
+	 * @see Protoatom#put(Consumer)
 	 * @param consumer 変数展開用クラスのインスタンスを受け取る{@link Consumer}
-	 * @return 部分的に展開された新しい{@link Prototype}
+	 * @return 部分的に展開された新しい{@link Protoatom}
 	 */
-	public Prototype<T, A> renew(Consumer<A> consumer) {
-		return new Prototype<>(put(consumer), atomsUnfolderClass);
+	public Protoatom<T, A> renew(Consumer<A> consumer) {
+		return new Protoatom<>(put(consumer), atomsUnfolderClass);
 	}
 }

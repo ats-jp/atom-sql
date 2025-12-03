@@ -2,11 +2,13 @@ package jp.ats.atomsql.processor;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -19,6 +21,7 @@ import javax.lang.model.util.SimpleTypeVisitor14;
 import javax.tools.StandardLocation;
 
 import jp.ats.atomsql.AtomSql;
+import jp.ats.atomsql.AtomSqlTypeFactory;
 
 /**
  * @author 千葉 哲嗣
@@ -149,6 +152,25 @@ class ProcessorUtils {
 		if (message == null || message.isBlank()) return e.getClass().getName();
 
 		return message;
+	}
+
+	/**
+	 * @see AtomSqlTypeFactory#canUse(Class)
+	 * @param type
+	 * @return boolean
+	 */
+	static boolean canUse(TypeElement type, AtomSqlTypeFactory factory) {
+		if (type.getKind() == ElementKind.ENUM) return true;
+
+		var typeName = type.getQualifiedName().toString();
+
+		if (typeName.equals(Enum.class.getCanonicalName())) return true;
+
+		return Arrays.stream(factory.nonPrimitiveTypes())
+			.map(t -> t.type())
+			.filter(c -> typeName.equals(c.getCanonicalName()))
+			.findFirst()
+			.isPresent();
 	}
 
 	private static class TypeConverter extends SimpleElementVisitor14<TypeElement, Void> {
