@@ -9,15 +9,7 @@
 	<name>Atom SQL</name>
 	<description>A JDBC wrapper with SQL injection resistant</description>
 
-	<url>https://github.com/ats-jp/atom-sql</url>
-
-	<distributionManagement>
-		<repository>
-			<id>internal.repos</id>
-			<name>Temporary Staging Repository</name>
-			<url>file://${staging.repository.directory}</url>
-		</repository>
-	</distributionManagement>
+	<url>https://github.com/tetzc/atom-sql</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -26,17 +18,6 @@
 		<github.global.server>github-ats-jp</github.global.server>
 	</properties>
 	<build>
-		<resources>
-			<resource>
-				<directory>src/main/resources</directory>
-			</resource>
-			<resource>
-				<directory>src/main/java</directory>
-				<includes>
-					<include>**/processor/*_Template.java</include>
-				</includes>
-			</resource>
-		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -60,28 +41,6 @@
 					<debug>true</debug>
 					<debuglevel>lines,vars,source</debuglevel>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>com.github.github</groupId>
-				<artifactId>site-maven-plugin</artifactId>
-				<version>0.12</version>
-				<configuration>
-					<message>Maven artifacts for ${project.version}</message>
-					<noJekyll>true</noJekyll>
-					<outputDirectory>${staging.repository.directory}</outputDirectory>
-					<includes>
-						<include>**/*</include>
-					</includes>
-					<merge>true</merge>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>site</goal>
-						</goals>
-						<phase>deploy</phase>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>
