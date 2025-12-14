@@ -16,7 +16,7 @@ Spring FrameworkからAtom SQLを使用する場合は[Atom SQL Spring](https://
 		<dependency>
 			<groupId>jp.ats</groupId>
 			<artifactId>atom-sql</artifactId>
-			<version>0.6.0</version>
+			<version>x.x.x</version>
 		</dependency>
 	</dependencies>
 ```
