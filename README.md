@@ -3,7 +3,7 @@
 ## 概要
 Atom SQLは、Javaのアノテーションプロセッサーと動的プロキシクラスという技術を利用し、宣言のみの記述で手続きをほぼ記述することなくSQLの発行、結果の取得を行うことを可能にするツールです。  
 通常のライブラリと異なり、アノテーションプロセッサーによりコンパイル時に内部の実装を作成するため、以下ルールに従った記述をしない場合想定外の動作となる可能性があるため注意が必要です。  
-またAtom SQLで使用可能なSQL文は事前定義したもののみであり、値はすべてプレースホルダからセットするため、SQL Injectionの発生を回避することが可能です。
+またAtom SQLで使用可能なSQL文は事前定義したもののみであり、値はすべてプレースホルダからセットするため、Atom SQLからのみDBの操作を行う限りSQL Injectionの発生を回避することが可能です。
 
 ## Spring Framework  
 Spring FrameworkからAtom SQLを使用する場合は[Atom SQL Spring](https://github.com/ats-jp/atom-sql-spring)を参照のこと  
@@ -24,8 +24,8 @@ Spring FrameworkからAtom SQLを使用する場合は[Atom SQL Spring](https://
 プロジェクトのプロパティで  
   - `Java Compiler` > `Annotation Processing`のページを表示  
   - `Enable annotation processing`をチェック  
-  - `Apply and Close`をクリック
-プロジェクトで`Maven` > `Update Project...`で再ビルド
+  - `Apply and Close`をクリック  
+プロジェクトで`Maven` > `Update Project...`で再ビルド  
 で設定完了  
 
 - その他のIDE  
@@ -51,7 +51,7 @@ public interface SampleProxy {
 ### SELECT文の発行  
 - 検索結果格納クラスの作成
   - __@DataObject__  
-検索結果格納クラスを作成し、`@DataObject`を付与する
+検索結果格納クラスを作成し、`@DataObject`を付与する  
 簡単な検索結果であれば後に解説する`@DataObject`の自動生成機能を使用すればこの検索結果格納クラスを作成する必要はない  
 検索結果格納クラスは以下の3タイプが使用可能  
 
